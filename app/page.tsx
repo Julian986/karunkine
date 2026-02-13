@@ -8,7 +8,7 @@ export default function Home() {
       <section
         className="relative flex min-h-[88vh] flex-col items-center justify-center px-6 text-center bg-cover bg-center bg-no-repeat"
         style={{
-          backgroundImage: "url('/beautiful-fit-red-girl-working-out.jpg')",
+          backgroundImage: "url('/https://res.cloudinary.com/dzoupwn0e/image/upload/v1771005492/beautiful-fit-red-girl-working-out_mz9uww.webp')",
         }}
       >
         <div className="absolute inset-0 bg-black/50" aria-hidden />
