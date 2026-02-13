@@ -103,7 +103,7 @@ export default function Header() {
               aria-hidden
             />
             <div
-              className="absolute inset-y-0 right-0 w-full max-w-sm bg-white shadow-xl transition-transform duration-200 ease-out"
+              className="absolute inset-0 bg-white shadow-xl transition-transform duration-200 ease-out"
               style={{ transform: menuOpen ? "translateX(0)" : "translateX(100%)" }}
             >
               <div className="flex items-center justify-end border-b border-zinc-100 px-4 py-3">
