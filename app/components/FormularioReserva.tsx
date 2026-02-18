@@ -2,11 +2,15 @@
 
 import { useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
-import DatePicker from "./DatePicker";
 
 const iconPerson = (
   <svg className="h-5 w-5 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
     <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+  </svg>
+);
+const iconMail = (
+  <svg className="h-5 w-5 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
   </svg>
 );
 const iconPhone = (
@@ -21,15 +25,12 @@ const iconChevron = (
 );
 
 const MOTIVOS_CONSULTA = [
-  { value: "evaluacion", label: "Evaluación / Consulta inicial" },
-  { value: "dolor_espalda", label: "Dolor de espalda (cervical, lumbar)" },
-  { value: "rehabilitacion", label: "Rehabilitación post lesión o cirugía" },
-  { value: "lesion_deportiva", label: "Lesión deportiva" },
-  { value: "contracturas", label: "Contracturas / dolor muscular" },
-  { value: "kine_respiratoria", label: "Kinesiología respiratoria" },
-  { value: "recuperacion_funcional", label: "Recuperación funcional / movilidad" },
-  { value: "prevencion", label: "Prevención y mantenimiento" },
-  { value: "otro", label: "Otro" },
+  { value: "suelo_pelvico", label: "Disfunción de suelo pélvico" },
+  { value: "embarazo", label: "Embarazo" },
+  { value: "posparto", label: "Posparto" },
+  { value: "lesion", label: "Lesión" },
+  { value: "dolor", label: "Dolor" },
+  { value: "postura", label: "Postura" },
 ];
 
 const PLACEHOLDER_MOTIVO = "Motivo de consulta";
@@ -44,12 +45,14 @@ function InputWithIcon({
   type = "text",
   icon,
   id,
+  name,
   ariaLabel,
 }: {
   placeholder: string;
   type?: string;
   icon: React.ReactNode;
   id: string;
+  name?: string;
   ariaLabel: string;
 }) {
   const isTextarea = type === "textarea";
@@ -58,6 +61,7 @@ function InputWithIcon({
       {isTextarea ? (
         <textarea
           id={id}
+          name={name ?? id}
           placeholder={placeholder}
           rows={3}
           aria-label={ariaLabel}
@@ -66,6 +70,7 @@ function InputWithIcon({
       ) : (
         <input
           id={id}
+          name={name ?? id}
           type={type}
           placeholder={placeholder}
           aria-label={ariaLabel}
@@ -82,7 +87,6 @@ function InputWithIcon({
 }
 
 export default function FormularioReserva() {
-  const [activeTab, setActiveTab] = useState<"reserva" | "info">("reserva");
   const [motivoOpen, setMotivoOpen] = useState(false);
   const [selectedMotivo, setSelectedMotivo] = useState<string>("");
   const [motivoRect, setMotivoRect] = useState<{
@@ -125,6 +129,14 @@ export default function FormularioReserva() {
     }
   }, [motivoOpen]);
 
+  // Cerrar dropdown al hacer scroll en la página
+  useEffect(() => {
+    if (!motivoOpen) return;
+    const handleScroll = () => setMotivoOpen(false);
+    window.addEventListener("scroll", handleScroll, true);
+    return () => window.removeEventListener("scroll", handleScroll, true);
+  }, [motivoOpen]);
+
   return (
     <>
       <section
@@ -132,54 +144,38 @@ export default function FormularioReserva() {
         className="relative z-10 -mt-6 px-4 pb-24 pt-8 sm:px-6 md:px-10 lg:px-16"
       >
         <div className="mx-auto max-w-2xl">
-          {/* Tarjeta flotante estilo referencia */}
           <div className="overflow-hidden rounded-3xl bg-white shadow-[0_8px_30px_rgba(0,0,0,0.12)]">
-            {/* Pestañas */}
-            <div className="border-b border-zinc-200 px-6 pt-6">
-              <div className="flex gap-6">
-                <button
-                  type="button"
-                  onClick={() => setActiveTab("reserva")}
-                  className={`pb-4 text-sm font-semibold transition ${
-                    activeTab === "reserva"
-                      ? "border-b-2 border-[#d4602c] text-zinc-900"
-                      : "text-zinc-400 hover:text-zinc-600"
-                  }`}
-                >
-                  Reserva
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setActiveTab("info")}
-                  className={`pb-4 text-sm font-semibold transition ${
-                    activeTab === "info"
-                      ? "border-b-2 border-[#d4602c] text-zinc-900"
-                      : "text-zinc-400 hover:text-zinc-600"
-                  }`}
-                >
-                  Información
-                </button>
-              </div>
-            </div>
-
-            {/* Contenido según pestaña */}
             <div className="p-6 sm:p-8">
-              {activeTab === "reserva" && (
-                <form className="flex flex-col gap-5">
-                  <InputWithIcon
-                    id="nombre"
-                    placeholder="Tu nombre"
-                    ariaLabel="Nombre"
-                    icon={iconPerson}
-                  />
-                  <InputWithIcon
-                    id="celular"
-                    placeholder="Celular"
-                    ariaLabel="Celular"
-                    icon={iconPhone}
-                  />
-                  <DatePicker id="fecha" placeholder="Fecha preferida" ariaLabel="Fecha preferida" />
-                  <div className="relative">
+              <h2 className="text-xl font-semibold text-zinc-800 sm:text-2xl">
+                Agendar evaluación
+              </h2>
+              <p className="mt-1 text-zinc-500">
+                Completá tus datos y te contactamos.
+              </p>
+              <form className="mt-6 flex flex-col gap-5">
+                <InputWithIcon
+                  id="nombre"
+                  name="nombre"
+                  placeholder="Nombre y apellido"
+                  ariaLabel="Nombre y apellido"
+                  icon={iconPerson}
+                />
+                <InputWithIcon
+                  id="mail"
+                  name="mail"
+                  type="email"
+                  placeholder="Mail"
+                  ariaLabel="Mail"
+                  icon={iconMail}
+                />
+                <InputWithIcon
+                  id="celular"
+                  name="celular"
+                  placeholder="Celular"
+                  ariaLabel="Celular"
+                  icon={iconPhone}
+                />
+                <div className="relative">
                     <input type="hidden" name="motivo" value={selectedMotivo} readOnly />
                     <button
                       ref={motivoTriggerRef}
@@ -232,22 +228,14 @@ export default function FormularioReserva() {
                       </div>,
                       document.body
                     )}
-                  <button
-                    type="button"
-                    className="mt-2 flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#d4602c] py-3.5 font-semibold text-white transition hover:opacity-90"
-                  >
-                    Enviar solicitud
-                    {iconSend}
-                  </button>
-                </form>
-              )}
-              {activeTab === "info" && (
-                <div className="py-4 text-zinc-600">
-                  <p className="text-sm leading-relaxed">
-                    Acá podés agregar información sobre consultorio, horarios o tratamientos. Por ahora esta pestaña es solo de ejemplo.
-                  </p>
-                </div>
-              )}
+                <button
+                  type="button"
+                  className="mt-2 flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#d4602c] py-3.5 font-semibold text-white transition hover:opacity-90"
+                >
+                  Enviar solicitud
+                  {iconSend}
+                </button>
+              </form>
             </div>
           </div>
         </div>

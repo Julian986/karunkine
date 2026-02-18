@@ -3,10 +3,10 @@
 import { useState } from "react";
 
 const FAQ = [
-  {
-    q: "¿Necesito orden médica?",
-    a: "Depende del tipo de cobertura y del tratamiento. Te lo indicamos cuando reserves.",
-  },
+  // {
+  //   q: "¿Necesito orden médica?",
+  //   a: "Depende del tipo de cobertura y del tratamiento. Te lo indicamos cuando reserves.",
+  // },
   {
     q: "¿Cuánto dura una sesión?",
     a: "La primera consulta suele ser un poco más larga (evaluación). Las siguientes rondan los 45–60 minutos.",
@@ -15,10 +15,10 @@ const FAQ = [
     q: "¿Qué tengo que llevar?",
     a: "Si tenés estudios o órdenes médicas, traelos. Ropa cómoda ayuda para la evaluación y los ejercicios.",
   },
-  {
-    q: "¿Con qué frecuencia se recomienda ir?",
-    a: "Se define según tu caso en la evaluación. Puede ser 1 o 2 veces por semana al inicio.",
-  },
+  // {
+  //   q: "¿Con qué frecuencia se recomienda ir?",
+  //   a: "Se define según tu caso en la evaluación. Puede ser 1 o 2 veces por semana al inicio.",
+  // },
 ];
 
 export default function PreguntasFrecuentes() {

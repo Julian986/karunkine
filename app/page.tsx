@@ -4,7 +4,7 @@ import PreguntasFrecuentes from "./components/PreguntasFrecuentes";
 export default function Home() {
   return (
     <>
-      {/* Hero: primera pantalla con título, descripción y botón */}
+      {/* Hero */}
       <section
         className="relative flex min-h-[88vh] flex-col items-center justify-center px-6 text-center bg-cover bg-center bg-no-repeat"
         style={{
@@ -12,104 +12,97 @@ export default function Home() {
         }}
       >
         <div className="absolute inset-0 bg-black/50" aria-hidden />
-        <div className="relative z-10">
-        <h1 className="text-4xl font-bold tracking-tight text-white drop-shadow-sm sm:text-5xl md:text-6xl">
-          Karunkine
-        </h1>
-        <p className="mt-4 max-w-md text-lg leading-relaxed text-white/95 sm:text-xl">
-          Kinesiología y rehabilitación para tu bienestar. Agendá tu turno y
-          empezá a sentirte mejor.
-        </p>
-        <a
-          href="#formulario-reserva"
-          className="mt-8 inline-flex items-center gap-2 rounded-xl bg-white px-8 py-4 font-semibold text-[#d4602c] shadow-lg transition hover:bg-white/95 hover:shadow-xl"
-        >
-          Reservar
-          <span aria-hidden>➜</span>
-        </a>
+        <div className="relative z-10 max-w-2xl">
+          <p className="text-sm font-medium tracking-wide text-white/90 sm:text-base">
+            Conciencia Corporal y Movimiento
+          </p>
+          <p className="mt-1 text-xs tracking-widest text-white/80 sm:text-sm">
+            WANDA PERRIN | Lic. en Kinesiología y Fisiatría
+          </p>
+          <h1 className="mt-6 text-3xl font-bold tracking-tight text-white drop-shadow-sm sm:text-4xl md:text-5xl">
+            SENTITE PLENO HABITANDO TU CUERPO
+          </h1>
+          <p className="mt-6 text-base leading-relaxed text-white/95 sm:text-lg">
+            Existen herramientas simples y amorosas que podés incorporar en tu día a día
+            para el manejo del dolor, mientras implementas los cambios que tu cuerpo necesita.
+          </p>
+          <p className="mt-3 font-medium text-white">
+            Estoy para acompañarte.
+          </p>
+          <a
+            href="#formulario-reserva"
+            className="mt-8 inline-flex items-center gap-2 rounded-xl bg-white px-8 py-4 font-semibold text-[#d4602c] shadow-lg transition hover:bg-white/95 hover:shadow-xl"
+          >
+            AGENDAR EVALUACIÓN
+            <span aria-hidden>➜</span>
+          </a>
         </div>
       </section>
 
-      {/* Formulario: tarjeta flotante con pestañas (estilo referencia) */}
+      {/* Formulario */}
       <section className="relative z-10 -mt-6 rounded-t-3xl bg-zinc-100 shadow-[0_-8px_30px_rgba(0,0,0,0.06)]">
         <FormularioReserva />
       </section>
 
-      {/* Cómo es el tratamiento */}
+      {/* Nuestra visión (antes Tratamiento) */}
       <section id="tratamiento" className="bg-white px-4 py-14 sm:px-6 md:px-10">
         <div className="mx-auto max-w-2xl">
           <h2 className="text-2xl font-semibold text-zinc-800 sm:text-3xl">
-            Cómo es el tratamiento
+            Nuestra visión
           </h2>
           <div className="mt-6 space-y-4 text-zinc-600 leading-relaxed">
             <p>
-              En la primera consulta hacemos una evaluación para conocer tu historia, el motivo por el que venís y tus objetivos. A partir de ahí armamos un plan de trabajo a tu medida.
+              Además de lograr el objetivo específico de cada persona y cada sesión, el tratamiento busca generar la propia conciencia de movimiento normal y la capacidad de auto-regular el cuerpo físico con base en una perspectiva integral de la salud.
             </p>
             <p>
-              Las sesiones son individuales y se adaptan a lo que necesitás: pueden incluir ejercicios, trabajo manual y recomendaciones para que puedas seguir en el día a día. La idea es que te vayas sintiendo mejor y con más herramientas.
+              Con esto en mente, el espacio invita a la auto-observación, a explorarnos y escucharnos para conocernos y conectar con nuestras necesidades biológicas hasta alcanzar ese estado de completo bienestar que entendemos por salud.
             </p>
           </div>
         </div>
       </section>
 
-      {/* Actividades - lista minimalista, sin iconos, menos ítems */}
-      <section id="actividades" className="bg-zinc-50 px-4 py-14 sm:px-6 md:px-10">
+      {/* Consulta Inicial (reemplaza Actividades) */}
+      <section id="consulta-inicial" className="bg-zinc-50 px-4 py-14 sm:px-6 md:px-10">
         <div className="mx-auto max-w-2xl">
           <h2 className="text-2xl font-semibold text-zinc-800 sm:text-3xl">
-            Actividades
+            ¿En qué consiste la consulta inicial de evaluación?
           </h2>
-          <p className="mt-2 text-zinc-600">
-            Áreas en las que trabajamos.
-          </p>
-          <ul className="mt-10 space-y-10">
-            <li>
-              <h3 className="text-lg font-semibold text-zinc-800">
-                Evaluación y consulta inicial
-              </h3>
-              <p className="mt-1.5 text-zinc-600 leading-relaxed">
-                Análisis y plan de tratamiento personalizado según tu necesidad.
-              </p>
-            </li>
-            <li>
-              <h3 className="text-lg font-semibold text-zinc-800">
-                Dolor de espalda y contracturas
-              </h3>
-              <p className="mt-1.5 text-zinc-600 leading-relaxed">
-                Cervical, lumbar, postura y tratamiento del dolor muscular.
-              </p>
-            </li>
-            <li>
-              <h3 className="text-lg font-semibold text-zinc-800">
-                Rehabilitación y lesiones deportivas
-              </h3>
-              <p className="mt-1.5 text-zinc-600 leading-relaxed">
-                Post lesión o cirugía, recuperación y prevención en actividad física.
-              </p>
-            </li>
-            <li>
-              <h3 className="text-lg font-semibold text-zinc-800">
-                Kinesiología respiratoria
-              </h3>
-              <p className="mt-1.5 text-zinc-600 leading-relaxed">
-                Rehabilitación respiratoria y trabajo sobre la función pulmonar.
-              </p>
-            </li>
-            <li>
-              <h3 className="text-lg font-semibold text-zinc-800">
-                Prevención y mantenimiento
-              </h3>
-              <p className="mt-1.5 text-zinc-600 leading-relaxed">
-                Cuidado continuo, movilidad y bienestar para el día a día.
-              </p>
-            </li>
-          </ul>
+          <div className="mt-6 space-y-4 text-zinc-600 leading-relaxed">
+            <p>
+              La evaluación es un recorrido por tu historia corporal. Se trata de un espacio uno a uno destinado a conocer tu estado de salud actual, tu experiencia personal con la salud y el movimiento, tus hábitos y actividades diarias y los objetivos que te acercaron a la consulta.
+            </p>
+            <p>
+              Con la información recopilada le damos forma al Plan Kinésico que detalla los ítems que abordaremos en sesión y se te facilitará vía WhatsApp en formato PDF.
+            </p>
+            <p>
+              Junto con el plan kinésico te haré llegar la Guía de Hábitos para la Salud Integral, con las claves para que tu cuerpo responda de forma eficaz al tratamiento y puedas sostener los resultados en el tiempo.
+            </p>
+          </div>
+          <div className="mt-8 rounded-xl border border-zinc-200 bg-white p-6">
+            <p className="text-xl font-semibold text-zinc-800">
+              $33.000
+            </p>
+            <p className="mt-1 text-sm text-zinc-500">
+              El turno se reserva una vez recibido el pago.
+            </p>
+            <p className="mt-3 text-sm font-medium text-zinc-700">
+              Modalidad: PRESENCIAL / VIRTUAL
+            </p>
+            <a
+              href="#formulario-reserva"
+              className="mt-6 inline-flex items-center gap-2 rounded-xl bg-[#d4602c] px-6 py-3 font-semibold text-white transition hover:opacity-90"
+            >
+              AGENDAR EVALUACIÓN
+              <span aria-hidden>➜</span>
+            </a>
+          </div>
         </div>
       </section>
 
-      {/* Preguntas frecuentes (acordeón) */}
+      {/* Preguntas frecuentes */}
       <PreguntasFrecuentes />
 
-      {/* Contacto - estilo “Get in touch”: fondo oscuro, título, párrafo, lista con iconos */}
+      {/* Footer / Contacto */}
       <section
         id="contacto"
         className="relative px-4 py-16 sm:px-6 md:px-10"
@@ -121,11 +114,8 @@ export default function Home() {
       >
         <div className="mx-auto max-w-2xl">
           <h2 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">
-            Contacto
+            Información de contacto
           </h2>
-          <p className="mt-4 max-w-lg text-lg leading-relaxed text-zinc-400">
-            Escribinos o llamanos para más información. Estamos para ayudarte.
-          </p>
           <ul className="mt-10 space-y-8">
             <li className="flex items-start gap-4">
               <span className="flex h-10 w-10 shrink-0 items-center justify-center text-zinc-500">
@@ -135,10 +125,15 @@ export default function Home() {
                 </svg>
               </span>
               <div>
-                <p className="text-sm font-medium text-zinc-500">Dirección</p>
-                <p className="mt-1 text-white">
-                  Dirección del consultorio, localidad
-                </p>
+                <p className="text-sm font-medium text-zinc-500">Ubicación</p>
+                <a
+                  href="https://maps.google.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-1 block text-white transition hover:text-[#d4602c]"
+                >
+                  Ver en MAPS
+                </a>
               </div>
             </li>
             <li className="flex items-start gap-4">
@@ -153,7 +148,23 @@ export default function Home() {
                   href="tel:+5492914296636"
                   className="mt-1 block text-white transition hover:text-[#d4602c]"
                 >
-                  54 9 2914 29-6636
+                  2914 29-6636
+                </a>
+              </div>
+            </li>
+            <li className="flex items-start gap-4">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center text-zinc-500">
+                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
+                </svg>
+              </span>
+              <div>
+                <p className="text-sm font-medium text-zinc-500">Mail</p>
+                <a
+                  href="mailto:lic.wandaperrin@gmail.com"
+                  className="mt-1 block text-white transition hover:text-[#d4602c]"
+                >
+                  lic.wandaperrin@gmail.com
                 </a>
               </div>
             </li>

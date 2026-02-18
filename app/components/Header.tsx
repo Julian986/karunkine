@@ -5,9 +5,9 @@ import { createPortal } from "react-dom";
 
 const NAV_LINKS = [
   { href: "#", label: "Inicio" },
-  { href: "#formulario-reserva", label: "Reservar" },
+  { href: "#formulario-reserva", label: "Agendar" },
   { href: "#tratamiento", label: "Tratamiento" },
-  { href: "#actividades", label: "Actividades" },
+  { href: "#consulta-inicial", label: "Consulta Inicial" },
   { href: "#preguntas-frecuentes", label: "Preguntas" },
   { href: "#contacto", label: "Contacto" },
 ];
