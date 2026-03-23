@@ -1,54 +1,87 @@
+import Image from "next/image";
 import FormularioReserva from "./components/FormularioReserva";
+import HeroAgendarCta from "./components/HeroAgendarCta";
+import HeroLogoToggle from "./components/HeroLogoToggle";
+import ConsultaAgendarCta from "./components/ConsultaAgendarCta";
+import { LogoAccentProvider } from "./components/LogoAccentContext";
 import PreguntasFrecuentes from "./components/PreguntasFrecuentes";
+import { HERO_BACKGROUND_IMAGE_URL } from "./hero-assets";
 
 export default function Home() {
   return (
+    <LogoAccentProvider>
     <>
       {/* Hero */}
       <section
-        className="relative flex min-h-[88vh] flex-col items-center justify-center px-6 text-center bg-cover bg-center bg-no-repeat"
-        style={{
-          backgroundImage: "url('https://res.cloudinary.com/dzoupwn0e/image/upload/w_1920,c_limit,f_auto,q_auto/v1771005492/beautiful-fit-red-girl-working-out_mz9uww.webp')",
-        }}
+        id="inicio"
+        className="hero-home relative flex min-h-[88vh] flex-col items-center justify-center overflow-hidden px-6 text-center"
       >
-        <div className="absolute inset-0 bg-black/50" aria-hidden />
-        <div className="relative z-10 max-w-2xl">
-          <p className="text-sm font-medium tracking-wide text-white/90 sm:text-base">
+        <Image
+          src={HERO_BACKGROUND_IMAGE_URL}
+          alt=""
+          fill
+          priority
+          fetchPriority="high"
+          sizes="100vw"
+          quality={80}
+          className="z-0 object-cover object-center"
+          aria-hidden
+        />
+        <div className="absolute inset-0 z-[1] bg-black/50" aria-hidden />
+        <div className="hero-content relative z-10 flex max-w-2xl flex-col items-center pt-28 text-center sm:pt-0">
+          <HeroLogoToggle />
+          <p className="mt-4 text-sm font-medium tracking-wide text-white/90 sm:text-base">
             Conciencia Corporal y Movimiento
           </p>
           <p className="mt-1 text-xs tracking-widest text-white/80 sm:text-sm">
             WANDA PERRIN | Lic. en Kinesiología y Fisiatría
           </p>
-          <h1 className="mt-6 text-3xl font-bold tracking-tight text-white drop-shadow-sm sm:text-4xl md:text-5xl">
+          <h1 className="mt-6 whitespace-nowrap text-base font-bold tracking-tight text-white drop-shadow-sm sm:text-3xl md:text-4xl lg:text-5xl">
             SENTITE PLENO HABITANDO TU CUERPO
           </h1>
           <p className="mt-6 text-base leading-relaxed text-white/95 sm:text-lg">
-            Existen herramientas simples y amorosas que podés incorporar en tu día a día
-            para el manejo del dolor, mientras implementas los cambios que tu cuerpo necesita.
+            Existen herramientas simples y amorosas<br />
+            que podés incorporar en tu día a día<br />
+            para el manejo del dolor,<br />
+            mientras implementas los cambios<br />
+            que tu cuerpo necesita.
           </p>
           <p className="mt-3 font-medium text-white">
             Estoy para acompañarte.
           </p>
-          <a
-            href="#formulario-reserva"
-            className="mt-8 inline-flex items-center gap-2 rounded-xl bg-white px-8 py-4 font-semibold text-[#d4602c] shadow-lg transition hover:bg-white/95 hover:shadow-xl"
-          >
-            AGENDAR EVALUACIÓN
-            <span aria-hidden>➜</span>
-          </a>
+          <HeroAgendarCta />
         </div>
       </section>
 
       {/* Formulario */}
-      <section className="relative z-10 -mt-6 rounded-t-3xl bg-zinc-100 shadow-[0_-8px_30px_rgba(0,0,0,0.06)]">
+      <section className="hero-formulario-section relative z-10 -mt-6 rounded-t-3xl bg-zinc-100 shadow-[0_-8px_30px_rgba(0,0,0,0.06)]">
         <FormularioReserva />
+      </section>
+
+      {/* Sobre nosotros */}
+      <section id="sobre-nosotros" className="bg-zinc-50 px-4 py-14 sm:px-6 md:px-10">
+        <div className="mx-auto max-w-2xl">
+          <h2 className="text-2xl font-semibold text-zinc-800 sm:text-3xl">
+            SOBRE NOSOTROS
+          </h2>
+          <div className="mt-6 space-y-4 text-zinc-600 leading-relaxed">
+            <p>
+              <span className="font-semibold text-zinc-800">Misión:</span>{" "}
+              Promover la salud y el bienestar para que las personas puedan habitar sus cuerpos —y el mundo— con plenitud y en coherencia con su esencia y sus sueños.
+            </p>
+            <p>
+              <span className="font-semibold text-zinc-800">Visión:</span>{" "}
+              Guíar procesos de recuperación de la salud más conscientes y autónomos, acompañando a las personas a reconectar con su cuerpo y a despertar todo su potencial.
+            </p>
+          </div>
+        </div>
       </section>
 
       {/* Nuestra visión (antes Tratamiento) */}
       <section id="tratamiento" className="bg-white px-4 py-14 sm:px-6 md:px-10">
         <div className="mx-auto max-w-2xl">
           <h2 className="text-2xl font-semibold text-zinc-800 sm:text-3xl">
-            Nuestra visión
+            SOBRE EL TRATAMIENTO
           </h2>
           <div className="mt-6 space-y-4 text-zinc-600 leading-relaxed">
             <p>
@@ -57,6 +90,33 @@ export default function Home() {
             <p>
               Con esto en mente, el espacio invita a la auto-observación, a explorarnos y escucharnos para conocernos y conectar con nuestras necesidades biológicas hasta alcanzar ese estado de completo bienestar que entendemos por salud.
             </p>
+            <p className="pt-2">
+              Podemos iniciar éste proceso en dos modalidades:
+            </p>
+            <ul className="mt-2 list-disc space-y-6 pl-5 marker:text-zinc-600">
+              <li className="pl-1">
+                <p className="font-semibold text-zinc-800">
+                  Por medio de CLASES REGULARES GRUPALES con evaluación previa.
+                </p>
+                <p className="mt-2">Los días Martes y Jueves</p>
+                <p className="mt-2">En los siguientes horarios:</p>
+                <p className="mt-1">9:30H ~ 10:30H ~ 16H ~ 17H</p>
+                <p className="mt-2">
+                  Cada turno con un cupo máximo de 4 personas.
+                </p>
+                <p className="mt-2">
+                  Con un valor mensual de $160.000 que incluye la consulta individual para evaluación.
+                </p>
+              </li>
+              <li className="pl-1">
+                <p className="font-semibold text-zinc-800">
+                  Con la modalidad de CONSULTAS INDIVIDUALES.
+                </p>
+                <p className="mt-2">
+                  Éstas tienen una duración estimada de 45&apos; y tienen un valor de $40.000.
+                </p>
+              </li>
+            </ul>
           </div>
         </div>
       </section>
@@ -65,7 +125,7 @@ export default function Home() {
       <section id="consulta-inicial" className="bg-zinc-50 px-4 py-14 sm:px-6 md:px-10">
         <div className="mx-auto max-w-2xl">
           <h2 className="text-2xl font-semibold text-zinc-800 sm:text-3xl">
-            ¿En qué consiste la consulta inicial de evaluación?
+          SOBRE LA EVALUACIÓN 
           </h2>
           <div className="mt-6 space-y-4 text-zinc-600 leading-relaxed">
             <p>
@@ -78,23 +138,8 @@ export default function Home() {
               Junto con el plan kinésico te haré llegar la Guía de Hábitos para la Salud Integral, con las claves para que tu cuerpo responda de forma eficaz al tratamiento y puedas sostener los resultados en el tiempo.
             </p>
           </div>
-          <div className="mt-8 rounded-xl border border-zinc-200 bg-white p-6">
-            <p className="text-xl font-semibold text-zinc-800">
-              $33.000
-            </p>
-            <p className="mt-1 text-sm text-zinc-500">
-              El turno se reserva una vez recibido el pago.
-            </p>
-            <p className="mt-3 text-sm font-medium text-zinc-700">
-              Modalidad: PRESENCIAL / VIRTUAL
-            </p>
-            <a
-              href="#formulario-reserva"
-              className="mt-6 inline-flex items-center gap-2 rounded-xl bg-[#d4602c] px-6 py-3 font-semibold text-white transition hover:opacity-90"
-            >
-              AGENDAR EVALUACIÓN
-              <span aria-hidden>➜</span>
-            </a>
+          <div className="mt-8">
+            <ConsultaAgendarCta />
           </div>
         </div>
       </section>
@@ -126,13 +171,17 @@ export default function Home() {
               </span>
               <div>
                 <p className="text-sm font-medium text-zinc-500">Ubicación</p>
+                <p className="mt-1 text-white">
+                  Viamonte 1233 | Bahía Blanca
+                </p>
                 <a
-                  href="https://maps.google.com"
+                  href="https://www.google.com/maps/search/?api=1&query=Viamonte%201233%2C%20Bah%C3%ADa%20Blanca"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="mt-1 block text-white transition hover:text-[#d4602c]"
+                  className="mt-3 inline-flex items-center gap-2 rounded-lg border border-white/25 bg-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white hover:text-[#d4602c] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
                 >
                   Ver en MAPS
+                  <span aria-hidden>↗</span>
                 </a>
               </div>
             </li>
@@ -190,5 +239,6 @@ export default function Home() {
         </div>
       </section>
     </>
+    </LogoAccentProvider>
   );
 }

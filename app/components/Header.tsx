@@ -1,18 +1,19 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 
 const NAV_LINKS = [
-  { href: "#", label: "Inicio" },
+  { href: "#inicio", label: "Inicio" },
   { href: "#formulario-reserva", label: "Agendar" },
+  { href: "#sobre-nosotros", label: "Sobre nosotros" },
   { href: "#tratamiento", label: "Tratamiento" },
-  { href: "#consulta-inicial", label: "Consulta Inicial" },
+  { href: "#consulta-inicial", label: "Evaluación" },
   { href: "#preguntas-frecuentes", label: "Preguntas" },
   { href: "#contacto", label: "Contacto" },
 ];
 
-function useScrollLock(locked: boolean) {
+function useScrollLock(locked: boolean, skipRestoreRef: React.MutableRefObject<boolean>) {
   useEffect(() => {
     if (!locked) return;
     const scrollY = window.scrollY;
@@ -31,24 +32,31 @@ function useScrollLock(locked: boolean) {
       style.left = "";
       style.right = "";
       htmlStyle.overflow = "";
-      window.scrollTo(0, scrollY);
+      if (!skipRestoreRef.current) {
+        window.scrollTo(0, scrollY);
+      }
+      skipRestoreRef.current = false;
     };
-  }, [locked]);
+  }, [locked, skipRestoreRef]);
 }
 
 export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const skipRestoreRef = useRef(false);
 
   useEffect(() => setMounted(true), []);
-  useScrollLock(menuOpen);
+  useScrollLock(menuOpen, skipRestoreRef);
 
-  const handleNavClick = () => setMenuOpen(false);
+  const handleNavClick = () => {
+    skipRestoreRef.current = true;
+    setMenuOpen(false);
+  };
 
   return (
     <header className="fixed left-0 right-0 top-0 z-40 border-b border-white/10 bg-black/20 backdrop-blur-sm">
       <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4 sm:px-6 md:px-8">
-        <a href="#" className="text-lg font-semibold text-white" onClick={handleNavClick}>
+        <a href="#inicio" className="text-lg font-semibold text-white" onClick={handleNavClick}>
           Karunkine
         </a>
 
