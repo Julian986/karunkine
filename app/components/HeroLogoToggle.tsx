@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useLogoAccent } from "./LogoAccentContext";
 
 const LOGO_V1 = "/02-LOGO%2001-VER%2001.webp";
@@ -22,10 +23,15 @@ export default function HeroLogoToggle() {
       }
       aria-pressed={isLogoV2}
     >
-      <img
+      <Image
         key={src}
         src={src}
         alt="Conciencia Corporal y Movimiento - Wanda Perrin"
+        width={176}
+        height={176}
+        sizes="(max-width: 640px) 144px, (max-width: 768px) 160px, 176px"
+        quality={75}
+        priority
         className="h-36 w-36 rounded-full object-cover drop-shadow-sm transition-transform duration-200 group-hover:scale-[1.02] group-active:scale-[0.98] sm:h-40 sm:w-40 md:h-44 md:w-44"
       />
     </button>

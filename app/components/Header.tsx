@@ -95,24 +95,21 @@ export default function Header() {
 
       {/* Mobile menu: portal a body solo después de hidratar para evitar mismatch */}
       {mounted &&
+        menuOpen &&
         createPortal(
           <div
             className="fixed inset-0 z-[9999] md:hidden"
-            aria-hidden={!menuOpen}
-            style={{
-              pointerEvents: menuOpen ? "auto" : "none",
-              visibility: menuOpen ? "visible" : "hidden",
-            }}
+            aria-hidden={false}
           >
             <div
               className="absolute inset-0 bg-black/60 transition-opacity duration-200"
-              style={{ opacity: menuOpen ? 1 : 0 }}
+              style={{ opacity: 1 }}
               onClick={() => setMenuOpen(false)}
               aria-hidden
             />
             <div
               className="absolute inset-0 bg-white shadow-xl transition-transform duration-200 ease-out"
-              style={{ transform: menuOpen ? "translateX(0)" : "translateX(100%)" }}
+              style={{ transform: "translateX(0)" }}
             >
               <div className="flex items-center justify-end border-b border-zinc-100 px-4 py-3">
                 <button

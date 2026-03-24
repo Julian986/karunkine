@@ -1,7 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import Header from "./components/Header";
-import { HERO_BACKGROUND_IMAGE_URL } from "./hero-assets";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -39,12 +38,6 @@ export default function RootLayout({
       <head>
         <link rel="preconnect" href="https://res.cloudinary.com" crossOrigin="" />
         <link rel="dns-prefetch" href="https://res.cloudinary.com" />
-        <link
-          rel="preload"
-          as="image"
-          href={HERO_BACKGROUND_IMAGE_URL}
-          fetchPriority="high"
-        />
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}

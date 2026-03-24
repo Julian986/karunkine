@@ -1,11 +1,20 @@
 import Image from "next/image";
 import dynamic from "next/dynamic";
-import FormularioReserva from "./components/FormularioReserva";
 import HeroAgendarCta from "./components/HeroAgendarCta";
 import HeroLogoToggle from "./components/HeroLogoToggle";
 import ConsultaAgendarCta from "./components/ConsultaAgendarCta";
 import { LogoAccentProvider } from "./components/LogoAccentContext";
 import { HERO_BACKGROUND_IMAGE_URL } from "./hero-assets";
+
+const FormularioReserva = dynamic(() => import("./components/FormularioReserva"), {
+  loading: () => (
+    <div className="px-4 py-10 sm:px-6 md:px-10">
+      <div className="mx-auto max-w-2xl">
+        <div className="h-24 animate-pulse rounded-2xl bg-zinc-200/80" />
+      </div>
+    </div>
+  ),
+});
 
 const PreguntasFrecuentes = dynamic(() => import("./components/PreguntasFrecuentes"), {
   loading: () => (
