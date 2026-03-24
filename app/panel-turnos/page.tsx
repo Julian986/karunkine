@@ -234,6 +234,41 @@ function statusClassName(status: TurnoEstado): string {
   return "bg-zinc-200 text-zinc-700";
 }
 
+function normalizePhoneForWhatsApp(rawPhone: string): string | null {
+  const onlyDigits = rawPhone.replace(/\D/g, "");
+  if (onlyDigits.length < 10) return null;
+
+  // Casos ya internacionalizados
+  if (onlyDigits.startsWith("549")) {
+    return onlyDigits.length >= 12 && onlyDigits.length <= 15 ? onlyDigits : null;
+  }
+  if (onlyDigits.startsWith("54")) {
+    const withCountry = onlyDigits.slice(2);
+    if (withCountry.startsWith("9")) {
+      return onlyDigits.length >= 12 && onlyDigits.length <= 15 ? onlyDigits : null;
+    }
+    const withoutTrunkZero = withCountry.replace(/^0+/, "");
+    const withoutNational15 = withoutTrunkZero.replace(/^(\d{2,4})15/, "$1");
+    const normalized = `549${withoutNational15}`;
+    return normalized.length >= 12 && normalized.length <= 15 ? normalized : null;
+  }
+
+  // Casos locales Argentina: 0 + area + 15 + numero, o area + numero
+  let national = onlyDigits.replace(/^0+/, "");
+  national = national.replace(/^(\d{2,4})15/, "$1");
+  if (national.startsWith("9")) national = national.slice(1);
+  const normalized = `549${national}`;
+  return normalized.length >= 12 && normalized.length <= 15 ? normalized : null;
+}
+
+function buildWhatsAppLink(turno: TurnoRecord): string | null {
+  const phone = normalizePhoneForWhatsApp(turno.celular);
+  if (!phone) return null;
+
+  const message = `Hola ${turno.nombre}, soy Wanda Perrin. Te escribo por tu reserva (${turno.turnoDetalle}).`;
+  return `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+}
+
 export default function PanelTurnosPage() {
   const [turnos, setTurnos] = useState<TurnoRecord[]>([]);
   const [filtroEstado, setFiltroEstado] =
@@ -438,12 +473,37 @@ export default function PanelTurnosPage() {
                   <tr key={turno.id} className="border-b border-zinc-100 align-top">
                     <td className="px-3 py-3 text-zinc-600">{formatDate(turno.createdAt)}</td>
                     <td className="px-3 py-3">
+                      {(() => {
+                        const whatsappLink = buildWhatsAppLink(turno);
+                        return (
+                          <>
                       <p className="font-medium text-zinc-900">{turno.nombre}</p>
                       <p className="text-zinc-700">{turno.mail}</p>
-                      <p className="text-zinc-500">{turno.celular}</p>
+                      {whatsappLink ? (
+                        <a
+                          href={whatsappLink}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-2 text-zinc-700 underline decoration-zinc-300 underline-offset-2 transition hover:text-[#25D366] hover:decoration-[#25D366]"
+                          aria-label={`Abrir chat de WhatsApp para ${turno.nombre}`}
+                        >
+                          {turno.celular}
+                          <span className="text-xs font-medium text-zinc-500">WhatsApp</span>
+                        </a>
+                      ) : (
+                        <p className="text-zinc-500">{turno.celular}</p>
+                      )}
+                      {!whatsappLink && (
+                        <p className="mt-1 text-xs text-zinc-400">
+                          Número no válido para abrir WhatsApp.
+                        </p>
+                      )}
                       <p className="mt-1 text-xs text-zinc-500">
                         Motivo: {turno.motivo}
                       </p>
+                          </>
+                        );
+                      })()}
                     </td>
                     <td className="px-3 py-3 text-zinc-700">
                       <p>
