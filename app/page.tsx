@@ -1,11 +1,23 @@
 import Image from "next/image";
+import dynamic from "next/dynamic";
 import FormularioReserva from "./components/FormularioReserva";
 import HeroAgendarCta from "./components/HeroAgendarCta";
 import HeroLogoToggle from "./components/HeroLogoToggle";
 import ConsultaAgendarCta from "./components/ConsultaAgendarCta";
 import { LogoAccentProvider } from "./components/LogoAccentContext";
-import PreguntasFrecuentes from "./components/PreguntasFrecuentes";
 import { HERO_BACKGROUND_IMAGE_URL } from "./hero-assets";
+
+const PreguntasFrecuentes = dynamic(() => import("./components/PreguntasFrecuentes"), {
+  loading: () => (
+    <section className="bg-white px-4 py-14 sm:px-6 md:px-10">
+      <div className="mx-auto max-w-2xl">
+        <h2 className="text-2xl font-semibold text-zinc-800 sm:text-3xl">
+          PREGUNTAS FRECUENTES
+        </h2>
+      </div>
+    </section>
+  ),
+});
 
 export default function Home() {
   return (
@@ -23,7 +35,7 @@ export default function Home() {
           priority
           fetchPriority="high"
           sizes="100vw"
-          quality={80}
+          quality={65}
           className="z-0 object-cover object-center"
           aria-hidden
         />
@@ -59,7 +71,7 @@ export default function Home() {
       </section>
 
       {/* Sobre nosotros */}
-      <section id="sobre-nosotros" className="bg-zinc-50 px-4 py-14 sm:px-6 md:px-10">
+      <section id="sobre-nosotros" className="cv-auto bg-zinc-50 px-4 py-14 sm:px-6 md:px-10">
         <div className="mx-auto max-w-2xl">
           <h2 className="text-2xl font-semibold text-zinc-800 sm:text-3xl">
             SOBRE NOSOTROS
@@ -78,7 +90,7 @@ export default function Home() {
       </section>
 
       {/* Nuestra visión (antes Tratamiento) */}
-      <section id="tratamiento" className="bg-white px-4 py-14 sm:px-6 md:px-10">
+      <section id="tratamiento" className="cv-auto bg-white px-4 py-14 sm:px-6 md:px-10">
         <div className="mx-auto max-w-2xl">
           <h2 className="text-2xl font-semibold text-zinc-800 sm:text-3xl">
             SOBRE EL TRATAMIENTO
@@ -122,7 +134,7 @@ export default function Home() {
       </section>
 
       {/* Consulta Inicial (reemplaza Actividades) */}
-      <section id="consulta-inicial" className="bg-zinc-50 px-4 py-14 sm:px-6 md:px-10">
+      <section id="consulta-inicial" className="cv-auto bg-zinc-50 px-4 py-14 sm:px-6 md:px-10">
         <div className="mx-auto max-w-2xl">
           <h2 className="text-2xl font-semibold text-zinc-800 sm:text-3xl">
           SOBRE LA EVALUACIÓN 
@@ -145,12 +157,14 @@ export default function Home() {
       </section>
 
       {/* Preguntas frecuentes */}
-      <PreguntasFrecuentes />
+      <div className="cv-auto">
+        <PreguntasFrecuentes />
+      </div>
 
       {/* Footer / Contacto */}
       <section
         id="contacto"
-        className="relative px-4 py-16 sm:px-6 md:px-10"
+        className="cv-auto relative px-4 py-16 sm:px-6 md:px-10"
         style={{
           backgroundColor: "#18181b",
           backgroundImage: `linear-gradient(rgba(255,255,255,.02) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.02) 1px, transparent 1px)`,

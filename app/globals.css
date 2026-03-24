@@ -43,6 +43,11 @@ body {
   box-shadow: 0 0 0 2px var(--form-focus-ring);
 }
 
+.cv-auto {
+  content-visibility: auto;
+  contain-intrinsic-size: 1px 1000px;
+}
+
 /* Evita superposición entre CTA del hero y formulario en celulares de poca altura */
 @media (max-width: 767px) and (max-height: 740px) {
   .hero-home {
