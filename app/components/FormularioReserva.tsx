@@ -381,6 +381,7 @@ export default function FormularioReserva() {
   const horarioTriggerRef = useRef<HTMLButtonElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const didAutoScrollRef = useRef(false);
+  const formRef = useRef<HTMLFormElement>(null);
 
   const clearFieldError = useCallback((field: FormField) => {
     setFieldErrors((prev) => {
@@ -616,10 +617,13 @@ export default function FormularioReserva() {
 
     setSubmitAttempted(false);
     setEnvioOk(true);
+    formRef.current?.reset();
     setSelectedMotivo("");
     setSelectedModalidad("");
     setSelectedHorario("");
     setTouchedFields({});
+    setFieldErrors({});
+    setOpenPicker(null);
   }
 
   return (
@@ -639,6 +643,7 @@ export default function FormularioReserva() {
               </p>
 
               <form
+                ref={formRef}
                 className="mt-6 flex flex-col gap-5"
                 style={{ ["--form-focus-ring" as string]: focusRingColor } as React.CSSProperties}
                 noValidate
