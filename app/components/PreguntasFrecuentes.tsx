@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { BRAND_BG_DARK, altBandBg } from "../lib/brand-colors";
 import { useLogoAccent } from "./LogoAccentContext";
 
 const FAQ: { q: string; a: string | string[] }[] = [
@@ -34,13 +35,26 @@ const FAQ: { q: string; a: string | string[] }[] = [
 ];
 
 export default function PreguntasFrecuentes() {
-  const { accentColor } = useLogoAccent();
+  const { accentColor, isLogoV2 } = useLogoAccent();
   const [openIndex, setOpenIndex] = useState<number | null>(null);
 
+  const sectionBg = altBandBg(isLogoV2);
+  const isDarkBand = sectionBg === BRAND_BG_DARK;
+  const borderClass = isDarkBand ? "border-white/25 hover:border-white/40" : "border-[#963417]/25 hover:border-[#963417]/40";
+  const headingClass = isDarkBand ? "text-white" : "text-[#5c2810]";
+  const questionHover = isDarkBand ? "hover:bg-white/10" : "hover:bg-[#963417]/10";
+  const questionText = isDarkBand ? "text-white" : "text-[#5c2810]";
+  const answerBorder = isDarkBand ? "border-white/20" : "border-[#963417]/15";
+  const answerText = isDarkBand ? "text-white/90" : "text-[#6b3014]";
+
   return (
-    <section id="preguntas-frecuentes" className="bg-white px-4 py-14 sm:px-6 md:px-10">
+    <section
+      id="preguntas-frecuentes"
+      className="px-4 py-14 transition-colors duration-300 sm:px-6 md:px-10"
+      style={{ backgroundColor: sectionBg }}
+    >
       <div className="mx-auto max-w-2xl">
-        <h2 className="text-2xl font-semibold text-zinc-800 sm:text-3xl">
+        <h2 className={`text-2xl font-semibold sm:text-3xl ${headingClass}`}>
           Preguntas frecuentes
         </h2>
         <div className="mt-8 space-y-2">
@@ -49,12 +63,12 @@ export default function PreguntasFrecuentes() {
             return (
               <div
                 key={item.q}
-                className="overflow-hidden rounded-xl border border-zinc-200 transition-colors hover:border-zinc-300"
+                className={`overflow-hidden rounded-xl border transition-colors ${borderClass}`}
               >
                 <button
                   type="button"
                   onClick={() => setOpenIndex(isOpen ? null : index)}
-                  className="flex w-full cursor-pointer items-center justify-between gap-4 px-5 py-4 text-left font-medium text-zinc-800 transition hover:bg-zinc-50"
+                  className={`flex w-full cursor-pointer items-center justify-between gap-4 px-5 py-4 text-left font-medium transition ${questionHover} ${questionText}`}
                   aria-expanded={isOpen}
                   aria-controls={`faq-answer-${index}`}
                   id={`faq-question-${index}`}
@@ -79,7 +93,7 @@ export default function PreguntasFrecuentes() {
                   style={{ gridTemplateRows: isOpen ? "1fr" : "0fr" }}
                 >
                   <div
-                    className={`min-h-0 overflow-hidden px-5 text-zinc-600 ${isOpen ? "border-t border-zinc-100 py-4" : "border-0 py-0"}`}
+                    className={`min-h-0 overflow-hidden px-5 ${answerText} ${isOpen ? `border-t py-4 ${answerBorder}` : "border-0 py-0"}`}
                   >
                     {Array.isArray(item.a) ? (
                       <div className="space-y-3">

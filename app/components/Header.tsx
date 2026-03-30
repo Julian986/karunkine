@@ -54,7 +54,7 @@ export default function Header() {
   };
 
   return (
-    <header className="fixed left-0 right-0 top-0 z-40 border-b border-white/10 bg-black/20 backdrop-blur-sm">
+    <header className="fixed left-0 right-0 top-0 z-40 border-b border-white/15 bg-[#963417]/95 backdrop-blur-sm">
       <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4 sm:px-6 md:px-8">
         <a href="#inicio" className="text-lg font-semibold text-white" onClick={handleNavClick}>
           Karunkine

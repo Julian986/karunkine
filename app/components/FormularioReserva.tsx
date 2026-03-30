@@ -630,7 +630,7 @@ export default function FormularioReserva() {
     <>
       <section
         id="formulario-reserva"
-        className="relative z-10 -mt-6 px-4 pb-24 pt-8 sm:px-6 md:px-10 lg:px-16"
+        className="relative z-10 px-4 pb-24 pt-8 sm:px-6 md:px-10 lg:px-16"
       >
         <div className="mx-auto max-w-2xl">
           <div className="overflow-hidden rounded-3xl bg-white shadow-[0_8px_30px_rgba(0,0,0,0.12)]">
@@ -828,7 +828,7 @@ export default function FormularioReserva() {
                 )}
                 {envioOk && (
                   <p className="text-sm font-medium text-emerald-700" role="status">
-                    ¡Gracias! Recibimos tu solicitud y te contactaremos pronto.
+                    ¡Gracias! Nos vemos el miércoles a las ....H en Viamonte 1233 😊 Recordá asistir con ropa cómoda/deportiva.
                   </p>
                 )}
 

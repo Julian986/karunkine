@@ -1,8 +1,9 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Fondo base de la home: marca oscura (evita franjas blancas al cargar). */
+  --background: #963417;
+  --foreground: #ffffff;
   --primary: #d4602c;
 }
 
@@ -14,12 +15,6 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
 
 html {
   scroll-behavior: smooth;

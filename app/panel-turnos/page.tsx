@@ -265,7 +265,8 @@ function buildWhatsAppLink(turno: TurnoRecord): string | null {
   const phone = normalizePhoneForWhatsApp(turno.celular);
   if (!phone) return null;
 
-  const message = `Hola ${turno.nombre}, soy Wanda Perrin. Te escribo por tu reserva (${turno.turnoDetalle}).`;
+  const message =
+    "Hola Wanda Perrin, soy Wanda Perrin. Te escribo para recordarte nuestro encuentro de hoy, Miércoles 16H.";
   return `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
 }
 
