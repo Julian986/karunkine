@@ -261,12 +261,22 @@ function normalizePhoneForWhatsApp(rawPhone: string): string | null {
   return normalized.length >= 12 && normalized.length <= 15 ? normalized : null;
 }
 
+const PROFESIONAL_WHATSAPP_FIRMA = "Wanda Perrin";
+
+function buildWhatsAppReminderMessage(turno: TurnoRecord): string {
+  const nombrePaciente = turno.nombre.trim() || "te";
+  const horarioTexto = turno.turnoDetalle.trim();
+  const cuerpoHorario = horarioTexto
+    ? `, ${horarioTexto}`
+    : "";
+  return `Hola ${nombrePaciente}, soy ${PROFESIONAL_WHATSAPP_FIRMA}. Te escribo para recordarte nuestro encuentro de hoy${cuerpoHorario}.`;
+}
+
 function buildWhatsAppLink(turno: TurnoRecord): string | null {
   const phone = normalizePhoneForWhatsApp(turno.celular);
   if (!phone) return null;
 
-  const message =
-    "Hola Wanda Perrin, soy Wanda Perrin. Te escribo para recordarte nuestro encuentro de hoy, Miércoles 16H.";
+  const message = buildWhatsAppReminderMessage(turno);
   return `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
 }
 

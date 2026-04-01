@@ -10,6 +10,7 @@ import {
 import { createPortal } from "react-dom";
 import { z } from "zod";
 import { hexToRgba, useLogoAccent } from "./LogoAccentContext";
+import { MercadoPagoButton } from "./MercadoPagoButton";
 
 const iconPerson = (
   <svg className="h-5 w-5 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
@@ -168,12 +169,21 @@ type PickerKey = "motivo" | "modalidad" | "horario" | null;
 type FormField = "nombre" | "mail" | "celular" | "motivo" | "modalidad" | "horario";
 type FormErrors = Partial<Record<FormField, string>>;
 type TouchedFields = Partial<Record<FormField, boolean>>;
+type ReservaDraft = {
+  nombre: string;
+  mail: string;
+  celular: string;
+  motivo: string;
+  modalidad: "" | "grupal" | "consulta_individual";
+  horario: string;
+};
 type DropdownRect = {
   top: number;
   left: number;
   width: number;
   maxHeight: number;
 };
+const DRAFT_STORAGE_KEY = "karunkine_reserva_draft_v1";
 
 const DROPDOWN_MARGIN = 12;
 const DROPDOWN_GAP = 6;
@@ -374,7 +384,11 @@ export default function FormularioReserva() {
   const [submitAttempted, setSubmitAttempted] = useState(false);
   const [envioError, setEnvioError] = useState<string | null>(null);
   const [envioOk, setEnvioOk] = useState(false);
+  const [envioTurnoDetalle, setEnvioTurnoDetalle] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [seniaPagada, setSeniaPagada] = useState(false);
+  const [simulandoPago, setSimulandoPago] = useState(false);
+  const [pagoError, setPagoError] = useState<string | null>(null);
 
   const motivoTriggerRef = useRef<HTMLButtonElement>(null);
   const modalidadTriggerRef = useRef<HTMLButtonElement>(null);
@@ -382,6 +396,28 @@ export default function FormularioReserva() {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const didAutoScrollRef = useRef(false);
   const formRef = useRef<HTMLFormElement>(null);
+  const pagoYEnvioRef = useRef<HTMLDivElement>(null);
+  const scrollSuaveTrasElegirHorarioRef = useRef(false);
+
+  const persistDraft = useCallback((draft: ReservaDraft) => {
+    if (typeof window === "undefined") return;
+    window.sessionStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(draft));
+  }, []);
+
+  const getCurrentDraft = useCallback((): ReservaDraft => {
+    const form = formRef.current;
+    const nombreInput = form?.elements.namedItem("nombre") as HTMLInputElement | null;
+    const mailInput = form?.elements.namedItem("mail") as HTMLInputElement | null;
+    const celularInput = form?.elements.namedItem("celular") as HTMLInputElement | null;
+    return {
+      nombre: nombreInput?.value ?? "",
+      mail: mailInput?.value ?? "",
+      celular: celularInput?.value ?? "",
+      motivo: selectedMotivo,
+      modalidad: selectedModalidad,
+      horario: selectedHorario,
+    };
+  }, [selectedMotivo, selectedModalidad, selectedHorario]);
 
   const clearFieldError = useCallback((field: FormField) => {
     setFieldErrors((prev) => {
@@ -454,6 +490,11 @@ export default function FormularioReserva() {
     if (!turnoCompleto) return "";
     return esGrupal ? String(PRECIO_GRUPAL_MENSUAL) : String(PRECIO_CONSULTA_INDIVIDUAL);
   }, [turnoCompleto, esGrupal]);
+
+  const montoSenia = useMemo(() => {
+    if (!turnoCompleto || !resumenPrecio) return 0;
+    return Math.round(resumenPrecio.monto * 0.2);
+  }, [turnoCompleto, resumenPrecio]);
 
   const activeTrigger = useMemo(() => {
     if (openPicker === "motivo") return motivoTriggerRef.current;
@@ -553,9 +594,51 @@ export default function FormularioReserva() {
     };
   }, [openPicker]);
 
+  useEffect(() => {
+    if (!scrollSuaveTrasElegirHorarioRef.current || !turnoCompleto) return;
+
+    const id = window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(() => {
+        scrollSuaveTrasElegirHorarioRef.current = false;
+        pagoYEnvioRef.current?.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+          inline: "nearest",
+        });
+      });
+    });
+
+    return () => window.cancelAnimationFrame(id);
+  }, [turnoCompleto, selectedHorario]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const raw = window.sessionStorage.getItem(DRAFT_STORAGE_KEY);
+    if (!raw) return;
+    try {
+      const draft = JSON.parse(raw) as ReservaDraft;
+      setSelectedMotivo(draft.motivo ?? "");
+      setSelectedModalidad(draft.modalidad ?? "");
+      setSelectedHorario(draft.horario ?? "");
+      window.setTimeout(() => {
+        const form = formRef.current;
+        if (!form) return;
+        const nombreInput = form.elements.namedItem("nombre") as HTMLInputElement | null;
+        const mailInput = form.elements.namedItem("mail") as HTMLInputElement | null;
+        const celularInput = form.elements.namedItem("celular") as HTMLInputElement | null;
+        if (nombreInput) nombreInput.value = draft.nombre ?? "";
+        if (mailInput) mailInput.value = draft.mail ?? "";
+        if (celularInput) celularInput.value = draft.celular ?? "";
+      }, 0);
+    } catch {
+      window.sessionStorage.removeItem(DRAFT_STORAGE_KEY);
+    }
+  }, []);
+
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setEnvioError(null);
+    setPagoError(null);
     setEnvioOk(false);
     setSubmitAttempted(true);
     setFieldErrors({});
@@ -580,6 +663,11 @@ export default function FormularioReserva() {
       }
       setFieldErrors(nextErrors);
       setEnvioError("Revisá los campos marcados.");
+      return;
+    }
+
+    if (!seniaPagada) {
+      setPagoError("Primero debés abonar la seña para confirmar la reserva.");
       return;
     }
 
@@ -616,14 +704,32 @@ export default function FormularioReserva() {
     }
 
     setSubmitAttempted(false);
+    setEnvioTurnoDetalle(turnoDetalleHidden);
     setEnvioOk(true);
     formRef.current?.reset();
     setSelectedMotivo("");
     setSelectedModalidad("");
     setSelectedHorario("");
+    setSeniaPagada(false);
+    setSimulandoPago(false);
     setTouchedFields({});
     setFieldErrors({});
     setOpenPicker(null);
+    if (typeof window !== "undefined") {
+      window.sessionStorage.removeItem(DRAFT_STORAGE_KEY);
+    }
+  }
+
+  async function simularPagoSenia() {
+    setPagoError(null);
+    if (!turnoCompleto) {
+      setPagoError("Primero seleccioná modalidad y horario.");
+      return;
+    }
+    setSimulandoPago(true);
+    await new Promise((resolve) => window.setTimeout(resolve, 1100));
+    setSimulandoPago(false);
+    setSeniaPagada(true);
   }
 
   return (
@@ -654,6 +760,11 @@ export default function FormularioReserva() {
                     if (submitAttempted || touchedFields[name]) {
                       validateTextField(name, target.value);
                     }
+                    const nextDraft = getCurrentDraft();
+                    if (name === "nombre" || name === "mail" || name === "celular") {
+                      nextDraft[name] = target.value;
+                    }
+                    persistDraft(nextDraft);
                   }
                 }}
                 onSubmit={handleSubmit}
@@ -735,6 +846,7 @@ export default function FormularioReserva() {
                   onToggle={() => setOpenPicker((p) => (p === "motivo" ? null : "motivo"))}
                   onSelect={(value) => {
                     setSelectedMotivo(value);
+                    persistDraft({ ...getCurrentDraft(), motivo: value });
                     clearFieldError("motivo");
                     setOpenPicker(null);
                   }}
@@ -765,8 +877,16 @@ export default function FormularioReserva() {
                   rect={dropdownRect}
                   onToggle={() => setOpenPicker((p) => (p === "modalidad" ? null : "modalidad"))}
                   onSelect={(value) => {
-                    setSelectedModalidad(value as "" | "grupal" | "consulta_individual");
+                    const modalidad = value as "" | "grupal" | "consulta_individual";
+                    setSelectedModalidad(modalidad);
                     setSelectedHorario("");
+                    persistDraft({
+                      ...getCurrentDraft(),
+                      modalidad,
+                      horario: "",
+                    });
+                    setSeniaPagada(false);
+                    setPagoError(null);
                     clearFieldError("modalidad");
                     clearFieldError("horario");
                     setOpenPicker(null);
@@ -798,8 +918,12 @@ export default function FormularioReserva() {
                     onToggle={() => setOpenPicker((p) => (p === "horario" ? null : "horario"))}
                     onSelect={(value) => {
                       setSelectedHorario(value);
+                      persistDraft({ ...getCurrentDraft(), horario: value });
+                      setSeniaPagada(false);
+                      setPagoError(null);
                       clearFieldError("horario");
                       setOpenPicker(null);
+                      scrollSuaveTrasElegirHorarioRef.current = true;
                     }}
                     accentColor={accentColor}
                     error={shouldShowError("horario") ? fieldErrors.horario : undefined}
@@ -811,36 +935,91 @@ export default function FormularioReserva() {
                   </p>
                 )}
 
-                {resumenPrecio && (
-                  <div className="rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm">
-                    <p className="font-medium text-zinc-800">Importe de referencia</p>
-                    <p className="mt-1 text-2xl font-semibold tabular-nums text-zinc-900">
-                      ${resumenPrecio.monto.toLocaleString("es-AR")}
-                    </p>
-                    <p className="mt-1 text-xs text-zinc-500">{resumenPrecio.descripcion}</p>
+                {turnoCompleto && (
+                  <div
+                    ref={pagoYEnvioRef}
+                    className="flex scroll-mt-20 flex-col gap-5"
+                  >
+                    {resumenPrecio && (
+                      <div className="rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm">
+                        <p className="font-medium text-zinc-800">Importe de referencia</p>
+                        <p className="mt-1 text-2xl font-semibold tabular-nums text-zinc-900">
+                          ${resumenPrecio.monto.toLocaleString("es-AR")}
+                        </p>
+                        <p className="mt-1 text-xs text-zinc-500">{resumenPrecio.descripcion}</p>
+                      </div>
+                    )}
+
+                    <div className="rounded-xl border border-zinc-200 bg-white px-4 py-4">
+                      <p className="text-sm font-semibold text-zinc-800">Seña requerida (simulada)</p>
+                      <p className="mt-1 text-sm text-zinc-600">
+                        Para continuar, aboná una seña de{" "}
+                        <span className="font-semibold text-zinc-900">
+                          ${montoSenia.toLocaleString("es-AR")}
+                        </span>{" "}
+                        con Mercado Pago.
+                      </p>
+                      <div className="mt-3 flex flex-wrap items-center gap-3">
+                        <MercadoPagoButton
+                          onClick={() => {
+                            void simularPagoSenia();
+                          }}
+                          label={simulandoPago ? "Procesando pago..." : "Pagar con Mercado Pago"}
+                          disabled={simulandoPago || seniaPagada}
+                        />
+                        <span
+                          className={`text-sm font-medium ${seniaPagada ? "text-emerald-700" : "text-zinc-500"}`}
+                        >
+                          {seniaPagada ? "Seña pagada." : "Pago pendiente."}
+                        </span>
+                      </div>
+                      {pagoError && (
+                        <p className="mt-2 text-sm font-medium text-red-600" role="alert">
+                          {pagoError}
+                        </p>
+                      )}
+                    </div>
+
+                    {envioError && (
+                      <p className="text-sm font-medium text-red-600" role="alert">
+                        {envioError}
+                      </p>
+                    )}
+
+                    <button
+                      type="submit"
+                      disabled={submitting || !seniaPagada}
+                      className="mt-0 flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl py-3.5 font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-70"
+                      style={{ backgroundColor: accentColor }}
+                    >
+                      {submitting ? "Enviando..." : "Enviar solicitud"}
+                      {iconSend}
+                    </button>
                   </div>
                 )}
 
-                {envioError && (
+                {envioOk && (
+                  <p className="text-sm font-medium text-emerald-700" role="status">
+                    ¡Gracias! Nos vemos {envioTurnoDetalle ? `${envioTurnoDetalle}` : "el miércoles a las ....H"} en Viamonte 1233 😊 Recordá asistir con ropa cómoda/deportiva.
+                  </p>
+                )}
+                {!turnoCompleto && envioError && (
                   <p className="text-sm font-medium text-red-600" role="alert">
                     {envioError}
                   </p>
                 )}
-                {envioOk && (
-                  <p className="text-sm font-medium text-emerald-700" role="status">
-                    ¡Gracias! Nos vemos el miércoles a las ....H en Viamonte 1233 😊 Recordá asistir con ropa cómoda/deportiva.
-                  </p>
-                )}
 
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className="mt-2 flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl py-3.5 font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-70"
-                  style={{ backgroundColor: accentColor }}
-                >
-                  {submitting ? "Enviando..." : "Enviar solicitud"}
-                  {iconSend}
-                </button>
+                {!turnoCompleto && (
+                  <button
+                    type="submit"
+                    disabled={submitting || !seniaPagada}
+                    className="mt-2 flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl py-3.5 font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-70"
+                    style={{ backgroundColor: accentColor }}
+                  >
+                    {submitting ? "Enviando..." : "Enviar solicitud"}
+                    {iconSend}
+                  </button>
+                )}
               </form>
             </div>
           </div>

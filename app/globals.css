@@ -56,10 +56,17 @@ body {
     padding-top: 0.5rem;
   }
 
-  .hero-content img {
-    height: 7rem;
-    width: 7rem;
-    max-width: none;
+  /* Logo hero: isotipo + wordmark (no forzar cuadrado en todas las img) */
+  .hero-content .hero-logo-isotipo {
+    height: 9.9rem;
+    width: auto;
+    max-width: min(89vw, 18.25rem);
+  }
+
+  .hero-content .hero-logo-wordmark {
+    height: 1.85rem;
+    width: auto;
+    max-width: min(92vw, 20rem);
   }
 
   .hero-cta {

@@ -13,12 +13,15 @@ const NAV_LINKS = [
   { href: "#contacto", label: "Contacto" },
 ];
 
-function useScrollLock(locked: boolean, skipRestoreRef: React.MutableRefObject<boolean>) {
+function useScrollLock(locked: boolean, scrollYRef: React.MutableRefObject<number>) {
   useEffect(() => {
     if (!locked) return;
     const scrollY = window.scrollY;
+    scrollYRef.current = scrollY;
     const style = document.body.style;
     const htmlStyle = document.documentElement.style;
+    const prevScrollBehavior = htmlStyle.scrollBehavior;
+
     style.overflow = "hidden";
     style.position = "fixed";
     style.top = `-${scrollY}px`;
@@ -32,31 +35,93 @@ function useScrollLock(locked: boolean, skipRestoreRef: React.MutableRefObject<b
       style.left = "";
       style.right = "";
       htmlStyle.overflow = "";
-      if (!skipRestoreRef.current) {
-        window.scrollTo(0, scrollY);
-      }
-      skipRestoreRef.current = false;
+      // Evita animación involuntaria por `scroll-behavior: smooth` global.
+      htmlStyle.scrollBehavior = "auto";
+      window.scrollTo(0, scrollYRef.current);
+      window.requestAnimationFrame(() => {
+        htmlStyle.scrollBehavior = prevScrollBehavior;
+      });
     };
-  }, [locked, skipRestoreRef]);
+  }, [locked, scrollYRef]);
 }
 
 export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [menuVisible, setMenuVisible] = useState(false);
   const [mounted, setMounted] = useState(false);
-  const skipRestoreRef = useRef(false);
+  const scrollYRef = useRef(0);
+  const closeTimeoutRef = useRef<number | null>(null);
+  const openRafRef = useRef<number | null>(null);
 
   useEffect(() => setMounted(true), []);
-  useScrollLock(menuOpen, skipRestoreRef);
+  useScrollLock(menuVisible, scrollYRef);
 
-  const handleNavClick = () => {
-    skipRestoreRef.current = true;
+  useEffect(() => {
+    return () => {
+      if (openRafRef.current) {
+        window.cancelAnimationFrame(openRafRef.current);
+        openRafRef.current = null;
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (menuOpen) {
+      if (closeTimeoutRef.current) {
+        window.clearTimeout(closeTimeoutRef.current);
+        closeTimeoutRef.current = null;
+      }
+      setMenuVisible(true);
+      return;
+    }
+    closeTimeoutRef.current = window.setTimeout(() => {
+      setMenuVisible(false);
+      closeTimeoutRef.current = null;
+    }, 280);
+    return () => {
+      if (closeTimeoutRef.current) {
+        window.clearTimeout(closeTimeoutRef.current);
+        closeTimeoutRef.current = null;
+      }
+    };
+  }, [menuOpen]);
+
+  const openMenu = () => {
+    if (closeTimeoutRef.current) {
+      window.clearTimeout(closeTimeoutRef.current);
+      closeTimeoutRef.current = null;
+    }
+    setMenuVisible(true);
+    if (openRafRef.current) {
+      window.cancelAnimationFrame(openRafRef.current);
+    }
+    openRafRef.current = window.requestAnimationFrame(() => {
+      setMenuOpen(true);
+      openRafRef.current = null;
+    });
+  };
+
+  const closeMenu = () => {
     setMenuOpen(false);
+  };
+
+  const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
+    if (!href.startsWith("#")) return;
+    e.preventDefault();
+    closeMenu();
+    window.setTimeout(() => {
+      const target = document.querySelector(href);
+      if (target instanceof HTMLElement) {
+        target.scrollIntoView({ behavior: "smooth", block: "start" });
+        window.history.replaceState(null, "", href);
+      }
+    }, 320);
   };
 
   return (
     <header className="fixed left-0 right-0 top-0 z-40 border-b border-white/15 bg-[#963417]/95 backdrop-blur-sm">
       <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4 sm:px-6 md:px-8">
-        <a href="#inicio" className="text-lg font-semibold text-white" onClick={handleNavClick}>
+        <a href="#inicio" className="text-lg font-semibold text-white">
           Karunkine
         </a>
 
@@ -78,7 +143,7 @@ export default function Header() {
           type="button"
           aria-label={menuOpen ? "Cerrar menú" : "Abrir menú"}
           aria-expanded={menuOpen}
-          onClick={() => setMenuOpen((o) => !o)}
+          onClick={() => (menuOpen ? closeMenu() : openMenu())}
           className="flex h-10 w-10 items-center justify-center rounded-lg text-white hover:bg-white/10 md:hidden"
         >
           {menuOpen ? (
@@ -95,26 +160,27 @@ export default function Header() {
 
       {/* Mobile menu: portal a body solo después de hidratar para evitar mismatch */}
       {mounted &&
-        menuOpen &&
+        menuVisible &&
         createPortal(
           <div
             className="fixed inset-0 z-[9999] md:hidden"
-            aria-hidden={false}
+            aria-hidden={!menuOpen}
+            style={{ pointerEvents: menuOpen ? "auto" : "none" }}
           >
             <div
-              className="absolute inset-0 bg-black/60 transition-opacity duration-200"
-              style={{ opacity: 1 }}
-              onClick={() => setMenuOpen(false)}
+              className="absolute inset-0 bg-black/60 transition-opacity duration-300"
+              style={{ opacity: menuOpen ? 1 : 0 }}
+              onClick={closeMenu}
               aria-hidden
             />
             <div
-              className="absolute inset-0 bg-white shadow-xl transition-transform duration-200 ease-out"
-              style={{ transform: "translateX(0)" }}
+              className="absolute inset-0 bg-white shadow-xl transition-transform duration-300 ease-out"
+              style={{ transform: menuOpen ? "translateX(0)" : "translateX(100%)" }}
             >
               <div className="flex items-center justify-end border-b border-zinc-100 px-4 py-3">
                 <button
                   type="button"
-                  onClick={() => setMenuOpen(false)}
+                  onClick={closeMenu}
                   aria-label="Cerrar menú"
                   className="flex h-10 w-10 items-center justify-center rounded-lg text-zinc-600 transition hover:bg-zinc-100 hover:text-zinc-900"
                 >
@@ -128,7 +194,7 @@ export default function Header() {
                   <a
                     key={href + label}
                     href={href}
-                    onClick={handleNavClick}
+                    onClick={(e) => handleNavClick(e, href)}
                     className="border-b border-zinc-100 px-6 py-4 text-base font-medium text-zinc-800 transition hover:bg-zinc-50 hover:text-[#d4602c]"
                   >
                     {label}

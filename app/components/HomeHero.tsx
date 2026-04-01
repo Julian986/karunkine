@@ -15,10 +15,10 @@ export default function HomeHero() {
   return (
     <section
       id="inicio"
-      className="hero-home relative flex min-h-[88vh] flex-col items-center justify-center overflow-hidden px-6 text-center transition-colors duration-300"
+      className="hero-home relative flex min-h-[88vh] flex-col items-center justify-start overflow-hidden px-6 pt-1 text-center transition-colors duration-300 sm:justify-center sm:pt-0"
       style={{ backgroundColor: heroBg }}
     >
-      <div className="hero-content relative z-10 flex max-w-2xl flex-col items-center pt-28 text-center sm:pt-0">
+      <div className="hero-content relative z-10 flex max-w-2xl flex-col items-center pt-16 text-center sm:pt-0 md:-translate-y-3 lg:-translate-y-4">
         <HeroLogoToggle />
         <p
           className="mt-4 text-sm font-medium tracking-wide sm:text-base"
