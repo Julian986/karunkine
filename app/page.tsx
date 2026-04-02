@@ -29,7 +29,7 @@ export default function Home() {
         <HeroFormularioSection />
 
         <BrandBandSection id="sobre-nosotros" band="hero">
-          <h2>SOBRE NOSOTROS</h2>
+          <h2>NOSOTROS</h2>
           <div className="mt-6 space-y-4">
             <p>
               <span className="brand-strong">Misión:</span> Promover la salud y el bienestar para que
@@ -45,7 +45,7 @@ export default function Home() {
         </BrandBandSection>
 
         <BrandBandSection id="tratamiento" band="alt">
-          <h2>SOBRE EL TRATAMIENTO</h2>
+          <h2>TRATAMIENTO</h2>
           <div className="mt-6 space-y-4">
             <p>
               Además de lograr el objetivo específico de cada persona y cada sesión, el tratamiento
@@ -82,7 +82,7 @@ export default function Home() {
         </BrandBandSection>
 
         <BrandBandSection id="consulta-inicial" band="hero">
-          <h2>SOBRE LA EVALUACIÓN</h2>
+          <h2>EVALUACIÓN</h2>
           <div className="mt-6 space-y-4">
             <p>
               La evaluación es un recorrido por tu historia corporal. Se trata de un espacio uno a uno

@@ -43,6 +43,24 @@ body {
   contain-intrinsic-size: 1px 1000px;
 }
 
+/* Escritorio con poca altura: sin centrar vertical (evita recortes); anula translate del bloque */
+@media (min-width: 768px) and (max-height: 820px) {
+  .hero-home.flex {
+    min-height: 100svh;
+    min-height: 100dvh;
+    justify-content: flex-start;
+  }
+
+  .hero-home .hero-content {
+    transform: none;
+    padding-top: 0.5rem;
+  }
+
+  .hero-home .hero-content .hero-cta {
+    margin-top: 1.25rem;
+  }
+}
+
 /* Evita superposición entre CTA del hero y formulario en celulares de poca altura */
 @media (max-width: 767px) and (max-height: 740px) {
   .hero-home {

@@ -15,7 +15,7 @@ export default function HomeHero() {
   return (
     <section
       id="inicio"
-      className="hero-home relative flex min-h-[88vh] flex-col items-center justify-start overflow-hidden px-6 pt-1 text-center transition-colors duration-300 sm:justify-center sm:pt-0"
+      className="hero-home relative flex min-h-[88vh] flex-col items-center justify-start overflow-x-hidden px-6 pb-12 pt-1 text-center transition-colors duration-300 sm:min-h-[100svh] sm:justify-center sm:pb-14 sm:pt-0 md:pb-16 lg:pb-[4.5rem]"
       style={{ backgroundColor: heroBg }}
     >
       <div className="hero-content relative z-10 flex max-w-2xl flex-col items-center pt-16 text-center sm:pt-0 md:-translate-y-3 lg:-translate-y-4">

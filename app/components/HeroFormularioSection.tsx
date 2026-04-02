@@ -20,7 +20,7 @@ export default function HeroFormularioSection() {
 
   return (
     <section
-      className="hero-formulario-section relative z-10 -mt-6 rounded-t-3xl shadow-[0_-8px_30px_rgba(0,0,0,0.06)] transition-colors duration-300"
+      className="hero-formulario-section relative z-10 -mt-4 rounded-t-3xl shadow-[0_-8px_30px_rgba(0,0,0,0.06)] transition-colors duration-300 sm:-mt-3 md:-mt-2 lg:mt-0"
       style={{ backgroundColor: sectionBg }}
     >
       <FormularioReserva />
