@@ -10,10 +10,12 @@ import {
 import { createPortal } from "react-dom";
 
 type TurnoEstado =
+  | "pending_payment"
   | "pendiente"
   | "contactado"
   | "confirmado"
-  | "cancelado";
+  | "cancelado"
+  | "expirado";
 
 type Option = { value: string; label: string };
 type DropdownRect = {
@@ -41,10 +43,12 @@ type TurnoRecord = {
 };
 
 const ESTADO_OPCIONES: { value: TurnoEstado; label: string }[] = [
-  { value: "pendiente", label: "Pendiente" },
+  { value: "pending_payment", label: "Pendiente de pago" },
+  { value: "pendiente", label: "Pendiente (legado)" },
   { value: "contactado", label: "Contactado" },
   { value: "confirmado", label: "Confirmado" },
   { value: "cancelado", label: "Cancelado" },
+  { value: "expirado", label: "Expirada (sin pago)" },
 ];
 
 const FILTRO_ESTADO = [
@@ -231,6 +235,8 @@ function statusClassName(status: TurnoEstado): string {
   if (status === "confirmado") return "bg-emerald-100 text-emerald-800";
   if (status === "contactado") return "bg-amber-100 text-amber-800";
   if (status === "cancelado") return "bg-red-100 text-red-800";
+  if (status === "expirado") return "bg-zinc-300 text-zinc-800";
+  if (status === "pending_payment") return "bg-sky-100 text-sky-900";
   return "bg-zinc-200 text-zinc-700";
 }
 
@@ -318,7 +324,9 @@ export default function PanelTurnosPage() {
   const total = turnos.length;
   const grupal = turnos.filter((t) => t.modalidad === "grupal").length;
   const individual = turnos.filter((t) => t.modalidad === "consulta_individual").length;
-  const pendientes = turnos.filter((t) => t.estado === "pendiente").length;
+  const pendientes = turnos.filter(
+    (t) => t.estado === "pendiente" || t.estado === "pending_payment"
+  ).length;
 
   async function actualizarEstado(id: string, estado: TurnoEstado) {
     setTurnos((prev) =>

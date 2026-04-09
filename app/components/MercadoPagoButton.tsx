@@ -8,6 +8,7 @@ type MercadoPagoButtonProps = {
   label?: string;
   className?: string;
   disabled?: boolean;
+  type?: "button" | "submit";
 };
 
 export function MercadoPagoButton({
@@ -16,6 +17,7 @@ export function MercadoPagoButton({
   label = "Pagar con Mercado Pago",
   className = "",
   disabled = false,
+  type = "button",
 }: MercadoPagoButtonProps) {
   const content = (
     <>
@@ -54,7 +56,7 @@ export function MercadoPagoButton({
 
   return (
     <button
-      type="button"
+      type={type}
       onClick={onClick}
       disabled={disabled}
       className={`${styles} ${className}`}

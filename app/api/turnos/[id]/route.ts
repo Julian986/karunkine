@@ -6,7 +6,14 @@ import { isPanelAuthenticated } from "../../../../lib/panel-auth";
 
 const updateSchema = z.object({
   estado: z
-    .enum(["pendiente", "contactado", "confirmado", "cancelado"])
+    .enum([
+      "pending_payment",
+      "pendiente",
+      "contactado",
+      "confirmado",
+      "cancelado",
+      "expirado",
+    ])
     .optional(),
   notaInterna: z.string().max(2000).optional(),
 });

@@ -66,8 +66,10 @@ const HORARIOS_INDIVIDUAL = [
   { value: "mie_17", label: "Miércoles - 17H" },
 ] as const;
 
-const PRECIO_GRUPAL_MENSUAL = 160_000;
-const PRECIO_CONSULTA_INDIVIDUAL = 40_000;
+const PRECIO_GRUPAL_MENSUAL = 30
+//160_000;
+const PRECIO_CONSULTA_INDIVIDUAL = 30
+// 40_000;
 
 const PLACEHOLDER_MOTIVO = "Motivo de consulta";
 const PLACEHOLDER_MODALIDAD = "¿Clases grupales o consulta individual?";
@@ -158,12 +160,6 @@ const formularioSchema = z
     }
   });
 
-const iconSend = (
-  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-    <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
-  </svg>
-);
-
 type Option = { value: string; label: string };
 type PickerKey = "motivo" | "modalidad" | "horario" | null;
 type FormField = "nombre" | "mail" | "celular" | "motivo" | "modalidad" | "horario";
@@ -184,6 +180,7 @@ type DropdownRect = {
   maxHeight: number;
 };
 const DRAFT_STORAGE_KEY = "karunkine_reserva_draft_v1";
+const PENDING_RESERVA_ID_KEY = "karunkine_pending_reserva_id";
 
 const DROPDOWN_MARGIN = 12;
 const DROPDOWN_GAP = 6;
@@ -383,11 +380,7 @@ export default function FormularioReserva() {
   const [touchedFields, setTouchedFields] = useState<TouchedFields>({});
   const [submitAttempted, setSubmitAttempted] = useState(false);
   const [envioError, setEnvioError] = useState<string | null>(null);
-  const [envioOk, setEnvioOk] = useState(false);
-  const [envioTurnoDetalle, setEnvioTurnoDetalle] = useState("");
-  const [submitting, setSubmitting] = useState(false);
-  const [seniaPagada, setSeniaPagada] = useState(false);
-  const [simulandoPago, setSimulandoPago] = useState(false);
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [pagoError, setPagoError] = useState<string | null>(null);
 
   const motivoTriggerRef = useRef<HTMLButtonElement>(null);
@@ -490,11 +483,6 @@ export default function FormularioReserva() {
     if (!turnoCompleto) return "";
     return esGrupal ? String(PRECIO_GRUPAL_MENSUAL) : String(PRECIO_CONSULTA_INDIVIDUAL);
   }, [turnoCompleto, esGrupal]);
-
-  const montoSenia = useMemo(() => {
-    if (!turnoCompleto || !resumenPrecio) return 0;
-    return Math.round(resumenPrecio.monto * 0.2);
-  }, [turnoCompleto, resumenPrecio]);
 
   const activeTrigger = useMemo(() => {
     if (openPicker === "motivo") return motivoTriggerRef.current;
@@ -635,15 +623,25 @@ export default function FormularioReserva() {
     }
   }, []);
 
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+  function handleFormSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+  }
+
+  async function iniciarCheckoutMercadoPago() {
     setEnvioError(null);
     setPagoError(null);
-    setEnvioOk(false);
     setSubmitAttempted(true);
     setFieldErrors({});
 
-    const formData = new FormData(e.currentTarget);
+    if (!turnoCompleto || !resumenPrecio) {
+      setPagoError("Seleccioná modalidad y horario.");
+      return;
+    }
+
+    const form = formRef.current;
+    if (!form) return;
+
+    const formData = new FormData(form);
     const result = formularioSchema.safeParse({
       nombre: String(formData.get("nombre") ?? ""),
       mail: String(formData.get("mail") ?? ""),
@@ -666,11 +664,6 @@ export default function FormularioReserva() {
       return;
     }
 
-    if (!seniaPagada) {
-      setPagoError("Primero debés abonar la seña para confirmar la reserva.");
-      return;
-    }
-
     const payload = {
       nombre: result.data.nombre,
       mail: result.data.mail,
@@ -681,55 +674,54 @@ export default function FormularioReserva() {
       turnoDetalle: turnoDetalleHidden,
       turnoCodigo:
         selectedModalidad && selectedHorario ? `${selectedModalidad}|${selectedHorario}` : "",
-      precioReferenciaArs: Number(precioReferenciaHidden || 0),
+      precioReferenciaArs: Math.round(Number(precioReferenciaHidden || 0)),
     };
 
-    setSubmitting(true);
+    setCheckoutLoading(true);
     try {
-      const response = await fetch("/api/turnos", {
+      const resPendiente = await fetch("/api/reservas/pendiente", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-
-      if (!response.ok) {
-        setEnvioError("No pudimos enviar la solicitud. Intentá nuevamente.");
+      const jsonP = (await resPendiente.json().catch(() => ({}))) as {
+        error?: string;
+        id?: string;
+      };
+      if (!resPendiente.ok) {
+        setPagoError(jsonP.error ?? "No se pudo iniciar la reserva.");
         return;
       }
+      const id = jsonP.id;
+      if (!id) {
+        setPagoError("Respuesta inválida del servidor.");
+        return;
+      }
+
+      const resPref = await fetch(`/api/reservas/${id}/preferencia`, {
+        method: "POST",
+      });
+      const jsonPref = (await resPref.json().catch(() => ({}))) as {
+        error?: string;
+        initPoint?: string;
+      };
+      if (!resPref.ok) {
+        setPagoError(jsonPref.error ?? "No se pudo crear el checkout de Mercado Pago.");
+        return;
+      }
+      const initPoint = jsonPref.initPoint;
+      if (!initPoint || typeof window === "undefined") {
+        setPagoError("No se obtuvo el enlace de pago.");
+        return;
+      }
+
+      window.sessionStorage.setItem(PENDING_RESERVA_ID_KEY, id);
+      window.location.assign(initPoint);
     } catch {
-      setEnvioError("No pudimos enviar la solicitud. Verificá tu conexión.");
-      return;
+      setPagoError("Error de conexión. Intentá de nuevo.");
     } finally {
-      setSubmitting(false);
+      setCheckoutLoading(false);
     }
-
-    setSubmitAttempted(false);
-    setEnvioTurnoDetalle(turnoDetalleHidden);
-    setEnvioOk(true);
-    formRef.current?.reset();
-    setSelectedMotivo("");
-    setSelectedModalidad("");
-    setSelectedHorario("");
-    setSeniaPagada(false);
-    setSimulandoPago(false);
-    setTouchedFields({});
-    setFieldErrors({});
-    setOpenPicker(null);
-    if (typeof window !== "undefined") {
-      window.sessionStorage.removeItem(DRAFT_STORAGE_KEY);
-    }
-  }
-
-  async function simularPagoSenia() {
-    setPagoError(null);
-    if (!turnoCompleto) {
-      setPagoError("Primero seleccioná modalidad y horario.");
-      return;
-    }
-    setSimulandoPago(true);
-    await new Promise((resolve) => window.setTimeout(resolve, 1100));
-    setSimulandoPago(false);
-    setSeniaPagada(true);
   }
 
   return (
@@ -767,7 +759,7 @@ export default function FormularioReserva() {
                     persistDraft(nextDraft);
                   }
                 }}
-                onSubmit={handleSubmit}
+                onSubmit={handleFormSubmit}
               >
                 <input type="hidden" name="modalidad" value={modalidadHidden} readOnly />
                 <input type="hidden" name="turno_detalle" value={turnoDetalleHidden} readOnly />
@@ -885,7 +877,6 @@ export default function FormularioReserva() {
                       modalidad,
                       horario: "",
                     });
-                    setSeniaPagada(false);
                     setPagoError(null);
                     clearFieldError("modalidad");
                     clearFieldError("horario");
@@ -919,7 +910,6 @@ export default function FormularioReserva() {
                     onSelect={(value) => {
                       setSelectedHorario(value);
                       persistDraft({ ...getCurrentDraft(), horario: value });
-                      setSeniaPagada(false);
                       setPagoError(null);
                       clearFieldError("horario");
                       setOpenPicker(null);
@@ -951,27 +941,30 @@ export default function FormularioReserva() {
                     )}
 
                     <div className="rounded-xl border border-zinc-200 bg-white px-4 py-4">
-                      <p className="text-sm font-semibold text-zinc-800">Seña requerida (simulada)</p>
+                      <p className="text-sm font-semibold text-zinc-800">Pago con Mercado Pago</p>
                       <p className="mt-1 text-sm text-zinc-600">
-                        Para continuar, aboná una seña de{" "}
+                        La reserva se registra al continuar y se{" "}
+                        <strong>confirma solo cuando Mercado Pago aprueba el pago</strong>                         del total:{" "}
                         <span className="font-semibold text-zinc-900">
-                          ${montoSenia.toLocaleString("es-AR")}
-                        </span>{" "}
-                        con Mercado Pago.
+                          ${(resumenPrecio?.monto ?? 0).toLocaleString("es-AR")}
+                        </span>
+                        .
+                      </p>
+                      <p className="mt-2 text-xs text-zinc-500">
+                        Volvé del checkout con el botón de Mercado Pago; el estado final lo define el
+                        webhook (no esta página).
                       </p>
                       <div className="mt-3 flex flex-wrap items-center gap-3">
                         <MercadoPagoButton
+                          type="button"
                           onClick={() => {
-                            void simularPagoSenia();
+                            void iniciarCheckoutMercadoPago();
                           }}
-                          label={simulandoPago ? "Procesando pago..." : "Pagar con Mercado Pago"}
-                          disabled={simulandoPago || seniaPagada}
+                          label={
+                            checkoutLoading ? "Preparando checkout..." : "Pagar y reservar con Mercado Pago"
+                          }
+                          disabled={checkoutLoading}
                         />
-                        <span
-                          className={`text-sm font-medium ${seniaPagada ? "text-emerald-700" : "text-zinc-500"}`}
-                        >
-                          {seniaPagada ? "Seña pagada." : "Pago pendiente."}
-                        </span>
                       </div>
                       {pagoError && (
                         <p className="mt-2 text-sm font-medium text-red-600" role="alert">
@@ -985,40 +978,13 @@ export default function FormularioReserva() {
                         {envioError}
                       </p>
                     )}
-
-                    <button
-                      type="submit"
-                      disabled={submitting || !seniaPagada}
-                      className="mt-0 flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl py-3.5 font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-70"
-                      style={{ backgroundColor: accentColor }}
-                    >
-                      {submitting ? "Enviando..." : "Enviar solicitud"}
-                      {iconSend}
-                    </button>
                   </div>
                 )}
 
-                {envioOk && (
-                  <p className="text-sm font-medium text-emerald-700" role="status">
-                    ¡Gracias! Nos vemos {envioTurnoDetalle ? `${envioTurnoDetalle}` : "el miércoles a las ....H"} en Viamonte 1233 😊 Recordá asistir con ropa cómoda/deportiva.
-                  </p>
-                )}
                 {!turnoCompleto && envioError && (
                   <p className="text-sm font-medium text-red-600" role="alert">
                     {envioError}
                   </p>
-                )}
-
-                {!turnoCompleto && (
-                  <button
-                    type="submit"
-                    disabled={submitting || !seniaPagada}
-                    className="mt-2 flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl py-3.5 font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-70"
-                    style={{ backgroundColor: accentColor }}
-                  >
-                    {submitting ? "Enviando..." : "Enviar solicitud"}
-                    {iconSend}
-                  </button>
                 )}
               </form>
             </div>
