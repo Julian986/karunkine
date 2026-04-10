@@ -9,6 +9,7 @@ import {
 } from "react";
 import { createPortal } from "react-dom";
 import { z } from "zod";
+import { event as gaEvent } from "../../lib/gtag";
 import { hexToRgba, useLogoAccent } from "./LogoAccentContext";
 import { MercadoPagoButton } from "./MercadoPagoButton";
 
@@ -769,6 +770,13 @@ export default function FormularioReserva() {
         setPagoError("No se obtuvo el enlace de pago.");
         return;
       }
+
+      gaEvent("reserva_checkout_mercadopago", {
+        modalidad: selectedModalidad,
+        value: resumenPrecio.monto,
+        currency: "ARS",
+        reserva_id: id,
+      });
 
       window.sessionStorage.setItem(PENDING_RESERVA_ID_KEY, id);
       window.location.assign(initPoint);

@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import GoogleAnalytics from "./components/GoogleAnalytics";
 import Header from "./components/Header";
 import { getSiteUrl } from "../lib/site-url";
 import "./globals.css";
@@ -98,6 +99,7 @@ export default function RootLayout({
       >
         <Header />
         {children}
+        <GoogleAnalytics />
       </body>
     </html>
   );
