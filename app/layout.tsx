@@ -18,9 +18,9 @@ export const metadata: Metadata = {
   description: "Reserva online",
   manifest: "/manifest.webmanifest",
   icons: {
-    icon: [{ url: "/icon.png?app=site-v1", type: "image/png" }],
-    apple: [{ url: "/icon.png?app=site-v1", type: "image/png" }],
-    shortcut: ["/icon.png?app=site-v1"],
+    icon: [{ url: "/icon.png?app=site-v2", type: "image/png" }],
+    apple: [{ url: "/icon.png?app=site-v2", type: "image/png" }],
+    shortcut: ["/icon.png?app=site-v2"],
   },
 };
 

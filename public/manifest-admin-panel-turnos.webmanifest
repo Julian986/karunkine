@@ -1,7 +1,7 @@
 {
   "name": "Karunkine - Panel de turnos",
   "short_name": "Panel Karunkine",
-  "id": "/panel-turnos?app=panel-v1",
+  "id": "/panel-turnos?app=panel-v2",
   "start_url": "/panel-turnos",
   "scope": "/panel-turnos/",
   "display": "standalone",
@@ -9,13 +9,13 @@
   "theme_color": "#a56a42",
   "icons": [
     {
-      "src": "/panel-turnos/app-icon/192?app=panel-v1",
+      "src": "/panel-turnos/app-icon/192?app=panel-v2",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "/panel-turnos/app-icon/512?app=panel-v1",
+      "src": "/panel-turnos/app-icon/512?app=panel-v2",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"

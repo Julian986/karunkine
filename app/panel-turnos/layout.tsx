@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 
-const PANEL_PWA_VERSION = "panel-v1";
+const PANEL_PWA_VERSION = "panel-v2";
 
 export const metadata: Metadata = {
   manifest: "/manifest-admin-panel-turnos.webmanifest",
