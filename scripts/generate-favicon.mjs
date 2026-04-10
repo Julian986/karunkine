@@ -1,11 +1,9 @@
 /**
- * Genera en public/ (favicons en PNG; evita .ico con PNG interno que Chrome a veces muestra corrupto):
- * - public/icon.png (512, PWA / manifest / panel)
- * - public/favicon-32.png, public/favicon-16.png (pestaña del navegador)
+ * Genera en public/ (PNG con esquinas redondeadas en iconos cuadrados):
+ * - public/icon.png (512)
+ * - public/favicon-32.png, public/favicon-16.png
  * - public/apple-touch-icon.png (180×180)
- * - public/og.jpg (1200×630, Open Graph / WhatsApp)
- *
- * No genera .ico: next.config redirige /favicon.ico → /favicon-32.png
+ * - public/og.jpg (1200×630, sin recorte redondo — JPG / preview redes)
  *
  * Uso: npm run icons
  */
@@ -35,16 +33,32 @@ const logoSquare = () =>
     .resize(512, 512, { fit: "contain", background: { ...bg, alpha: 1 } })
     .flatten({ background: bg });
 
-await logoSquare().png().toFile(publicIcon);
+/**
+ * Cuadrado redimensionado + máscara SVG (esquinas redondeadas, ~20% del lado).
+ */
+async function writeRoundedSquarePng(source512Png, size, outPath) {
+  const rx = Math.max(
+    2,
+    Math.min(Math.round(size * 0.2), Math.max(1, Math.floor(size / 2) - 1))
+  );
+  const svg = Buffer.from(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}">` +
+      `<rect width="${size}" height="${size}" rx="${rx}" ry="${rx}" fill="white"/>` +
+      `</svg>`
+  );
+  await sharp(source512Png)
+    .resize(size, size)
+    .composite([{ input: svg, blend: "dest-in" }])
+    .png()
+    .toFile(outPath);
+}
 
-await sharp(publicIcon).resize(32, 32).png().toFile(publicFavicon32);
-await sharp(publicIcon).resize(16, 16).png().toFile(publicFavicon16);
+const base512 = await logoSquare().png().toBuffer();
 
-await sharp(input)
-  .resize(180, 180, { fit: "contain", background: { ...bg, alpha: 1 } })
-  .flatten({ background: bg })
-  .png()
-  .toFile(publicApple);
+await writeRoundedSquarePng(base512, 512, publicIcon);
+await writeRoundedSquarePng(base512, 32, publicFavicon32);
+await writeRoundedSquarePng(base512, 16, publicFavicon16);
+await writeRoundedSquarePng(base512, 180, publicApple);
 
 const ogW = 1200;
 const ogH = 630;

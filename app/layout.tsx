@@ -15,13 +15,13 @@ const geistMono = Geist_Mono({
 });
 
 /** Vista previa en WhatsApp / redes: JPG 1200×630 generado con `npm run icons` (logo + fondo marca). */
-const OG_IMAGE_PATH = "/og.jpg?v=6";
+const OG_IMAGE_PATH = "/og.jpg?v=7";
 
 /**
- * Favicons en PNG (el .ico con PNG interno a veces se ve “arcoíris”/corrupto en Chrome).
+ * Favicons en PNG con esquinas redondeadas (generados con `npm run icons`).
  * Subí la versión si hace falta romper caché.
  */
-const ICON_ASSET_V = "7";
+const ICON_ASSET_V = "8";
 
 const siteUrl = getSiteUrl();
 const favicon32Abs = `${siteUrl}/favicon-32.png?v=${ICON_ASSET_V}`;
