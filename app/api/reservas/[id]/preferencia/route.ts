@@ -57,14 +57,20 @@ export async function POST(
     const modalidadEtiqueta =
       turno.modalidad === "consulta_individual" ? "Consulta individual" : "Clases grupales";
     const franja = String(turno.turnoDetalle ?? "").trim();
-    const descripcionItem = franja
-      ? `${modalidadEtiqueta} · ${franja}`.slice(0, 256)
-      : modalidadEtiqueta.slice(0, 256);
+    /** Sufijo "hs" en horarios tipo 9:30 (Checkout móvil de MP suele mostrar más la descripción que el título). */
+    const franjaConHs = (() => {
+      if (!franja) return "";
+      if (/\bhs\b/i.test(franja)) return franja;
+      if (/\d{1,2}:\d{2}/.test(franja)) return `${franja} hs`;
+      return franja;
+    })();
+    const partes = ["Reserva Karün", modalidadEtiqueta, franjaConHs].filter(Boolean);
+    const lineaVisible = partes.join(" · ").slice(0, 256);
 
     const { preferenceId, initPoint } = await crearPreferenciaCheckoutPro({
       externalReference,
-      tituloItem: "Reserva Karün",
-      descripcionItem,
+      tituloItem: lineaVisible,
+      descripcionItem: lineaVisible,
       precioArs: Math.round(precio),
       nombrePagador: String(turno.nombre ?? "Cliente"),
       emailPagador: String(turno.mail ?? ""),

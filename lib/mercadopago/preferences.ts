@@ -5,9 +5,9 @@ import type { MercadoPagoPreferenceResponse } from "./types";
 export type CrearPreferenciaInput = {
   /** external_reference en MP = id del turno (string ObjectId); no se muestra en el título del ítem */
   externalReference: string;
-  /** Título visible en el checkout (ej. "Reserva Karün") */
+  /** Título del ítem (Checkout Pro; en móvil a veces solo se ve la descripción) */
   tituloItem: string;
-  /** Descripción corta legible: modalidad + franja horaria en palabras */
+  /** Descripción del ítem; conviene repetir la misma línea legible que el título si MP oculta el título */
   descripcionItem: string;
   precioArs: number;
   nombrePagador: string;
