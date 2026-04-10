@@ -3,9 +3,12 @@ import { mpFetchJson } from "./http";
 import type { MercadoPagoPreferenceResponse } from "./types";
 
 export type CrearPreferenciaInput = {
-  /** external_reference en MP = id del turno (string ObjectId) */
+  /** external_reference en MP = id del turno (string ObjectId); no se muestra en el título del ítem */
   externalReference: string;
+  /** Título visible en el checkout (ej. "Reserva Karün") */
   tituloItem: string;
+  /** Descripción corta legible: modalidad + franja horaria en palabras */
+  descripcionItem: string;
   precioArs: number;
   nombrePagador: string;
   emailPagador: string;
@@ -30,7 +33,7 @@ export async function crearPreferenciaCheckoutPro(
     items: [
       {
         title: input.tituloItem.slice(0, 256),
-        description: `Reserva — ref. ${input.externalReference}`.slice(0, 256),
+        description: input.descripcionItem.trim().slice(0, 256) || "Reserva online Karün",
         quantity: 1,
         currency_id: "ARS",
         unit_price: input.precioArs,

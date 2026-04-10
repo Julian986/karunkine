@@ -54,13 +54,17 @@ export async function POST(
       return NextResponse.json({ error: "Monto inválido en la reserva." }, { status: 500 });
     }
 
-    const modalidad =
+    const modalidadEtiqueta =
       turno.modalidad === "consulta_individual" ? "Consulta individual" : "Clases grupales";
-    const tituloItem = `Karün — ${modalidad}`.slice(0, 256);
+    const franja = String(turno.turnoDetalle ?? "").trim();
+    const descripcionItem = franja
+      ? `${modalidadEtiqueta} · ${franja}`.slice(0, 256)
+      : modalidadEtiqueta.slice(0, 256);
 
     const { preferenceId, initPoint } = await crearPreferenciaCheckoutPro({
       externalReference,
-      tituloItem,
+      tituloItem: "Reserva Karün",
+      descripcionItem,
       precioArs: Math.round(precio),
       nombrePagador: String(turno.nombre ?? "Cliente"),
       emailPagador: String(turno.mail ?? ""),
