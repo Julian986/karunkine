@@ -37,6 +37,7 @@
     "eslint-config-next": "^16.1.6",
     "sharp": "^0.34.5",
     "tailwindcss": "^4.1.18",
+    "to-ico": "^1.1.5",
     "typescript": "^5.9.3"
   }
 }

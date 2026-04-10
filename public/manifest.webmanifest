@@ -1,7 +1,7 @@
 {
   "name": "Karunkine",
   "short_name": "Karunkine",
-  "id": "/?app=site-v2",
+  "id": "/?app=site-v3",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
@@ -9,7 +9,7 @@
   "theme_color": "#a56a42",
   "icons": [
     {
-      "src": "/icon.png?app=site-v2",
+      "src": "/icon.png?app=site-v3",
       "sizes": "1024x1024",
       "type": "image/png",
       "purpose": "any"

@@ -13,15 +13,11 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+// Iconos: app/icon.png, app/apple-icon.png (Next) + public/favicon.ico (petición implícita /favicon.ico).
 export const metadata: Metadata = {
   title: "Karunkine - Reserva online",
   description: "Reserva online",
   manifest: "/manifest.webmanifest",
-  icons: {
-    icon: [{ url: "/icon.png?app=site-v2", type: "image/png" }],
-    apple: [{ url: "/icon.png?app=site-v2", type: "image/png" }],
-    shortcut: ["/icon.png?app=site-v2"],
-  },
 };
 
 export const viewport: Viewport = {
