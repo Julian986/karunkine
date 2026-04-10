@@ -97,3 +97,113 @@ body {
     border-top-right-radius: 0;
   }
 }
+
+/* Checkout status (Replit / Stitch) — animaciones */
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.85);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes drawCircle {
+  from {
+    stroke-dashoffset: 314;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes drawCheck {
+  from {
+    stroke-dashoffset: 80;
+    opacity: 0;
+  }
+  to {
+    stroke-dashoffset: 0;
+    opacity: 1;
+  }
+}
+
+@keyframes drawX {
+  from {
+    stroke-dashoffset: 60;
+    opacity: 0;
+  }
+  to {
+    stroke-dashoffset: 0;
+    opacity: 1;
+  }
+}
+
+@keyframes pulse-slow {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+.animate-fade-up {
+  animation: fadeUp 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.animate-delay-100 {
+  animation-delay: 0.1s;
+}
+
+.animate-delay-200 {
+  animation-delay: 0.2s;
+}
+
+.animate-delay-300 {
+  animation-delay: 0.3s;
+}
+
+.animate-delay-400 {
+  animation-delay: 0.4s;
+}
+
+.icon-circle-path {
+  stroke-dasharray: 314;
+  stroke-dashoffset: 314;
+  animation: drawCircle 0.7s cubic-bezier(0.22, 1, 0.36, 1) 0.1s forwards;
+}
+
+.icon-check-path {
+  stroke-dasharray: 80;
+  stroke-dashoffset: 80;
+  animation: drawCheck 0.5s cubic-bezier(0.22, 1, 0.36, 1) 0.65s forwards;
+}
+
+.icon-x-path {
+  stroke-dasharray: 60;
+  stroke-dashoffset: 60;
+  animation: drawX 0.4s cubic-bezier(0.22, 1, 0.36, 1) 0.65s forwards;
+}
+
+.icon-pulse {
+  animation: pulse-slow 2.4s ease-in-out infinite;
+}
