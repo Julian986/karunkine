@@ -66,10 +66,9 @@ const HORARIOS_INDIVIDUAL = [
   { value: "mie_17", label: "Miércoles - 17H" },
 ] as const;
 
-const PRECIO_GRUPAL_MENSUAL = 30
-//160_000;
-const PRECIO_CONSULTA_INDIVIDUAL = 30
-// 40_000;
+/** Precios finales que ve y paga el cliente en checkout; la comisión de Mercado Pago la absorbe la cuenta de la profesional. */
+const PRECIO_GRUPAL_MENSUAL = 160_000;
+const PRECIO_CONSULTA_INDIVIDUAL = 40_000;
 
 const PLACEHOLDER_MOTIVO = "Motivo de consulta";
 const PLACEHOLDER_MODALIDAD = "¿Clases grupales o consulta individual?";
