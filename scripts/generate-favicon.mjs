@@ -1,9 +1,8 @@
 /**
- * Genera:
+ * Genera solo en public/ (evita duplicar con app/icon.png de Next, que a veces compite con /favicon.ico):
  * - public/icon.png (512, PWA / manifest / panel)
- * - public/favicon.ico (16/32/48; los navegadores piden /favicon.ico solos — sin esto Vercel puede mostrar su triángulo)
- * - app/icon.png (convención Next.js para <link rel="icon">)
- * - app/apple-icon.png (180×180, iOS)
+ * - public/favicon.ico (16/32/48)
+ * - public/apple-touch-icon.png (180×180, iOS / Apple)
  *
  * Uso: npm run icons
  */
@@ -21,8 +20,7 @@ const root = path.join(__dirname, "..");
 const input = path.join(root, "public", "karun_logo.webp");
 const publicIcon = path.join(root, "public", "icon.png");
 const publicFavicon = path.join(root, "public", "favicon.ico");
-const appIcon = path.join(root, "app", "icon.png");
-const appApple = path.join(root, "app", "apple-icon.png");
+const publicApple = path.join(root, "public", "apple-touch-icon.png");
 
 if (!fs.existsSync(input)) {
   console.error("No existe:", input);
@@ -40,24 +38,20 @@ await pipeline().png().toFile(publicIcon);
 
 const icoSizes = [16, 32, 48];
 const icoBuffers = await Promise.all(
-  icoSizes.map((s) =>
-    sharp(publicIcon).resize(s, s).png().toBuffer()
-  )
+  icoSizes.map((s) => sharp(publicIcon).resize(s, s).png().toBuffer())
 );
 const icoFile = await toIco(icoBuffers);
 await fs.promises.writeFile(publicFavicon, icoFile);
-
-fs.copyFileSync(publicIcon, appIcon);
 
 await sharp(input)
   .resize(180, 180, { fit: "contain", background: { ...bg, alpha: 1 } })
   .flatten({ background: bg })
   .png()
-  .toFile(appApple);
+  .toFile(publicApple);
 
 console.log(
   "OK:",
-  [publicIcon, publicFavicon, appIcon, appApple]
+  [publicIcon, publicFavicon, publicApple]
     .map((p) => path.relative(root, p))
     .join(", ")
 );
