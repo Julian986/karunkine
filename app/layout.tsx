@@ -14,9 +14,8 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-/** JPG 1200×630 en Cloudinary (WhatsApp / Facebook no suelen aceptar og:image en webp). */
-const OG_IMAGE_JPG =
-  "https://res.cloudinary.com/dzoupwn0e/image/upload/f_jpg,q_85,c_fill,w_1200,h_630,g_auto/v1774125901/beautiful-fit-red-girl-working-out_mz9uww_1_nd4bjf.jpg";
+/** Vista previa en WhatsApp / redes: JPG 1200×630 generado con `npm run icons` (logo + fondo marca). */
+const OG_IMAGE_PATH = "/og.jpg?v=4";
 
 const siteUrl = getSiteUrl();
 
@@ -50,7 +49,7 @@ export const metadata: Metadata = {
       "Reservá evaluación y turnos con Wanda Perrin en Bahía Blanca: consulta individual y clases grupales.",
     images: [
       {
-        url: OG_IMAGE_JPG,
+        url: OG_IMAGE_PATH,
         width: 1200,
         height: 630,
         alt: "Karunkine — conciencia corporal y movimiento",
@@ -62,7 +61,7 @@ export const metadata: Metadata = {
     title: "Karunkine · Reserva online",
     description:
       "Reservá evaluación y turnos con Wanda Perrin en Bahía Blanca: consulta individual y clases grupales.",
-    images: [OG_IMAGE_JPG],
+    images: [OG_IMAGE_PATH],
   },
 };
 

@@ -1,8 +1,9 @@
 /**
- * Genera solo en public/ (evita duplicar con app/icon.png de Next, que a veces compite con /favicon.ico):
+ * Genera en public/:
  * - public/icon.png (512, PWA / manifest / panel)
  * - public/favicon.ico (16/32/48)
  * - public/apple-touch-icon.png (180×180, iOS / Apple)
+ * - public/og.jpg (1200×630, logo + fondo marca — WhatsApp / Open Graph)
  *
  * Uso: npm run icons
  */
@@ -21,6 +22,7 @@ const input = path.join(root, "public", "karun_logo.webp");
 const publicIcon = path.join(root, "public", "icon.png");
 const publicFavicon = path.join(root, "public", "favicon.ico");
 const publicApple = path.join(root, "public", "apple-touch-icon.png");
+const publicOg = path.join(root, "public", "og.jpg");
 
 if (!fs.existsSync(input)) {
   console.error("No existe:", input);
@@ -49,9 +51,31 @@ await sharp(input)
   .png()
   .toFile(publicApple);
 
+const ogW = 1200;
+const ogH = 630;
+const logoMaxW = 920;
+const logoMaxH = 440;
+const logoLayer = await sharp(input)
+  .resize(logoMaxW, logoMaxH, { fit: "contain", background: { ...bg, alpha: 1 } })
+  .flatten({ background: bg })
+  .png()
+  .toBuffer();
+
+await sharp({
+  create: {
+    width: ogW,
+    height: ogH,
+    channels: 3,
+    background: bg,
+  },
+})
+  .composite([{ input: logoLayer, gravity: "center" }])
+  .jpeg({ quality: 88, mozjpeg: true })
+  .toFile(publicOg);
+
 console.log(
   "OK:",
-  [publicIcon, publicFavicon, publicApple]
+  [publicIcon, publicFavicon, publicApple, publicOg]
     .map((p) => path.relative(root, p))
     .join(", ")
 );
