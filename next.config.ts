@@ -2,6 +2,15 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   allowedDevOrigins: ["http://192.168.141.118:7245"],
+  async redirects() {
+    return [
+      {
+        source: "/favicon.ico",
+        destination: "/favicon-32.png",
+        permanent: true,
+      },
+    ];
+  },
   async headers() {
     return [
       {

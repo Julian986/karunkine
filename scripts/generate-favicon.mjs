@@ -1,28 +1,25 @@
 /**
- * Genera en public/:
+ * Genera en public/ (favicons en PNG; evita .ico con PNG interno que Chrome a veces muestra corrupto):
  * - public/icon.png (512, PWA / manifest / panel)
- * - public/favicon.ico (16/32/48)
- * - app/favicon.ico (misma ICO; Next prioriza /favicon.ico desde app/ y evita el favicon por defecto de la plataforma)
- * - public/apple-touch-icon.png (180×180, iOS / Apple)
- * - public/og.jpg (1200×630, logo + fondo marca — WhatsApp / Open Graph)
+ * - public/favicon-32.png, public/favicon-16.png (pestaña del navegador)
+ * - public/apple-touch-icon.png (180×180)
+ * - public/og.jpg (1200×630, Open Graph / WhatsApp)
+ *
+ * No genera .ico: next.config redirige /favicon.ico → /favicon-32.png
  *
  * Uso: npm run icons
  */
-import { createRequire } from "node:module";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import sharp from "sharp";
 
-const require = createRequire(import.meta.url);
-const toIco = require("to-ico");
-
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.join(__dirname, "..");
 const input = path.join(root, "public", "karun_logo.webp");
 const publicIcon = path.join(root, "public", "icon.png");
-const publicFavicon = path.join(root, "public", "favicon.ico");
-const appFavicon = path.join(root, "app", "favicon.ico");
+const publicFavicon32 = path.join(root, "public", "favicon-32.png");
+const publicFavicon16 = path.join(root, "public", "favicon-16.png");
 const publicApple = path.join(root, "public", "apple-touch-icon.png");
 const publicOg = path.join(root, "public", "og.jpg");
 
@@ -33,20 +30,15 @@ if (!fs.existsSync(input)) {
 
 const bg = { r: 165, g: 106, b: 66 };
 
-const pipeline = () =>
+const logoSquare = () =>
   sharp(input)
     .resize(512, 512, { fit: "contain", background: { ...bg, alpha: 1 } })
     .flatten({ background: bg });
 
-await pipeline().png().toFile(publicIcon);
+await logoSquare().png().toFile(publicIcon);
 
-const icoSizes = [16, 32, 48];
-const icoBuffers = await Promise.all(
-  icoSizes.map((s) => sharp(publicIcon).resize(s, s).png().toBuffer())
-);
-const icoFile = await toIco(icoBuffers);
-await fs.promises.writeFile(publicFavicon, icoFile);
-await fs.promises.writeFile(appFavicon, icoFile);
+await sharp(publicIcon).resize(32, 32).png().toFile(publicFavicon32);
+await sharp(publicIcon).resize(16, 16).png().toFile(publicFavicon16);
 
 await sharp(input)
   .resize(180, 180, { fit: "contain", background: { ...bg, alpha: 1 } })
@@ -78,7 +70,7 @@ await sharp({
 
 console.log(
   "OK:",
-  [publicIcon, publicFavicon, appFavicon, publicApple, publicOg]
+  [publicIcon, publicFavicon32, publicFavicon16, publicApple, publicOg]
     .map((p) => path.relative(root, p))
     .join(", ")
 );
