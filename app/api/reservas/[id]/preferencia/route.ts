@@ -1,6 +1,7 @@
 import { ObjectId } from "mongodb";
 import { NextResponse } from "next/server";
 import { getDb } from "../../../../../lib/mongodb";
+import { buildCheckoutItemCopy } from "../../../../../lib/mercadopago/checkout-item-copy";
 import { crearPreferenciaCheckoutPro } from "../../../../../lib/mercadopago/preferences";
 import { ensureReservaPaymentIndexes } from "../../../../../lib/mongodb/ensure-indexes";
 
@@ -54,23 +55,19 @@ export async function POST(
       return NextResponse.json({ error: "Monto inválido en la reserva." }, { status: 500 });
     }
 
-    const modalidadEtiqueta =
-      turno.modalidad === "consulta_individual" ? "Consulta individual" : "Clases grupales";
-    const franja = String(turno.turnoDetalle ?? "").trim();
-    /** Sufijo "hs" en horarios tipo 9:30 (Checkout móvil de MP suele mostrar más la descripción que el título). */
-    const franjaConHs = (() => {
-      if (!franja) return "";
-      if (/\bhs\b/i.test(franja)) return franja;
-      if (/\d{1,2}:\d{2}/.test(franja)) return `${franja} hs`;
-      return franja;
-    })();
-    const partes = ["Reserva Karün", modalidadEtiqueta, franjaConHs].filter(Boolean);
-    const lineaVisible = partes.join(" · ").slice(0, 256);
+    const modalidad =
+      turno.modalidad === "consulta_individual"
+        ? "consulta_individual"
+        : "grupal";
+    const { tituloItem, descripcionItem } = buildCheckoutItemCopy({
+      modalidad,
+      turnoDetalle: String(turno.turnoDetalle ?? ""),
+    });
 
     const { preferenceId, initPoint } = await crearPreferenciaCheckoutPro({
       externalReference,
-      tituloItem: lineaVisible,
-      descripcionItem: lineaVisible,
+      tituloItem,
+      descripcionItem,
       precioArs: Math.round(precio),
       nombrePagador: String(turno.nombre ?? "Cliente"),
       emailPagador: String(turno.mail ?? ""),
