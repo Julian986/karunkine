@@ -15,9 +15,15 @@ const geistMono = Geist_Mono({
 });
 
 /** Vista previa en WhatsApp / redes: JPG 1200×630 generado con `npm run icons` (logo + fondo marca). */
-const OG_IMAGE_PATH = "/og.jpg?v=4";
+const OG_IMAGE_PATH = "/og.jpg?v=5";
+
+/** Subir versión si WhatsApp / Chrome siguen mostrando favicon viejo (caché). */
+const ICON_ASSET_V = "6";
 
 const siteUrl = getSiteUrl();
+const faviconAbs = `${siteUrl}/favicon.ico?v=${ICON_ASSET_V}`;
+const iconPngAbs = `${siteUrl}/icon.png?v=${ICON_ASSET_V}`;
+const appleAbs = `${siteUrl}/apple-touch-icon.png?v=${ICON_ASSET_V}`;
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
@@ -30,11 +36,11 @@ export const metadata: Metadata = {
   manifest: "/manifest.webmanifest",
   icons: {
     icon: [
-      { url: "/favicon.ico", sizes: "any" },
-      { url: "/icon.png?v=3", type: "image/png", sizes: "512x512" },
+      { url: faviconAbs, sizes: "any" },
+      { url: iconPngAbs, type: "image/png", sizes: "512x512" },
     ],
-    apple: [{ url: "/apple-touch-icon.png?v=3", sizes: "180x180", type: "image/png" }],
-    shortcut: ["/favicon.ico"],
+    apple: [{ url: appleAbs, sizes: "180x180", type: "image/png" }],
+    shortcut: [faviconAbs],
   },
   alternates: {
     canonical: "/",
@@ -76,6 +82,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es">
+      <head>
+        <link rel="icon" href={faviconAbs} sizes="any" />
+        <link rel="shortcut icon" href={faviconAbs} type="image/x-icon" />
+        <link rel="apple-touch-icon" href={appleAbs} />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >

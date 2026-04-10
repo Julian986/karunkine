@@ -2,6 +2,7 @@
  * Genera en public/:
  * - public/icon.png (512, PWA / manifest / panel)
  * - public/favicon.ico (16/32/48)
+ * - app/favicon.ico (misma ICO; Next prioriza /favicon.ico desde app/ y evita el favicon por defecto de la plataforma)
  * - public/apple-touch-icon.png (180×180, iOS / Apple)
  * - public/og.jpg (1200×630, logo + fondo marca — WhatsApp / Open Graph)
  *
@@ -21,6 +22,7 @@ const root = path.join(__dirname, "..");
 const input = path.join(root, "public", "karun_logo.webp");
 const publicIcon = path.join(root, "public", "icon.png");
 const publicFavicon = path.join(root, "public", "favicon.ico");
+const appFavicon = path.join(root, "app", "favicon.ico");
 const publicApple = path.join(root, "public", "apple-touch-icon.png");
 const publicOg = path.join(root, "public", "og.jpg");
 
@@ -44,6 +46,7 @@ const icoBuffers = await Promise.all(
 );
 const icoFile = await toIco(icoBuffers);
 await fs.promises.writeFile(publicFavicon, icoFile);
+await fs.promises.writeFile(appFavicon, icoFile);
 
 await sharp(input)
   .resize(180, 180, { fit: "contain", background: { ...bg, alpha: 1 } })
@@ -75,7 +78,7 @@ await sharp({
 
 console.log(
   "OK:",
-  [publicIcon, publicFavicon, publicApple, publicOg]
+  [publicIcon, publicFavicon, appFavicon, publicApple, publicOg]
     .map((p) => path.relative(root, p))
     .join(", ")
 );
