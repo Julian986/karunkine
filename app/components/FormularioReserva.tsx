@@ -60,10 +60,19 @@ const HORARIOS_GRUPAL = [
 ] as const;
 
 const HORARIOS_INDIVIDUAL = [
-  { value: "mie_930", label: "Miércoles - 9:30" },
-  { value: "mie_1030", label: "Miércoles - 10:30" },
-  { value: "mie_16", label: "Miércoles - 16H" },
-  { value: "mie_17", label: "Miércoles - 17H" },
+  { value: "lun_1600", label: "Lunes 16:00H" },
+  { value: "lun_1700", label: "Lunes 17:00H" },
+  { value: "mie_900", label: "Miércoles 9:00H" },
+  { value: "mie_1000", label: "Miércoles 10:00H" },
+  { value: "mie_1600", label: "Miércoles 16:00H" },
+  { value: "mie_1700", label: "Miércoles 17:00H" },
+  { value: "vie_900", label: "Viernes 9:00H" },
+  { value: "vie_1000", label: "Viernes 10:00H" },
+] as const;
+
+const FORMATO_CONSULTA_OPCIONES = [
+  { value: "presencial", label: "Presencial" },
+  { value: "virtual", label: "Virtual" },
 ] as const;
 
 /** Precios finales que ve y paga el cliente en checkout; la comisión de Mercado Pago la absorbe la cuenta de la profesional. */
@@ -73,10 +82,14 @@ const PRECIO_CONSULTA_INDIVIDUAL = 40_000;
 const PLACEHOLDER_MOTIVO = "Motivo de consulta";
 const PLACEHOLDER_MODALIDAD = "¿Clases grupales o consulta individual?";
 const PLACEHOLDER_HORARIO = "Seleccioná un horario";
+const PLACEHOLDER_FORMATO_CONSULTA = "Consulta presencial o virtual";
 
 const MOTIVO_VALUES = new Set<string>(MOTIVOS_CONSULTA.map((o) => o.value));
 const HORARIO_GRUPAL_VALUES = new Set<string>(HORARIOS_GRUPAL.map((o) => o.value));
 const HORARIO_INDIVIDUAL_VALUES = new Set<string>(HORARIOS_INDIVIDUAL.map((o) => o.value));
+const FORMATO_CONSULTA_VALUES = new Set<string>(
+  FORMATO_CONSULTA_OPCIONES.map((o) => o.value)
+);
 
 const phoneDigits = (value: string) => value.replace(/\D/g, "");
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
@@ -110,6 +123,7 @@ const formularioSchema = z
     celular: celularSchema,
     motivo: z.string().min(1, "Elegí un motivo de consulta."),
     modalidad: z.string().trim(),
+    formatoConsulta: z.string().trim(),
     horario: z.string().trim(),
   })
   .superRefine((values, ctx) => {
@@ -157,11 +171,28 @@ const formularioSchema = z
         message: "Elegí un horario válido para consulta individual.",
       });
     }
+
+    if (values.modalidad === "consulta_individual") {
+      if (!FORMATO_CONSULTA_VALUES.has(values.formatoConsulta)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["formatoConsulta"],
+          message: "Elegí si la consulta es presencial o virtual.",
+        });
+      }
+    }
   });
 
 type Option = { value: string; label: string };
-type PickerKey = "motivo" | "modalidad" | "horario" | null;
-type FormField = "nombre" | "mail" | "celular" | "motivo" | "modalidad" | "horario";
+type PickerKey = "motivo" | "modalidad" | "formatoConsulta" | "horario" | null;
+type FormField =
+  | "nombre"
+  | "mail"
+  | "celular"
+  | "motivo"
+  | "modalidad"
+  | "formatoConsulta"
+  | "horario";
 type FormErrors = Partial<Record<FormField, string>>;
 type TouchedFields = Partial<Record<FormField, boolean>>;
 type ReservaDraft = {
@@ -170,6 +201,7 @@ type ReservaDraft = {
   celular: string;
   motivo: string;
   modalidad: "" | "grupal" | "consulta_individual";
+  formatoConsulta: "" | "presencial" | "virtual";
   horario: string;
 };
 type DropdownRect = {
@@ -178,7 +210,7 @@ type DropdownRect = {
   width: number;
   maxHeight: number;
 };
-const DRAFT_STORAGE_KEY = "karunkine_reserva_draft_v1";
+const DRAFT_STORAGE_KEY = "karunkine_reserva_draft_v2";
 const PENDING_RESERVA_ID_KEY = "karunkine_pending_reserva_id";
 
 const DROPDOWN_MARGIN = 12;
@@ -370,6 +402,9 @@ export default function FormularioReserva() {
 
   const [selectedMotivo, setSelectedMotivo] = useState("");
   const [selectedModalidad, setSelectedModalidad] = useState<"" | "grupal" | "consulta_individual">("");
+  const [selectedFormatoConsulta, setSelectedFormatoConsulta] = useState<
+    "" | "presencial" | "virtual"
+  >("");
   const [selectedHorario, setSelectedHorario] = useState("");
 
   const [openPicker, setOpenPicker] = useState<PickerKey>(null);
@@ -384,6 +419,7 @@ export default function FormularioReserva() {
 
   const motivoTriggerRef = useRef<HTMLButtonElement>(null);
   const modalidadTriggerRef = useRef<HTMLButtonElement>(null);
+  const formatoConsultaTriggerRef = useRef<HTMLButtonElement>(null);
   const horarioTriggerRef = useRef<HTMLButtonElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const didAutoScrollRef = useRef(false);
@@ -407,9 +443,10 @@ export default function FormularioReserva() {
       celular: celularInput?.value ?? "",
       motivo: selectedMotivo,
       modalidad: selectedModalidad,
+      formatoConsulta: selectedFormatoConsulta,
       horario: selectedHorario,
     };
-  }, [selectedMotivo, selectedModalidad, selectedHorario]);
+  }, [selectedMotivo, selectedModalidad, selectedFormatoConsulta, selectedHorario]);
 
   const clearFieldError = useCallback((field: FormField) => {
     setFieldErrors((prev) => {
@@ -452,7 +489,13 @@ export default function FormularioReserva() {
   }, [selectedModalidad]);
 
   const esGrupal = selectedModalidad === "grupal";
-  const turnoCompleto = Boolean(selectedModalidad && selectedHorario);
+  const esIndividual = selectedModalidad === "consulta_individual";
+  const individualListo =
+    esIndividual &&
+    (selectedFormatoConsulta === "presencial" || selectedFormatoConsulta === "virtual") &&
+    Boolean(selectedHorario);
+  const grupalListo = esGrupal && Boolean(selectedHorario);
+  const turnoCompleto = Boolean(individualListo || grupalListo);
 
   const resumenPrecio = useMemo(() => {
     if (!turnoCompleto) return null;
@@ -486,6 +529,7 @@ export default function FormularioReserva() {
   const activeTrigger = useMemo(() => {
     if (openPicker === "motivo") return motivoTriggerRef.current;
     if (openPicker === "modalidad") return modalidadTriggerRef.current;
+    if (openPicker === "formatoConsulta") return formatoConsultaTriggerRef.current;
     if (openPicker === "horario") return horarioTriggerRef.current;
     return null;
   }, [openPicker]);
@@ -504,9 +548,11 @@ export default function FormularioReserva() {
         ? MOTIVOS_CONSULTA.length
         : openPicker === "modalidad"
           ? MODALIDAD_OPCIONES.length
-          : openPicker === "horario"
-            ? opcionesHorarioActual.length
-            : 0;
+          : openPicker === "formatoConsulta"
+            ? FORMATO_CONSULTA_OPCIONES.length
+            : openPicker === "horario"
+              ? opcionesHorarioActual.length
+              : 0;
 
     const estimated = count * DROPDOWN_ITEM_ESTIMATED_HEIGHT + 28;
     return Math.min(
@@ -560,6 +606,7 @@ export default function FormularioReserva() {
       const insideTrigger =
         motivoTriggerRef.current?.contains(target) ||
         modalidadTriggerRef.current?.contains(target) ||
+        formatoConsultaTriggerRef.current?.contains(target) ||
         horarioTriggerRef.current?.contains(target);
 
       if (!insideDropdown && !insideTrigger) {
@@ -606,6 +653,7 @@ export default function FormularioReserva() {
       const draft = JSON.parse(raw) as ReservaDraft;
       setSelectedMotivo(draft.motivo ?? "");
       setSelectedModalidad(draft.modalidad ?? "");
+      setSelectedFormatoConsulta(draft.formatoConsulta ?? "");
       setSelectedHorario(draft.horario ?? "");
       window.setTimeout(() => {
         const form = formRef.current;
@@ -633,7 +681,11 @@ export default function FormularioReserva() {
     setFieldErrors({});
 
     if (!turnoCompleto || !resumenPrecio) {
-      setPagoError("Seleccioná modalidad y horario.");
+      setPagoError(
+        esIndividual
+          ? "Seleccioná modalidad de consulta (presencial/virtual), formato y horario."
+          : "Seleccioná modalidad y horario."
+      );
       return;
     }
 
@@ -647,6 +699,7 @@ export default function FormularioReserva() {
       celular: String(formData.get("celular") ?? ""),
       motivo: selectedMotivo,
       modalidad: selectedModalidad,
+      formatoConsulta: selectedFormatoConsulta,
       horario: selectedHorario,
     });
 
@@ -670,6 +723,9 @@ export default function FormularioReserva() {
       motivo: selectedMotivo,
       modalidad: selectedModalidad,
       horario: selectedHorario,
+      ...(selectedModalidad === "consulta_individual" && selectedFormatoConsulta
+        ? { formatoConsulta: selectedFormatoConsulta }
+        : {}),
       turnoDetalle: turnoDetalleHidden,
       turnoCodigo:
         selectedModalidad && selectedHorario ? `${selectedModalidad}|${selectedHorario}` : "",
@@ -871,14 +927,19 @@ export default function FormularioReserva() {
                     const modalidad = value as "" | "grupal" | "consulta_individual";
                     setSelectedModalidad(modalidad);
                     setSelectedHorario("");
+                    if (modalidad !== "consulta_individual") {
+                      setSelectedFormatoConsulta("");
+                    }
                     persistDraft({
                       ...getCurrentDraft(),
                       modalidad,
+                      formatoConsulta: modalidad === "consulta_individual" ? selectedFormatoConsulta : "",
                       horario: "",
                     });
                     setPagoError(null);
                     clearFieldError("modalidad");
                     clearFieldError("horario");
+                    clearFieldError("formatoConsulta");
                     setOpenPicker(null);
                   }}
                   accentColor={accentColor}
@@ -890,13 +951,51 @@ export default function FormularioReserva() {
                   </p>
                 )}
 
+                {selectedModalidad === "consulta_individual" && (
+                  <>
+                    <CustomPickerField
+                      id="formato_consulta"
+                      ariaLabel="Consulta presencial o virtual"
+                      placeholder={PLACEHOLDER_FORMATO_CONSULTA}
+                      value={selectedFormatoConsulta}
+                      options={FORMATO_CONSULTA_OPCIONES}
+                      isOpen={openPicker === "formatoConsulta"}
+                      triggerRef={formatoConsultaTriggerRef}
+                      dropdownRef={dropdownRef}
+                      rect={dropdownRect}
+                      onToggle={() =>
+                        setOpenPicker((p) => (p === "formatoConsulta" ? null : "formatoConsulta"))
+                      }
+                      onSelect={(value) => {
+                        const v = value as "presencial" | "virtual";
+                        setSelectedFormatoConsulta(v);
+                        persistDraft({ ...getCurrentDraft(), formatoConsulta: v });
+                        setPagoError(null);
+                        clearFieldError("formatoConsulta");
+                        setOpenPicker(null);
+                      }}
+                      accentColor={accentColor}
+                      error={
+                        shouldShowError("formatoConsulta")
+                          ? fieldErrors.formatoConsulta
+                          : undefined
+                      }
+                    />
+                    {shouldShowError("formatoConsulta") && fieldErrors.formatoConsulta && (
+                      <p className="-mt-3 px-1 text-sm font-medium text-red-600" role="alert">
+                        {fieldErrors.formatoConsulta}
+                      </p>
+                    )}
+                  </>
+                )}
+
                 {selectedModalidad !== "" && (
                   <CustomPickerField
                     id="horario"
                     ariaLabel={
                       esGrupal
                         ? "Horario clases grupales martes y jueves"
-                        : "Horario consulta individual miércoles"
+                        : "Horario consulta individual"
                     }
                     placeholder={PLACEHOLDER_HORARIO}
                     value={selectedHorario}

@@ -56,6 +56,10 @@ export async function GET() {
       modalidad:
         row.modalidad === "consulta_individual" ? "consulta_individual" : "grupal",
       turnoDetalle: String(row.turnoDetalle ?? ""),
+      formatoConsulta:
+        row.formatoConsulta === "presencial" || row.formatoConsulta === "virtual"
+          ? row.formatoConsulta
+          : undefined,
       precioReferenciaArs: Number(row.precioReferenciaArs ?? 0),
       estado,
       notaInterna: String(row.notaInterna ?? ""),

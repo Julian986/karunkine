@@ -13,6 +13,7 @@ export type TurnoInsertDoc = {
   horario: string;
   turnoDetalle: string;
   turnoCodigo: string;
+  formatoConsulta?: "presencial" | "virtual";
   precioReferenciaArs: number;
   estado: "pending_payment";
   notaInterna: string;
@@ -46,6 +47,9 @@ export async function insertarTurnoPendienteDePago(
     horario: data.horario,
     turnoDetalle: data.turnoDetalle,
     turnoCodigo: data.turnoCodigo,
+    ...(data.modalidad === "consulta_individual" && data.formatoConsulta
+      ? { formatoConsulta: data.formatoConsulta }
+      : {}),
     precioReferenciaArs: data.precioReferenciaArs,
     estado: "pending_payment",
     notaInterna: "",

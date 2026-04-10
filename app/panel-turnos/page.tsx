@@ -35,6 +35,7 @@ type TurnoRecord = {
   motivo: string;
   modalidad: "grupal" | "consulta_individual";
   turnoDetalle: string;
+  formatoConsulta?: "presencial" | "virtual";
   precioReferenciaArs: number;
   estado: TurnoEstado;
   notaInterna: string;
@@ -531,6 +532,14 @@ export default function PanelTurnosPage() {
                           : "Consulta individual"}
                       </p>
                       <p className="text-zinc-500">{turno.turnoDetalle}</p>
+                      {turno.modalidad === "consulta_individual" &&
+                        turno.formatoConsulta && (
+                          <p className="mt-0.5 text-xs text-zinc-400">
+                            {turno.formatoConsulta === "virtual"
+                              ? "Modalidad: virtual"
+                              : "Modalidad: presencial"}
+                          </p>
+                        )}
                     </td>
                     <td className="px-3 py-3 text-zinc-700">
                       {formatMoney(turno.precioReferenciaArs)}

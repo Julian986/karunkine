@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { mensajeConfirmacionReserva } from "../../lib/reserva/mensaje-confirmacion";
 
 type Status = "success" | "pending" | "failure";
 
@@ -92,7 +93,7 @@ const CONFIG = {
     heading: "Gracias por tu pago",
     body: "Tu solicitud fue recibida. Si Mercado Pago aprobó el pago, tu reserva quedará confirmada en breve — te escribiremos por whatsapp con todos los detalles.",
     bodyConfirmed:
-      "Tu reserva está confirmada. Te contactaremos por correo con los detalles. Recordá asistir con ropa cómoda o deportiva.",
+      "Tu reserva está confirmada. Te escribiremos con los detalles. Recordá usar ropa cómoda/deportiva.",
     ctaLabel: "Volver al inicio",
     ctaHref: "/",
     note: "La confirmación definitiva de tu turno la realiza nuestro sistema al recibir la notificación de pago. Esta pantalla no reemplaza esa validación.",
@@ -166,10 +167,20 @@ function PageShell({ children }: { children: React.ReactNode }) {
   );
 }
 
+type EstadoPollJson = {
+  estado?: string;
+  modalidad?: string;
+  turnoDetalle?: string;
+};
+
 export default function CheckoutStatus({ estado }: { estado?: string }) {
   const cardRef = useRef<HTMLDivElement>(null);
   const [pollEstado, setPollEstado] = useState<string | null>(null);
   const [pollError, setPollError] = useState<string | null>(null);
+  const [pollConfirmMeta, setPollConfirmMeta] = useState<{
+    modalidad: string;
+    turnoDetalle: string;
+  } | null>(null);
 
   const status: Status | null = isStatus(estado) ? estado : null;
 
@@ -203,10 +214,15 @@ export default function CheckoutStatus({ estado }: { estado?: string }) {
       attempts += 1;
       try {
         const r = await fetch(`/api/reservas/${id}/estado`, { cache: "no-store" });
-        const j = (await r.json()) as { estado?: string };
+        const j = (await r.json()) as EstadoPollJson;
         if (cancelled) return;
         if (j.estado === "confirmado") {
           setPollEstado("confirmado");
+          setPollConfirmMeta({
+            modalidad:
+              j.modalidad === "consulta_individual" ? "consulta_individual" : "grupal",
+            turnoDetalle: String(j.turnoDetalle ?? ""),
+          });
           window.sessionStorage.removeItem(PENDING_KEY);
           return;
         }
@@ -257,9 +273,16 @@ export default function CheckoutStatus({ estado }: { estado?: string }) {
 
   const cfg = CONFIG[status];
   const Icon = cfg.Icon;
-  const showConfirmed =
-    status === "success" && pollEstado === "confirmado" && cfg.bodyConfirmed;
-  const bodyText = showConfirmed ? cfg.bodyConfirmed : cfg.body;
+  const showConfirmed = status === "success" && pollEstado === "confirmado";
+  const bodyText =
+    showConfirmed && pollConfirmMeta
+      ? mensajeConfirmacionReserva({
+          modalidad: pollConfirmMeta.modalidad,
+          turnoDetalle: pollConfirmMeta.turnoDetalle,
+        })
+      : showConfirmed && cfg.bodyConfirmed
+        ? cfg.bodyConfirmed
+        : cfg.body;
 
   return (
     <PageShell>
@@ -287,7 +310,7 @@ export default function CheckoutStatus({ estado }: { estado?: string }) {
         >
           {cfg.heading}
         </h1>
-        <p className="animate-fade-up animate-delay-300 max-w-sm text-center text-[15px] leading-relaxed text-stone-600 sm:text-base">
+        <p className="animate-fade-up animate-delay-300 max-w-sm whitespace-pre-line text-center text-[15px] leading-relaxed text-stone-600 sm:text-base">
           {bodyText}
         </p>
         {pollError && status === "success" && (

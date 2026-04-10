@@ -16,7 +16,16 @@ export const HORARIOS_GRUPAL = new Set([
   "grupal_17",
 ]);
 
-export const HORARIOS_INDIVIDUAL = new Set(["mie_930", "mie_1030", "mie_16", "mie_17"]);
+export const HORARIOS_INDIVIDUAL = new Set([
+  "lun_1600",
+  "lun_1700",
+  "mie_900",
+  "mie_1000",
+  "mie_1600",
+  "mie_1700",
+  "vie_900",
+  "vie_1000",
+]);
 
 export const crearReservaTurnoSchema = z
   .object({
@@ -29,6 +38,7 @@ export const crearReservaTurnoSchema = z
     turnoDetalle: z.string().trim().min(1),
     turnoCodigo: z.string().trim().min(1),
     precioReferenciaArs: z.number().int().positive(),
+    formatoConsulta: z.enum(["presencial", "virtual"]).optional(),
   })
   .superRefine((value, ctx) => {
     if (!MOTIVOS_VALIDOS.has(value.motivo)) {
@@ -50,6 +60,20 @@ export const crearReservaTurnoSchema = z
         code: z.ZodIssueCode.custom,
         path: ["horario"],
         message: "Horario individual inválido.",
+      });
+    }
+    if (value.modalidad === "consulta_individual" && !value.formatoConsulta) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["formatoConsulta"],
+        message: "Elegí si la consulta es presencial o virtual.",
+      });
+    }
+    if (value.modalidad === "grupal" && value.formatoConsulta) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["formatoConsulta"],
+        message: "Formato de consulta solo aplica a consulta individual.",
       });
     }
   });

@@ -59,9 +59,16 @@ export async function POST(
       turno.modalidad === "consulta_individual"
         ? "consulta_individual"
         : "grupal";
+    const formatoRaw = turno.formatoConsulta;
+    const formatoConsulta =
+      formatoRaw === "presencial" || formatoRaw === "virtual"
+        ? formatoRaw
+        : null;
+
     const { tituloItem, descripcionItem } = buildCheckoutItemCopy({
       modalidad,
       turnoDetalle: String(turno.turnoDetalle ?? ""),
+      formatoConsulta,
     });
 
     const { preferenceId, initPoint } = await crearPreferenciaCheckoutPro({

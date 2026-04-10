@@ -76,6 +76,11 @@ export default function Home() {
                 <p className="mt-2">
                   Éstas tienen una duración estimada de 45&apos; y tienen un valor de $40.000.
                 </p>
+                <p className="mt-2">Podés elegir turno presencial u online, en estos horarios:</p>
+                <p className="mt-1">
+                  Lunes 16:00H · 17:00H — Miércoles 9:00H · 10:00H · 16:00H · 17:00H — Viernes 9:00H ·
+                  10:00H
+                </p>
               </li>
             </ul>
           </div>
