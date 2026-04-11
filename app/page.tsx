@@ -65,7 +65,7 @@ export default function Home() {
                 </p>
                 <p className="mt-2">Los días Martes y Jueves</p>
                 <p className="mt-2">En los siguientes horarios:</p>
-                <p className="mt-1">9:30H ~ 10:30H ~ 16H ~ 17H</p>
+                <p className="mt-1">9:30H • 10:30H • 16H • 17H</p>
                 <p className="mt-2">Cada turno con un cupo máximo de 4 personas.</p>
                 <p className="mt-2">
                   Con un valor mensual de $160.000 que incluye la consulta individual para evaluación.
@@ -77,10 +77,11 @@ export default function Home() {
                   Éstas tienen una duración estimada de 45&apos; y tienen un valor de $40.000.
                 </p>
                 <p className="mt-2">Podés elegir turno presencial u online, en estos horarios:</p>
-                <p className="mt-1">
-                  Lunes 16:00H · 17:00H — Miércoles 9:00H · 10:00H · 16:00H · 17:00H — Viernes 9:00H ·
-                  10:00H
-                </p>
+                <div className="mt-1 space-y-1">
+                  <p>Lunes: 16:00H • 17:00H</p>
+                  <p>Miércoles: 9:00H • 10:00H • 16:00H • 17:00H</p>
+                  <p>Viernes: 9:00H • 10:00H</p>
+                </div>
               </li>
             </ul>
           </div>
