@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { crearReservaTurnoSchema } from "../../../../lib/validators/reserva-turno";
 import { insertarTurnoPendienteDePago } from "../../../../lib/turnos/create-pending";
+import { resolveCitasForReserva } from "../../../../lib/turnos/resolve-reserva-citas";
 import { ensureReservaPaymentIndexes } from "../../../../lib/mongodb/ensure-indexes";
 import { getDb } from "../../../../lib/mongodb";
 
@@ -29,7 +30,26 @@ export async function POST(request: Request) {
   try {
     const db = await getDb();
     await ensureReservaPaymentIndexes(db);
-    const { insertedId } = await insertarTurnoPendienteDePago(result.data);
+
+    const resolved = await resolveCitasForReserva(db, {
+      modalidad: result.data.modalidad,
+      horario: result.data.horario,
+      principalSlot: result.data.principalSlot,
+      grupalClaseAnclaDateKey: result.data.grupalClaseAnclaDateKey,
+      evalSlot: result.data.evalSlot,
+      horarioEvaluacion: result.data.horarioEvaluacion,
+    });
+    if (!resolved.ok) {
+      return NextResponse.json(
+        { error: resolved.error, code: resolved.code },
+        { status: 409 }
+      );
+    }
+
+    const { insertedId } = await insertarTurnoPendienteDePago({
+      ...result.data,
+      citas: resolved.citas,
+    });
     return NextResponse.json(
       {
         ok: true,

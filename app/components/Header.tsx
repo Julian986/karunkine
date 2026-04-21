@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
+import { usePathname } from "next/navigation";
 
 const NAV_LINKS = [
   { href: "#inicio", label: "Inicio" },
@@ -46,6 +47,7 @@ function useScrollLock(locked: boolean, scrollYRef: React.MutableRefObject<numbe
 }
 
 export default function Header() {
+  const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
   const [menuVisible, setMenuVisible] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -117,6 +119,10 @@ export default function Header() {
       }
     }, 320);
   };
+
+  if (pathname?.startsWith("/panel-turnos")) {
+    return null;
+  }
 
   return (
     <header className="fixed left-0 right-0 top-0 z-40 border-b border-white/15 bg-[#963417]/95 backdrop-blur-sm">

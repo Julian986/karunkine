@@ -9,10 +9,9 @@ import {
   type ReactNode,
 } from "react";
 
-/** Logo 01 activo */
-export const ACCENT_LOGO_V1 = "#a56a42";
-/** Logo 02 activo */
-export const ACCENT_LOGO_V2 = "#843921";
+import { ACCENT_LOGO_V1, ACCENT_LOGO_V2 } from "../../lib/brand/karunkine-colors";
+
+export { ACCENT_LOGO_V1, ACCENT_LOGO_V2 } from "../../lib/brand/karunkine-colors";
 
 /** Convierte #RRGGBB a rgba para anillos/bordes con opacidad */
 export function hexToRgba(hex: string, alpha: number): string {

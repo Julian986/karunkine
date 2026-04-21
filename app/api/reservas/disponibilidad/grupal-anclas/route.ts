@@ -1,0 +1,25 @@
+import { NextResponse } from "next/server";
+import { getDb } from "../../../../../lib/mongodb";
+import { listGrupalAnclaOpciones } from "../../../../../lib/turnos/disponibilidad-publica";
+
+export const runtime = "nodejs";
+
+/** Primeras anclas mar/jue libres para una banda grupal. */
+export async function GET(request: Request) {
+  const url = new URL(request.url);
+  const horario = url.searchParams.get("horario")?.trim() ?? "";
+  const weeks = Math.min(24, Math.max(4, Number(url.searchParams.get("weeks") ?? "12")));
+
+  if (!horario) {
+    return NextResponse.json({ error: "Falta horario grupal." }, { status: 400 });
+  }
+
+  try {
+    const db = await getDb();
+    const opciones = (await listGrupalAnclaOpciones(db, horario, weeks)).slice(0, 24);
+    return NextResponse.json({ opciones });
+  } catch (e) {
+    console.error("[disponibilidad/grupal-anclas]", e);
+    return NextResponse.json({ error: "No se pudieron cargar las opciones." }, { status: 500 });
+  }
+}

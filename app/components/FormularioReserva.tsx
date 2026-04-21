@@ -83,9 +83,11 @@ const PRECIO_CONSULTA_INDIVIDUAL = 40_000;
 const PLACEHOLDER_MOTIVO = "Motivo de consulta";
 const PLACEHOLDER_MODALIDAD = "¿Clases grupales o consulta individual?";
 const PLACEHOLDER_HORARIO = "Horario de clases o consulta";
+const PLACEHOLDER_HORARIO_CARGANDO = "Cargando horarios con cupo…";
 const PLACEHOLDER_FORMATO_CONSULTA = "Consulta presencial o virtual";
 const PLACEHOLDER_EVAL_FORMATO = "Evaluación: presencial o virtual";
 const PLACEHOLDER_HORARIO_EVAL = "Horario de la evaluación";
+const PLACEHOLDER_HORARIO_EVAL_CARGANDO = "Cargando horarios disponibles…";
 
 const MOTIVO_VALUES = new Set<string>(MOTIVOS_CONSULTA.map((o) => o.value));
 const HORARIO_GRUPAL_VALUES = new Set<string>(HORARIOS_GRUPAL.map((o) => o.value));
@@ -356,6 +358,7 @@ function CustomPickerField({
   onSelect,
   accentColor,
   error,
+  disabled = false,
 }: {
   id: string;
   ariaLabel: string;
@@ -370,6 +373,7 @@ function CustomPickerField({
   onSelect: (value: string) => void;
   accentColor: string;
   error?: string;
+  disabled?: boolean;
 }) {
   const selected = options.find((o) => o.value === value);
   const accentSoftBg = hexToRgba(accentColor, 0.14);
@@ -384,10 +388,13 @@ function CustomPickerField({
           aria-label={ariaLabel}
           aria-expanded={isOpen}
           aria-invalid={Boolean(error)}
-          onClick={onToggle}
+          disabled={disabled}
+          onClick={() => {
+            if (!disabled) onToggle();
+          }}
           className={`form-accent-focus group flex h-[48px] w-full min-w-0 items-center rounded-xl border bg-white px-4 pr-11 text-left shadow-[0_1px_0_rgba(0,0,0,0.03)] transition ${
             error ? "border-red-400" : "border-zinc-200 hover:border-zinc-300"
-          }`}
+          } ${disabled ? "cursor-not-allowed opacity-60" : ""}`}
         >
           <span className={`block min-w-0 flex-1 truncate text-[15px] ${selected ? "text-zinc-800" : "text-zinc-500"}`}>
             {selected?.label ?? placeholder}
@@ -457,6 +464,13 @@ export default function FormularioReserva() {
   const [selectedFormatoEvaluacion, setSelectedFormatoEvaluacion] = useState<
     "" | "presencial" | "virtual"
   >("");
+  /** Códigos lun_1600… con al menos un hueco libre para evaluación + ciclo grupal; null = sin pedido o cargando. */
+  const [evalGrupalDisponibles, setEvalGrupalDisponibles] = useState<string[] | null>(null);
+  /** Horarios de consulta individual con al menos un turno libre; null = cargando o no aplica. */
+  const [individualHorariosDisponibles, setIndividualHorariosDisponibles] = useState<string[] | null>(
+    null
+  );
+  const [cuposAviso, setCuposAviso] = useState<string | null>(null);
 
   const [openPicker, setOpenPicker] = useState<PickerKey>(null);
   const [dropdownRect, setDropdownRect] = useState<DropdownRect | null>(null);
@@ -546,19 +560,128 @@ export default function FormularioReserva() {
 
   const opcionesHorarioPrincipal = useMemo(() => {
     if (selectedModalidad === "grupal") return HORARIOS_GRUPAL;
-    if (selectedModalidad === "consulta_individual") return HORARIOS_INDIVIDUAL;
+    if (selectedModalidad === "consulta_individual") {
+      if (individualHorariosDisponibles === null) return [];
+      const allow = new Set(individualHorariosDisponibles);
+      return HORARIOS_INDIVIDUAL.filter((o) => allow.has(o.value));
+    }
     return [];
+  }, [selectedModalidad, individualHorariosDisponibles]);
+
+  const cargandoHorarioIndividual =
+    selectedModalidad === "consulta_individual" && individualHorariosDisponibles === null;
+
+  const cargandoEvalGrupal =
+    selectedModalidad === "grupal" && Boolean(selectedHorario) && evalGrupalDisponibles === null;
+
+  const opcionesEvaluacionGrupal = useMemo(() => {
+    if (selectedModalidad !== "grupal" || !selectedHorario) return HORARIOS_INDIVIDUAL;
+    if (evalGrupalDisponibles === null) return [];
+    const allow = new Set(evalGrupalDisponibles);
+    return HORARIOS_INDIVIDUAL.filter((o) => allow.has(o.value));
+  }, [selectedModalidad, selectedHorario, evalGrupalDisponibles]);
+
+  useEffect(() => {
+    if (selectedModalidad !== "consulta_individual") {
+      setIndividualHorariosDisponibles(null);
+      return;
+    }
+    let cancelled = false;
+    setIndividualHorariosDisponibles(null);
+    setCuposAviso(null);
+    void (async () => {
+      try {
+        const res = await fetch("/api/reservas/disponibilidad/individual-horarios", {
+          cache: "no-store",
+        });
+        const j = (await res.json().catch(() => ({}))) as { horarios?: unknown };
+        if (cancelled) return;
+        if (!res.ok) {
+          setIndividualHorariosDisponibles([]);
+          setCuposAviso("No pudimos verificar cupos. Reintentá o escribinos.");
+          return;
+        }
+        const list = Array.isArray(j.horarios)
+          ? j.horarios.filter((x): x is string => typeof x === "string")
+          : [];
+        setIndividualHorariosDisponibles(list);
+        setCuposAviso(null);
+      } catch {
+        if (!cancelled) {
+          setIndividualHorariosDisponibles([]);
+          setCuposAviso("No pudimos verificar cupos. Reintentá o escribinos.");
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [selectedModalidad]);
+
+  useEffect(() => {
+    if (selectedModalidad !== "consulta_individual" || individualHorariosDisponibles === null) return;
+    if (selectedHorario && !individualHorariosDisponibles.includes(selectedHorario)) {
+      setSelectedHorario("");
+    }
+  }, [selectedModalidad, individualHorariosDisponibles, selectedHorario]);
+
+  useEffect(() => {
+    if (selectedModalidad !== "grupal" || !HORARIO_GRUPAL_VALUES.has(selectedHorario)) {
+      setEvalGrupalDisponibles(null);
+      return;
+    }
+    let cancelled = false;
+    setEvalGrupalDisponibles(null);
+    void (async () => {
+      try {
+        const res = await fetch(
+          `/api/reservas/disponibilidad/grupal-eval-horarios?horario=${encodeURIComponent(selectedHorario)}`,
+          { cache: "no-store" }
+        );
+        const j = (await res.json().catch(() => ({}))) as { horarios?: unknown };
+        if (cancelled) return;
+        if (!res.ok) {
+          setEvalGrupalDisponibles([]);
+          setCuposAviso("No pudimos verificar cupos de la evaluación. Reintentá o escribinos.");
+          return;
+        }
+        const list = Array.isArray(j.horarios)
+          ? j.horarios.filter((x): x is string => typeof x === "string")
+          : [];
+        setEvalGrupalDisponibles(list);
+        setCuposAviso(null);
+      } catch {
+        if (!cancelled) {
+          setEvalGrupalDisponibles([]);
+          setCuposAviso("No pudimos verificar cupos de la evaluación. Reintentá o escribinos.");
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedModalidad, selectedHorario]);
+
+  useEffect(() => {
+    if (selectedModalidad !== "grupal" || evalGrupalDisponibles === null) return;
+    if (selectedHorarioEvaluacion && !evalGrupalDisponibles.includes(selectedHorarioEvaluacion)) {
+      setSelectedHorarioEvaluacion("");
+    }
+  }, [selectedModalidad, evalGrupalDisponibles, selectedHorarioEvaluacion]);
 
   const esGrupal = selectedModalidad === "grupal";
   const esIndividual = selectedModalidad === "consulta_individual";
   const individualListo =
     esIndividual &&
+    !cargandoHorarioIndividual &&
+    (individualHorariosDisponibles?.includes(selectedHorario) ?? false) &&
     (selectedFormatoConsulta === "presencial" || selectedFormatoConsulta === "virtual") &&
     Boolean(selectedHorario);
   const grupalListo =
     esGrupal &&
     Boolean(selectedHorario) &&
+    !cargandoEvalGrupal &&
+    (evalGrupalDisponibles?.includes(selectedHorarioEvaluacion) ?? false) &&
     (selectedFormatoEvaluacion === "presencial" || selectedFormatoEvaluacion === "virtual") &&
     Boolean(selectedHorarioEvaluacion);
   const turnoCompleto = Boolean(individualListo || grupalListo);
@@ -657,7 +780,7 @@ export default function FormularioReserva() {
             : openPicker === "horario"
               ? opcionesHorarioPrincipal.length
               : openPicker === "horarioEvaluacion"
-                ? HORARIOS_INDIVIDUAL.length
+                ? opcionesEvaluacionGrupal.length
                 : 0;
 
     const estimated = count * DROPDOWN_ITEM_ESTIMATED_HEIGHT + 28;
@@ -665,7 +788,11 @@ export default function FormularioReserva() {
       DROPDOWN_MAX_HEIGHT,
       Math.max(DROPDOWN_MIN_VISIBLE, estimated)
     );
-  }, [openPicker, opcionesHorarioPrincipal.length]);
+  }, [
+    openPicker,
+    opcionesHorarioPrincipal.length,
+    opcionesEvaluacionGrupal.length,
+  ]);
 
   useEffect(() => {
     if (!openPicker) {
@@ -829,6 +956,30 @@ export default function FormularioReserva() {
       }
       setFieldErrors(nextErrors);
       setEnvioError("Revisá los campos marcados.");
+      return;
+    }
+
+    if (
+      result.data.modalidad === "grupal" &&
+      evalGrupalDisponibles &&
+      !evalGrupalDisponibles.includes(result.data.horarioEvaluacion)
+    ) {
+      setFieldErrors({
+        horarioEvaluacion: "Ese horario de evaluación ya no está disponible. Elegí otro.",
+      });
+      setEnvioError("Revisá el horario de la evaluación.");
+      return;
+    }
+
+    if (
+      result.data.modalidad === "consulta_individual" &&
+      individualHorariosDisponibles &&
+      !individualHorariosDisponibles.includes(result.data.horario)
+    ) {
+      setFieldErrors({
+        horario: "Ese horario ya no tiene cupos disponibles. Elegí otro.",
+      });
+      setEnvioError("Revisá el horario elegido.");
       return;
     }
 
@@ -1054,6 +1205,7 @@ export default function FormularioReserva() {
                     setSelectedHorario("");
                     setSelectedHorarioEvaluacion("");
                     setSelectedFormatoEvaluacion("");
+                    setCuposAviso(null);
                     if (modalidad !== "consulta_individual") {
                       setSelectedFormatoConsulta("");
                     }
@@ -1128,9 +1280,12 @@ export default function FormularioReserva() {
                         ? "Horario clases grupales martes y jueves"
                         : "Horario consulta individual"
                     }
-                    placeholder={PLACEHOLDER_HORARIO}
+                    placeholder={
+                      cargandoHorarioIndividual ? PLACEHOLDER_HORARIO_CARGANDO : PLACEHOLDER_HORARIO
+                    }
                     value={selectedHorario}
                     options={opcionesHorarioPrincipal}
+                    disabled={cargandoHorarioIndividual}
                     isOpen={openPicker === "horario"}
                     triggerRef={horarioTriggerRef}
                     dropdownRef={dropdownRef}
@@ -1155,6 +1310,28 @@ export default function FormularioReserva() {
                     {fieldErrors.horario}
                   </p>
                 )}
+                {cuposAviso && (
+                  <p className="-mt-2 px-1 text-sm text-amber-800" role="status">
+                    {cuposAviso}
+                  </p>
+                )}
+                {esIndividual &&
+                  !cargandoHorarioIndividual &&
+                  individualHorariosDisponibles !== null &&
+                  individualHorariosDisponibles.length === 0 && (
+                    <p className="-mt-2 px-1 text-sm text-zinc-600" role="status">
+                      No hay cupos libres en ninguna de las franjas habituales. Escribinos para coordinar.
+                    </p>
+                  )}
+                {esIndividual &&
+                  !cargandoHorarioIndividual &&
+                  individualHorariosDisponibles !== null &&
+                  individualHorariosDisponibles.length > 0 && (
+                    <p className="-mt-2 px-1 text-xs leading-snug text-zinc-500" role="note">
+                      Asignamos el <strong className="font-medium text-zinc-600">primer turno libre</strong> de
+                      esa franja (puede ser en semanas posteriores si los más próximos ya están reservados).
+                    </p>
+                  )}
 
                 {esGrupal && Boolean(selectedHorario) && (
                   <>
@@ -1162,7 +1339,9 @@ export default function FormularioReserva() {
                       <p className="text-sm font-semibold text-zinc-800">Agendar evaluación</p>
                       <p className="mt-1 text-sm leading-snug text-zinc-600">
                         Tenés que agendar una clase individual para la evaluación; está incluida en el plan
-                        mensual.
+                        mensual. El sistema asigna el <strong className="font-medium text-zinc-700">primer</strong>{" "}
+                        hueco libre de la franja que elijas (puede no ser la misma fecha que ves en el panel si
+                        hay turnos posteriores libres).
                       </p>
                     </div>
                     <CustomPickerField
@@ -1204,9 +1383,12 @@ export default function FormularioReserva() {
                     <CustomPickerField
                       id="horario_evaluacion"
                       ariaLabel="Horario de la evaluación"
-                      placeholder={PLACEHOLDER_HORARIO_EVAL}
+                      placeholder={
+                        cargandoEvalGrupal ? PLACEHOLDER_HORARIO_EVAL_CARGANDO : PLACEHOLDER_HORARIO_EVAL
+                      }
                       value={selectedHorarioEvaluacion}
-                      options={HORARIOS_INDIVIDUAL}
+                      options={opcionesEvaluacionGrupal}
+                      disabled={cargandoEvalGrupal}
                       isOpen={openPicker === "horarioEvaluacion"}
                       triggerRef={horarioEvaluacionTriggerRef}
                       dropdownRef={dropdownRef}
@@ -1239,6 +1421,15 @@ export default function FormularioReserva() {
                         {fieldErrors.horarioEvaluacion}
                       </p>
                     )}
+                    {!cargandoEvalGrupal &&
+                      evalGrupalDisponibles !== null &&
+                      evalGrupalDisponibles.length === 0 &&
+                      selectedHorario && (
+                        <p className="-mt-2 px-1 text-sm text-amber-800" role="status">
+                          No hay horarios de evaluación libres para esa franja de clases grupales. Probá otro
+                          horario de clases o contactanos.
+                        </p>
+                      )}
                   </>
                 )}
 

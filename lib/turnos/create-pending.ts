@@ -2,6 +2,8 @@ import { ObjectId } from "mongodb";
 import { getDb } from "../mongodb";
 import type { CrearReservaTurnoInput } from "../validators/reserva-turno";
 import { getReservaPagoTimeoutMs } from "../mercadopago/env";
+import type { CitaDoc } from "./wanda-schedule";
+import { buildTurnoDetalleFromCitas } from "./turno-detalle-copy";
 
 export type TurnoInsertDoc = {
   _id: ObjectId;
@@ -16,6 +18,7 @@ export type TurnoInsertDoc = {
   formatoConsulta?: "presencial" | "virtual";
   horarioEvaluacion?: string;
   formatoEvaluacion?: "presencial" | "virtual";
+  citas?: CitaDoc[];
   precioReferenciaArs: number;
   estado: "pending_payment";
   notaInterna: string;
@@ -31,13 +34,20 @@ export type TurnoInsertDoc = {
 };
 
 export async function insertarTurnoPendienteDePago(
-  data: CrearReservaTurnoInput
+  data: CrearReservaTurnoInput & { citas: CitaDoc[] }
 ): Promise<{ insertedId: ObjectId }> {
   const db = await getDb();
   const now = new Date();
   const timeoutMs = getReservaPagoTimeoutMs();
   const insertedId = new ObjectId();
   const externalReference = insertedId.toString();
+
+  const turnoDetalle = buildTurnoDetalleFromCitas({
+    citas: data.citas,
+    modalidad: data.modalidad,
+    formatoConsulta: data.formatoConsulta,
+    formatoEvaluacion: data.formatoEvaluacion,
+  });
 
   const doc: TurnoInsertDoc = {
     _id: insertedId,
@@ -47,8 +57,9 @@ export async function insertarTurnoPendienteDePago(
     motivo: data.motivo,
     modalidad: data.modalidad,
     horario: data.horario,
-    turnoDetalle: data.turnoDetalle,
+    turnoDetalle,
     turnoCodigo: data.turnoCodigo,
+    citas: data.citas,
     ...(data.modalidad === "consulta_individual" && data.formatoConsulta
       ? { formatoConsulta: data.formatoConsulta }
       : {}),

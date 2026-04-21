@@ -27,6 +27,11 @@ export const HORARIOS_INDIVIDUAL = new Set([
   "vie_1000",
 ]);
 
+const slotObj = z.object({
+  dateKey: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  timeLocal: z.string().regex(/^\d{2}:\d{2}$/),
+});
+
 export const crearReservaTurnoSchema = z
   .object({
     nombre: z.string().trim().min(3).max(80),
@@ -41,6 +46,12 @@ export const crearReservaTurnoSchema = z
     formatoConsulta: z.enum(["presencial", "virtual"]).optional(),
     horarioEvaluacion: z.string().trim().optional(),
     formatoEvaluacion: z.enum(["presencial", "virtual"]).optional(),
+    principalSlot: slotObj.optional(),
+    evalSlot: slotObj.optional(),
+    grupalClaseAnclaDateKey: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/)
+      .optional(),
   })
   .superRefine((value, ctx) => {
     if (!MOTIVOS_VALIDOS.has(value.motivo)) {
@@ -79,13 +90,30 @@ export const crearReservaTurnoSchema = z
       });
     }
 
+    if (value.modalidad === "consulta_individual") {
+      if (value.evalSlot || value.grupalClaseAnclaDateKey) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["evalSlot"],
+          message: "Campos de grupal no aplican.",
+        });
+      }
+      if (value.horarioEvaluacion?.trim() || value.formatoEvaluacion) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["horarioEvaluacion"],
+          message: "Evaluación solo aplica a clases grupales.",
+        });
+      }
+    }
+
     if (value.modalidad === "grupal") {
       const he = value.horarioEvaluacion?.trim() ?? "";
       if (!he || !HORARIOS_INDIVIDUAL.has(he)) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           path: ["horarioEvaluacion"],
-          message: "Elegí horario para la evaluación inicial (misma grilla que consulta individual).",
+          message: "Elegí horario para la evaluación inicial (código).",
         });
       }
       if (!value.formatoEvaluacion) {
@@ -95,21 +123,11 @@ export const crearReservaTurnoSchema = z
           message: "Elegí si la evaluación es presencial o virtual.",
         });
       }
-    }
-
-    if (value.modalidad === "consulta_individual") {
-      if (value.horarioEvaluacion?.trim()) {
+      if (value.principalSlot) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          path: ["horarioEvaluacion"],
-          message: "Horario de evaluación solo aplica a clases grupales.",
-        });
-      }
-      if (value.formatoEvaluacion) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          path: ["formatoEvaluacion"],
-          message: "Formato de evaluación solo aplica a clases grupales.",
+          path: ["principalSlot"],
+          message: "principalSlot no aplica a grupal.",
         });
       }
     }
