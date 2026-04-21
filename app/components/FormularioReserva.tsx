@@ -6,12 +6,14 @@ import {
   useMemo,
   useRef,
   useState,
+  type RefObject,
 } from "react";
 import { createPortal } from "react-dom";
 import { z } from "zod";
 import { event as gaEvent } from "../../lib/gtag";
 import { hexToRgba, useLogoAccent } from "./LogoAccentContext";
 import { MercadoPagoButton } from "./MercadoPagoButton";
+import { ReservaHuecosCalendario, type HuecoSeleccionado } from "./ReservaHuecosCalendario";
 
 const iconPerson = (
   <svg className="h-5 w-5 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
@@ -82,12 +84,9 @@ const PRECIO_CONSULTA_INDIVIDUAL = 40_000;
 
 const PLACEHOLDER_MOTIVO = "Motivo de consulta";
 const PLACEHOLDER_MODALIDAD = "¿Clases grupales o consulta individual?";
-const PLACEHOLDER_HORARIO = "Horario de clases o consulta";
-const PLACEHOLDER_HORARIO_CARGANDO = "Cargando horarios con cupo…";
+const PLACEHOLDER_HORARIO = "Horario de clases grupales (martes y jueves)";
 const PLACEHOLDER_FORMATO_CONSULTA = "Consulta presencial o virtual";
 const PLACEHOLDER_EVAL_FORMATO = "Evaluación: presencial o virtual";
-const PLACEHOLDER_HORARIO_EVAL = "Horario de la evaluación";
-const PLACEHOLDER_HORARIO_EVAL_CARGANDO = "Cargando horarios disponibles…";
 
 const MOTIVO_VALUES = new Set<string>(MOTIVOS_CONSULTA.map((o) => o.value));
 const HORARIO_GRUPAL_VALUES = new Set<string>(HORARIOS_GRUPAL.map((o) => o.value));
@@ -228,7 +227,6 @@ type PickerKey =
   | "formatoConsulta"
   | "horario"
   | "formatoEvaluacion"
-  | "horarioEvaluacion"
   | null;
 type FormField =
   | "nombre"
@@ -252,6 +250,8 @@ type ReservaDraft = {
   horario: string;
   horarioEvaluacion: string;
   formatoEvaluacion: "" | "presencial" | "virtual";
+  principalSlotJson?: string;
+  evalSlotJson?: string;
 };
 type DropdownRect = {
   top: number;
@@ -464,13 +464,8 @@ export default function FormularioReserva() {
   const [selectedFormatoEvaluacion, setSelectedFormatoEvaluacion] = useState<
     "" | "presencial" | "virtual"
   >("");
-  /** Códigos lun_1600… con al menos un hueco libre para evaluación + ciclo grupal; null = sin pedido o cargando. */
-  const [evalGrupalDisponibles, setEvalGrupalDisponibles] = useState<string[] | null>(null);
-  /** Horarios de consulta individual con al menos un turno libre; null = cargando o no aplica. */
-  const [individualHorariosDisponibles, setIndividualHorariosDisponibles] = useState<string[] | null>(
-    null
-  );
-  const [cuposAviso, setCuposAviso] = useState<string | null>(null);
+  const [huecoIndividual, setHuecoIndividual] = useState<HuecoSeleccionado | null>(null);
+  const [huecoEvalGrupal, setHuecoEvalGrupal] = useState<HuecoSeleccionado | null>(null);
 
   const [openPicker, setOpenPicker] = useState<PickerKey>(null);
   const [dropdownRect, setDropdownRect] = useState<DropdownRect | null>(null);
@@ -487,12 +482,37 @@ export default function FormularioReserva() {
   const formatoConsultaTriggerRef = useRef<HTMLButtonElement>(null);
   const horarioTriggerRef = useRef<HTMLButtonElement>(null);
   const formatoEvaluacionTriggerRef = useRef<HTMLButtonElement>(null);
-  const horarioEvaluacionTriggerRef = useRef<HTMLButtonElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const didAutoScrollRef = useRef(false);
   const formRef = useRef<HTMLFormElement>(null);
   const pagoYEnvioRef = useRef<HTMLDivElement>(null);
   const scrollSuaveTrasElegirHorarioRef = useRef(false);
+  const calendarioIndividualRef = useRef<HTMLDivElement>(null);
+  const calendarioEvalGrupalRef = useRef<HTMLDivElement>(null);
+
+  const scrollSuaveHaciaCalendario = useCallback((el: HTMLElement | null) => {
+    if (!el) return;
+    window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(() => {
+        el.scrollIntoView({ behavior: "smooth", block: "start", inline: "nearest" });
+      });
+    });
+  }, []);
+
+  /** Tras pintar el calendario (el ref no existe en el mismo tick que setState). */
+  const scrollAlCalendarioTrasPintar = useCallback(
+    (ref: RefObject<HTMLDivElement | null>) => {
+      window.setTimeout(() => {
+        const el = ref.current;
+        if (el) {
+          scrollSuaveHaciaCalendario(el);
+        } else {
+          window.setTimeout(() => scrollSuaveHaciaCalendario(ref.current), 32);
+        }
+      }, 0);
+    },
+    [scrollSuaveHaciaCalendario],
+  );
 
   const persistDraft = useCallback((draft: ReservaDraft) => {
     if (typeof window === "undefined") return;
@@ -514,6 +534,22 @@ export default function FormularioReserva() {
       horario: selectedHorario,
       horarioEvaluacion: selectedHorarioEvaluacion,
       formatoEvaluacion: selectedFormatoEvaluacion,
+      principalSlotJson: huecoIndividual
+        ? JSON.stringify({
+            dateKey: huecoIndividual.dateKey,
+            timeLocal: huecoIndividual.timeLocal,
+            templateId: huecoIndividual.templateId,
+            etiqueta: huecoIndividual.etiqueta,
+          })
+        : undefined,
+      evalSlotJson: huecoEvalGrupal
+        ? JSON.stringify({
+            dateKey: huecoEvalGrupal.dateKey,
+            timeLocal: huecoEvalGrupal.timeLocal,
+            templateId: huecoEvalGrupal.templateId,
+            etiqueta: huecoEvalGrupal.etiqueta,
+          })
+        : undefined,
     };
   }, [
     selectedMotivo,
@@ -522,6 +558,8 @@ export default function FormularioReserva() {
     selectedHorario,
     selectedHorarioEvaluacion,
     selectedFormatoEvaluacion,
+    huecoIndividual,
+    huecoEvalGrupal,
   ]);
 
   const clearFieldError = useCallback((field: FormField) => {
@@ -560,130 +598,20 @@ export default function FormularioReserva() {
 
   const opcionesHorarioPrincipal = useMemo(() => {
     if (selectedModalidad === "grupal") return HORARIOS_GRUPAL;
-    if (selectedModalidad === "consulta_individual") {
-      if (individualHorariosDisponibles === null) return [];
-      const allow = new Set(individualHorariosDisponibles);
-      return HORARIOS_INDIVIDUAL.filter((o) => allow.has(o.value));
-    }
     return [];
-  }, [selectedModalidad, individualHorariosDisponibles]);
-
-  const cargandoHorarioIndividual =
-    selectedModalidad === "consulta_individual" && individualHorariosDisponibles === null;
-
-  const cargandoEvalGrupal =
-    selectedModalidad === "grupal" && Boolean(selectedHorario) && evalGrupalDisponibles === null;
-
-  const opcionesEvaluacionGrupal = useMemo(() => {
-    if (selectedModalidad !== "grupal" || !selectedHorario) return HORARIOS_INDIVIDUAL;
-    if (evalGrupalDisponibles === null) return [];
-    const allow = new Set(evalGrupalDisponibles);
-    return HORARIOS_INDIVIDUAL.filter((o) => allow.has(o.value));
-  }, [selectedModalidad, selectedHorario, evalGrupalDisponibles]);
-
-  useEffect(() => {
-    if (selectedModalidad !== "consulta_individual") {
-      setIndividualHorariosDisponibles(null);
-      return;
-    }
-    let cancelled = false;
-    setIndividualHorariosDisponibles(null);
-    setCuposAviso(null);
-    void (async () => {
-      try {
-        const res = await fetch("/api/reservas/disponibilidad/individual-horarios", {
-          cache: "no-store",
-        });
-        const j = (await res.json().catch(() => ({}))) as { horarios?: unknown };
-        if (cancelled) return;
-        if (!res.ok) {
-          setIndividualHorariosDisponibles([]);
-          setCuposAviso("No pudimos verificar cupos. Reintentá o escribinos.");
-          return;
-        }
-        const list = Array.isArray(j.horarios)
-          ? j.horarios.filter((x): x is string => typeof x === "string")
-          : [];
-        setIndividualHorariosDisponibles(list);
-        setCuposAviso(null);
-      } catch {
-        if (!cancelled) {
-          setIndividualHorariosDisponibles([]);
-          setCuposAviso("No pudimos verificar cupos. Reintentá o escribinos.");
-        }
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
   }, [selectedModalidad]);
-
-  useEffect(() => {
-    if (selectedModalidad !== "consulta_individual" || individualHorariosDisponibles === null) return;
-    if (selectedHorario && !individualHorariosDisponibles.includes(selectedHorario)) {
-      setSelectedHorario("");
-    }
-  }, [selectedModalidad, individualHorariosDisponibles, selectedHorario]);
-
-  useEffect(() => {
-    if (selectedModalidad !== "grupal" || !HORARIO_GRUPAL_VALUES.has(selectedHorario)) {
-      setEvalGrupalDisponibles(null);
-      return;
-    }
-    let cancelled = false;
-    setEvalGrupalDisponibles(null);
-    void (async () => {
-      try {
-        const res = await fetch(
-          `/api/reservas/disponibilidad/grupal-eval-horarios?horario=${encodeURIComponent(selectedHorario)}`,
-          { cache: "no-store" }
-        );
-        const j = (await res.json().catch(() => ({}))) as { horarios?: unknown };
-        if (cancelled) return;
-        if (!res.ok) {
-          setEvalGrupalDisponibles([]);
-          setCuposAviso("No pudimos verificar cupos de la evaluación. Reintentá o escribinos.");
-          return;
-        }
-        const list = Array.isArray(j.horarios)
-          ? j.horarios.filter((x): x is string => typeof x === "string")
-          : [];
-        setEvalGrupalDisponibles(list);
-        setCuposAviso(null);
-      } catch {
-        if (!cancelled) {
-          setEvalGrupalDisponibles([]);
-          setCuposAviso("No pudimos verificar cupos de la evaluación. Reintentá o escribinos.");
-        }
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [selectedModalidad, selectedHorario]);
-
-  useEffect(() => {
-    if (selectedModalidad !== "grupal" || evalGrupalDisponibles === null) return;
-    if (selectedHorarioEvaluacion && !evalGrupalDisponibles.includes(selectedHorarioEvaluacion)) {
-      setSelectedHorarioEvaluacion("");
-    }
-  }, [selectedModalidad, evalGrupalDisponibles, selectedHorarioEvaluacion]);
 
   const esGrupal = selectedModalidad === "grupal";
   const esIndividual = selectedModalidad === "consulta_individual";
   const individualListo =
     esIndividual &&
-    !cargandoHorarioIndividual &&
-    (individualHorariosDisponibles?.includes(selectedHorario) ?? false) &&
-    (selectedFormatoConsulta === "presencial" || selectedFormatoConsulta === "virtual") &&
-    Boolean(selectedHorario);
+    Boolean(huecoIndividual) &&
+    (selectedFormatoConsulta === "presencial" || selectedFormatoConsulta === "virtual");
   const grupalListo =
     esGrupal &&
     Boolean(selectedHorario) &&
-    !cargandoEvalGrupal &&
-    (evalGrupalDisponibles?.includes(selectedHorarioEvaluacion) ?? false) &&
-    (selectedFormatoEvaluacion === "presencial" || selectedFormatoEvaluacion === "virtual") &&
-    Boolean(selectedHorarioEvaluacion);
+    Boolean(huecoEvalGrupal) &&
+    (selectedFormatoEvaluacion === "presencial" || selectedFormatoEvaluacion === "virtual");
   const turnoCompleto = Boolean(individualListo || grupalListo);
 
   const resumenPrecio = useMemo(() => {
@@ -706,43 +634,49 @@ export default function FormularioReserva() {
   }, [turnoCompleto, selectedModalidad]);
 
   const turnoDetalleHidden = useMemo(() => {
-    if (!selectedHorario) return "";
-    if (esGrupal) {
+    if (esIndividual && huecoIndividual) {
+      const formatoTxt =
+        selectedFormatoConsulta === "virtual" ? "virtual" : "presencial";
+      return `Consulta individual: ${huecoIndividual.etiqueta} (${formatoTxt})`;
+    }
+    if (esGrupal && selectedHorario) {
       const grupalLabel =
         HORARIOS_GRUPAL.find((t) => t.value === selectedHorario)?.label ?? "";
-      if (!selectedHorarioEvaluacion || !selectedFormatoEvaluacion) return grupalLabel;
-      const evalLabel =
-        HORARIOS_INDIVIDUAL.find((t) => t.value === selectedHorarioEvaluacion)?.label ?? "";
+      if (!huecoEvalGrupal || !selectedFormatoEvaluacion) return grupalLabel;
       const formatoTxt =
         selectedFormatoEvaluacion === "virtual" ? "virtual" : "presencial";
-      return `Clases grupales: ${grupalLabel} · Evaluación: ${evalLabel} (${formatoTxt})`;
+      return `Clases grupales: ${grupalLabel} · Evaluación: ${huecoEvalGrupal.etiqueta} (${formatoTxt})`;
     }
-    return opcionesHorarioPrincipal.find((t) => t.value === selectedHorario)?.label ?? "";
+    return "";
   }, [
-    selectedHorario,
-    selectedHorarioEvaluacion,
-    selectedFormatoEvaluacion,
+    esIndividual,
     esGrupal,
-    opcionesHorarioPrincipal,
+    huecoIndividual,
+    huecoEvalGrupal,
+    selectedHorario,
+    selectedFormatoConsulta,
+    selectedFormatoEvaluacion,
   ]);
 
   const turnoCodigoHidden = useMemo(() => {
-    if (!selectedModalidad || !selectedHorario) return "";
-    if (selectedModalidad === "consulta_individual") {
-      return `${selectedModalidad}|${selectedHorario}`;
+    if (!selectedModalidad) return "";
+    if (selectedModalidad === "consulta_individual" && huecoIndividual) {
+      return `${selectedModalidad}|${huecoIndividual.templateId}|${huecoIndividual.dateKey}|${huecoIndividual.timeLocal}`;
     }
     if (
       selectedModalidad === "grupal" &&
-      selectedHorarioEvaluacion &&
+      selectedHorario &&
+      huecoEvalGrupal &&
       (selectedFormatoEvaluacion === "presencial" || selectedFormatoEvaluacion === "virtual")
     ) {
-      return `grupal|${selectedHorario}|eval:${selectedHorarioEvaluacion}|${selectedFormatoEvaluacion}`;
+      return `grupal|${selectedHorario}|eval:${huecoEvalGrupal.templateId}|${huecoEvalGrupal.dateKey}|${huecoEvalGrupal.timeLocal}|${selectedFormatoEvaluacion}`;
     }
     return "";
   }, [
     selectedModalidad,
     selectedHorario,
-    selectedHorarioEvaluacion,
+    huecoIndividual,
+    huecoEvalGrupal,
     selectedFormatoEvaluacion,
   ]);
 
@@ -757,7 +691,6 @@ export default function FormularioReserva() {
     if (openPicker === "formatoConsulta") return formatoConsultaTriggerRef.current;
     if (openPicker === "horario") return horarioTriggerRef.current;
     if (openPicker === "formatoEvaluacion") return formatoEvaluacionTriggerRef.current;
-    if (openPicker === "horarioEvaluacion") return horarioEvaluacionTriggerRef.current;
     return null;
   }, [openPicker]);
 
@@ -779,20 +712,14 @@ export default function FormularioReserva() {
             ? FORMATO_CONSULTA_OPCIONES.length
             : openPicker === "horario"
               ? opcionesHorarioPrincipal.length
-              : openPicker === "horarioEvaluacion"
-                ? opcionesEvaluacionGrupal.length
-                : 0;
+              : 0;
 
     const estimated = count * DROPDOWN_ITEM_ESTIMATED_HEIGHT + 28;
     return Math.min(
       DROPDOWN_MAX_HEIGHT,
       Math.max(DROPDOWN_MIN_VISIBLE, estimated)
     );
-  }, [
-    openPicker,
-    opcionesHorarioPrincipal.length,
-    opcionesEvaluacionGrupal.length,
-  ]);
+  }, [openPicker, opcionesHorarioPrincipal.length]);
 
   useEffect(() => {
     if (!openPicker) {
@@ -841,8 +768,7 @@ export default function FormularioReserva() {
         modalidadTriggerRef.current?.contains(target) ||
         formatoConsultaTriggerRef.current?.contains(target) ||
         horarioTriggerRef.current?.contains(target) ||
-        formatoEvaluacionTriggerRef.current?.contains(target) ||
-        horarioEvaluacionTriggerRef.current?.contains(target);
+        formatoEvaluacionTriggerRef.current?.contains(target);
 
       if (!insideDropdown && !insideTrigger) {
         setOpenPicker(null);
@@ -878,7 +804,7 @@ export default function FormularioReserva() {
     });
 
     return () => window.cancelAnimationFrame(id);
-  }, [turnoCompleto, selectedHorario, selectedHorarioEvaluacion]);
+  }, [turnoCompleto, selectedHorario, huecoIndividual, huecoEvalGrupal]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -896,6 +822,30 @@ export default function FormularioReserva() {
           ? draft.formatoEvaluacion
           : ""
       );
+      if (draft.principalSlotJson) {
+        try {
+          const p = JSON.parse(draft.principalSlotJson) as Partial<HuecoSeleccionado>;
+          if (p.dateKey && p.timeLocal && p.templateId && p.etiqueta) {
+            setHuecoIndividual(p as HuecoSeleccionado);
+          }
+        } catch {
+          /* ignore */
+        }
+      } else {
+        setHuecoIndividual(null);
+      }
+      if (draft.evalSlotJson) {
+        try {
+          const p = JSON.parse(draft.evalSlotJson) as Partial<HuecoSeleccionado>;
+          if (p.dateKey && p.timeLocal && p.templateId && p.etiqueta) {
+            setHuecoEvalGrupal(p as HuecoSeleccionado);
+          }
+        } catch {
+          /* ignore */
+        }
+      } else {
+        setHuecoEvalGrupal(null);
+      }
       window.setTimeout(() => {
         const form = formRef.current;
         if (!form) return;
@@ -924,8 +874,8 @@ export default function FormularioReserva() {
     if (!turnoCompleto || !resumenPrecio) {
       setPagoError(
         esIndividual
-          ? "Seleccioná modalidad de consulta (presencial/virtual), formato y horario."
-          : "Seleccioná horario de clases grupales, formato y horario de la evaluación inicial."
+          ? "Seleccioná modalidad de consulta (presencial/virtual), fecha y horario en el calendario."
+          : "Seleccioná horario de clases grupales, formato y fecha/hora de la evaluación en el calendario."
       );
       return;
     }
@@ -959,30 +909,6 @@ export default function FormularioReserva() {
       return;
     }
 
-    if (
-      result.data.modalidad === "grupal" &&
-      evalGrupalDisponibles &&
-      !evalGrupalDisponibles.includes(result.data.horarioEvaluacion)
-    ) {
-      setFieldErrors({
-        horarioEvaluacion: "Ese horario de evaluación ya no está disponible. Elegí otro.",
-      });
-      setEnvioError("Revisá el horario de la evaluación.");
-      return;
-    }
-
-    if (
-      result.data.modalidad === "consulta_individual" &&
-      individualHorariosDisponibles &&
-      !individualHorariosDisponibles.includes(result.data.horario)
-    ) {
-      setFieldErrors({
-        horario: "Ese horario ya no tiene cupos disponibles. Elegí otro.",
-      });
-      setEnvioError("Revisá el horario elegido.");
-      return;
-    }
-
     const payload = {
       nombre: result.data.nombre,
       mail: result.data.mail,
@@ -993,12 +919,25 @@ export default function FormularioReserva() {
       ...(selectedModalidad === "consulta_individual" && selectedFormatoConsulta
         ? { formatoConsulta: selectedFormatoConsulta }
         : {}),
+      ...(selectedModalidad === "consulta_individual" && huecoIndividual
+        ? {
+            principalSlot: {
+              dateKey: huecoIndividual.dateKey,
+              timeLocal: huecoIndividual.timeLocal,
+            },
+          }
+        : {}),
       ...(selectedModalidad === "grupal" &&
+      huecoEvalGrupal &&
       selectedHorarioEvaluacion &&
       (selectedFormatoEvaluacion === "presencial" || selectedFormatoEvaluacion === "virtual")
         ? {
             horarioEvaluacion: selectedHorarioEvaluacion,
             formatoEvaluacion: selectedFormatoEvaluacion,
+            evalSlot: {
+              dateKey: huecoEvalGrupal.dateKey,
+              timeLocal: huecoEvalGrupal.timeLocal,
+            },
           }
         : {}),
       turnoDetalle: turnoDetalleHidden,
@@ -1205,7 +1144,8 @@ export default function FormularioReserva() {
                     setSelectedHorario("");
                     setSelectedHorarioEvaluacion("");
                     setSelectedFormatoEvaluacion("");
-                    setCuposAviso(null);
+                    setHuecoIndividual(null);
+                    setHuecoEvalGrupal(null);
                     if (modalidad !== "consulta_individual") {
                       setSelectedFormatoConsulta("");
                     }
@@ -1216,6 +1156,8 @@ export default function FormularioReserva() {
                       horario: "",
                       horarioEvaluacion: "",
                       formatoEvaluacion: "",
+                      principalSlotJson: undefined,
+                      evalSlotJson: undefined,
                     });
                     setPagoError(null);
                     clearFieldError("modalidad");
@@ -1252,10 +1194,18 @@ export default function FormularioReserva() {
                       onSelect={(value) => {
                         const v = value as "presencial" | "virtual";
                         setSelectedFormatoConsulta(v);
-                        persistDraft({ ...getCurrentDraft(), formatoConsulta: v });
+                        setHuecoIndividual(null);
+                        setSelectedHorario("");
+                        persistDraft({
+                          ...getCurrentDraft(),
+                          formatoConsulta: v,
+                          horario: "",
+                          principalSlotJson: undefined,
+                        });
                         setPagoError(null);
                         clearFieldError("formatoConsulta");
                         setOpenPicker(null);
+                        scrollAlCalendarioTrasPintar(calendarioIndividualRef);
                       }}
                       accentColor={accentColor}
                       error={
@@ -1272,20 +1222,13 @@ export default function FormularioReserva() {
                   </>
                 )}
 
-                {selectedModalidad !== "" && (
+                {esGrupal && (
                   <CustomPickerField
                     id="horario"
-                    ariaLabel={
-                      esGrupal
-                        ? "Horario clases grupales martes y jueves"
-                        : "Horario consulta individual"
-                    }
-                    placeholder={
-                      cargandoHorarioIndividual ? PLACEHOLDER_HORARIO_CARGANDO : PLACEHOLDER_HORARIO
-                    }
+                    ariaLabel="Horario clases grupales martes y jueves"
+                    placeholder={PLACEHOLDER_HORARIO}
                     value={selectedHorario}
                     options={opcionesHorarioPrincipal}
-                    disabled={cargandoHorarioIndividual}
                     isOpen={openPicker === "horario"}
                     triggerRef={horarioTriggerRef}
                     dropdownRef={dropdownRef}
@@ -1293,13 +1236,18 @@ export default function FormularioReserva() {
                     onToggle={() => setOpenPicker((p) => (p === "horario" ? null : "horario"))}
                     onSelect={(value) => {
                       setSelectedHorario(value);
-                      persistDraft({ ...getCurrentDraft(), horario: value });
+                      setHuecoEvalGrupal(null);
+                      setSelectedHorarioEvaluacion("");
+                      persistDraft({
+                        ...getCurrentDraft(),
+                        horario: value,
+                        horarioEvaluacion: "",
+                        evalSlotJson: undefined,
+                      });
                       setPagoError(null);
                       clearFieldError("horario");
+                      clearFieldError("horarioEvaluacion");
                       setOpenPicker(null);
-                      if (!esGrupal) {
-                        scrollSuaveTrasElegirHorarioRef.current = true;
-                      }
                     }}
                     accentColor={accentColor}
                     error={shouldShowError("horario") ? fieldErrors.horario : undefined}
@@ -1310,26 +1258,44 @@ export default function FormularioReserva() {
                     {fieldErrors.horario}
                   </p>
                 )}
-                {cuposAviso && (
-                  <p className="-mt-2 px-1 text-sm text-amber-800" role="status">
-                    {cuposAviso}
-                  </p>
-                )}
+
                 {esIndividual &&
-                  !cargandoHorarioIndividual &&
-                  individualHorariosDisponibles !== null &&
-                  individualHorariosDisponibles.length === 0 && (
-                    <p className="-mt-2 px-1 text-sm text-zinc-600" role="status">
-                      No hay cupos libres en ninguna de las franjas habituales. Escribinos para coordinar.
-                    </p>
+                  (selectedFormatoConsulta === "presencial" ||
+                    selectedFormatoConsulta === "virtual") && (
+                    <div
+                      ref={calendarioIndividualRef}
+                      className="scroll-mt-24 scroll-smooth"
+                    >
+                      <ReservaHuecosCalendario
+                      mode="individual"
+                      accentColor={accentColor}
+                      titulo="Elegí día y horario de la consulta"
+                      onSeleccion={(h) => {
+                        setHuecoIndividual(h);
+                        setSelectedHorario(h.templateId);
+                        persistDraft({
+                          ...getCurrentDraft(),
+                          horario: h.templateId,
+                          principalSlotJson: JSON.stringify({
+                            dateKey: h.dateKey,
+                            timeLocal: h.timeLocal,
+                            templateId: h.templateId,
+                            etiqueta: h.etiqueta,
+                          }),
+                        });
+                        setPagoError(null);
+                        clearFieldError("horario");
+                        scrollSuaveTrasElegirHorarioRef.current = true;
+                      }}
+                    />
+                    </div>
                   )}
                 {esIndividual &&
-                  !cargandoHorarioIndividual &&
-                  individualHorariosDisponibles !== null &&
-                  individualHorariosDisponibles.length > 0 && (
-                    <p className="-mt-2 px-1 text-xs leading-snug text-zinc-500" role="note">
-                      Asignamos el <strong className="font-medium text-zinc-600">primer turno libre</strong> de
-                      esa franja (puede ser en semanas posteriores si los más próximos ya están reservados).
+                  huecoIndividual &&
+                  (selectedFormatoConsulta === "presencial" ||
+                    selectedFormatoConsulta === "virtual") && (
+                    <p className="-mt-1 px-1 text-sm text-zinc-700" role="status">
+                      Turno elegido: <strong className="font-medium">{huecoIndividual.etiqueta}</strong>
                     </p>
                   )}
 
@@ -1338,10 +1304,8 @@ export default function FormularioReserva() {
                     <div className="rounded-xl border border-zinc-100 bg-zinc-50/90 px-3 py-2.5">
                       <p className="text-sm font-semibold text-zinc-800">Agendar evaluación</p>
                       <p className="mt-1 text-sm leading-snug text-zinc-600">
-                        Tenés que agendar una clase individual para la evaluación; está incluida en el plan
-                        mensual. El sistema asigna el <strong className="font-medium text-zinc-700">primer</strong>{" "}
-                        hueco libre de la franja que elijas (puede no ser la misma fecha que ves en el panel si
-                        hay turnos posteriores libres).
+                        Elegí día y horario exactos de la evaluación individual (incluida en el plan). Solo se
+                        muestran huecos reales compatibles con tu franja de clases grupales.
                       </p>
                     </div>
                     <CustomPickerField
@@ -1360,13 +1324,19 @@ export default function FormularioReserva() {
                       onSelect={(value) => {
                         const v = value as "presencial" | "virtual";
                         setSelectedFormatoEvaluacion(v);
-                        persistDraft({ ...getCurrentDraft(), formatoEvaluacion: v });
+                        setHuecoEvalGrupal(null);
+                        setSelectedHorarioEvaluacion("");
+                        persistDraft({
+                          ...getCurrentDraft(),
+                          formatoEvaluacion: v,
+                          horarioEvaluacion: "",
+                          evalSlotJson: undefined,
+                        });
                         setPagoError(null);
                         clearFieldError("formatoEvaluacion");
+                        clearFieldError("horarioEvaluacion");
                         setOpenPicker(null);
-                        if (selectedHorarioEvaluacion) {
-                          scrollSuaveTrasElegirHorarioRef.current = true;
-                        }
+                        scrollAlCalendarioTrasPintar(calendarioEvalGrupalRef);
                       }}
                       accentColor={accentColor}
                       error={
@@ -1380,56 +1350,50 @@ export default function FormularioReserva() {
                         {fieldErrors.formatoEvaluacion}
                       </p>
                     )}
-                    <CustomPickerField
-                      id="horario_evaluacion"
-                      ariaLabel="Horario de la evaluación"
-                      placeholder={
-                        cargandoEvalGrupal ? PLACEHOLDER_HORARIO_EVAL_CARGANDO : PLACEHOLDER_HORARIO_EVAL
-                      }
-                      value={selectedHorarioEvaluacion}
-                      options={opcionesEvaluacionGrupal}
-                      disabled={cargandoEvalGrupal}
-                      isOpen={openPicker === "horarioEvaluacion"}
-                      triggerRef={horarioEvaluacionTriggerRef}
-                      dropdownRef={dropdownRef}
-                      rect={dropdownRect}
-                      onToggle={() =>
-                        setOpenPicker((p) => (p === "horarioEvaluacion" ? null : "horarioEvaluacion"))
-                      }
-                      onSelect={(value) => {
-                        setSelectedHorarioEvaluacion(value);
-                        persistDraft({ ...getCurrentDraft(), horarioEvaluacion: value });
-                        setPagoError(null);
-                        clearFieldError("horarioEvaluacion");
-                        setOpenPicker(null);
-                        if (
-                          selectedFormatoEvaluacion === "presencial" ||
-                          selectedFormatoEvaluacion === "virtual"
-                        ) {
+                    {(selectedFormatoEvaluacion === "presencial" ||
+                      selectedFormatoEvaluacion === "virtual") && (
+                      <div
+                        ref={calendarioEvalGrupalRef}
+                        className="scroll-mt-24 scroll-smooth"
+                      >
+                        <ReservaHuecosCalendario
+                        mode="grupal-eval"
+                        horarioGrupalId={selectedHorario}
+                        accentColor={accentColor}
+                        titulo="Calendario de la evaluación"
+                        onSeleccion={(h) => {
+                          setHuecoEvalGrupal(h);
+                          setSelectedHorarioEvaluacion(h.templateId);
+                          persistDraft({
+                            ...getCurrentDraft(),
+                            horarioEvaluacion: h.templateId,
+                            evalSlotJson: JSON.stringify({
+                              dateKey: h.dateKey,
+                              timeLocal: h.timeLocal,
+                              templateId: h.templateId,
+                              etiqueta: h.etiqueta,
+                            }),
+                          });
+                          setPagoError(null);
+                          clearFieldError("horarioEvaluacion");
                           scrollSuaveTrasElegirHorarioRef.current = true;
-                        }
-                      }}
-                      accentColor={accentColor}
-                      error={
-                        shouldShowError("horarioEvaluacion")
-                          ? fieldErrors.horarioEvaluacion
-                          : undefined
-                      }
-                    />
+                        }}
+                      />
+                      </div>
+                    )}
+                    {huecoEvalGrupal &&
+                      (selectedFormatoEvaluacion === "presencial" ||
+                        selectedFormatoEvaluacion === "virtual") && (
+                        <p className="-mt-1 px-1 text-sm text-zinc-700" role="status">
+                          Evaluación:{" "}
+                          <strong className="font-medium">{huecoEvalGrupal.etiqueta}</strong>
+                        </p>
+                      )}
                     {shouldShowError("horarioEvaluacion") && fieldErrors.horarioEvaluacion && (
                       <p className="-mt-3 px-1 text-sm font-medium text-red-600" role="alert">
                         {fieldErrors.horarioEvaluacion}
                       </p>
                     )}
-                    {!cargandoEvalGrupal &&
-                      evalGrupalDisponibles !== null &&
-                      evalGrupalDisponibles.length === 0 &&
-                      selectedHorario && (
-                        <p className="-mt-2 px-1 text-sm text-amber-800" role="status">
-                          No hay horarios de evaluación libres para esa franja de clases grupales. Probá otro
-                          horario de clases o contactanos.
-                        </p>
-                      )}
                   </>
                 )}
 

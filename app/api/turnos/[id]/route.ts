@@ -63,6 +63,11 @@ export async function PATCH(
   if (result.data.estado === "cancelado") {
     updateSet.canceladoPor = "profesional";
     updateSet.motivoCancelacion = "Cancelado desde el panel de gestión.";
+    updateUnset.blockingSlotKeys = "";
+  }
+
+  if (result.data.estado === "expirado") {
+    updateUnset.blockingSlotKeys = "";
   }
 
   if (result.data.estado && result.data.estado !== "cancelado") {

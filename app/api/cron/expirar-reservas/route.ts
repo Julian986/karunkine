@@ -30,6 +30,7 @@ export async function GET(request: Request) {
         estado: "expirado",
         updatedAt: now,
       },
+      $unset: { blockingSlotKeys: "" },
     }
   );
 

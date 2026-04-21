@@ -17,7 +17,7 @@ import {
   type HorarioIndividualId,
 } from "./wanda-schedule";
 import { HORARIOS_INDIVIDUAL } from "../validators/reserva-turno";
-import { hasGrupalEvalCombo } from "./resolve-reserva-citas";
+import { evalConcreteFeasibleForGrupal, hasGrupalEvalCombo } from "./resolve-reserva-citas";
 import {
   grupalBandFree,
   isGrupalHorarioGloballyTaken,
@@ -159,4 +159,73 @@ export async function listHorariosIndividualDisponibles(db: Db): Promise<string[
     }
   }
   return out;
+}
+
+function daySlotsIndividualFromOccupied(
+  occupied: Set<string>,
+  dateKey: string,
+): { dateKey: string; timeLocal: string; templateId: string }[] {
+  const wd = isoDateWeekday(dateKey);
+  if (wd === null) return [];
+  const templates = individualTemplatesForWeekday(wd);
+  const out: { dateKey: string; timeLocal: string; templateId: string }[] = [];
+  for (const id of templates) {
+    const tl = normalizeTimeLocal(timeForIndividualTemplate(id));
+    if (occupied.has(slotKey(dateKey, tl))) continue;
+    out.push({ dateKey, timeLocal: tl, templateId: id });
+  }
+  return out;
+}
+
+/** Días del mes con al menos un hueco de evaluación compatible con la banda grupal. */
+export async function monthAvailabilityGrupalEval(
+  db: Db,
+  year: number,
+  month: number,
+  horarioGrupalId: string,
+): Promise<Record<string, boolean>> {
+  if (!isHorarioGrupalId(horarioGrupalId)) return {};
+  const grid = buildPanelMonthGrid(year, month);
+  const out: Record<string, boolean> = {};
+  if (await isGrupalHorarioGloballyTaken(db, horarioGrupalId)) {
+    for (const cell of grid) {
+      if (cell.inMonth) out[cell.dateKey] = false;
+    }
+    return out;
+  }
+  const occupied = await loadOccupiedSlotKeysGlobal(db);
+  const hid = horarioGrupalId as HorarioGrupalId;
+  for (const cell of grid) {
+    if (!cell.inMonth) continue;
+    const slots = daySlotsIndividualFromOccupied(occupied, cell.dateKey);
+    const any = slots.some((s) =>
+      evalConcreteFeasibleForGrupal(occupied, hid, s.dateKey, s.timeLocal),
+    );
+    out[cell.dateKey] = any;
+  }
+  return out;
+}
+
+/** Huecos de un día que sirven como evaluación para `horarioGrupalId`. */
+export async function daySlotsEvalGrupal(
+  db: Db,
+  dateKey: string,
+  horarioGrupalId: string,
+): Promise<{ value: string; label: string }[]> {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateKey)) return [];
+  if (!isHorarioGrupalId(horarioGrupalId)) return [];
+  if (await isGrupalHorarioGloballyTaken(db, horarioGrupalId)) return [];
+  const occupied = await loadOccupiedSlotKeysGlobal(db);
+  const hid = horarioGrupalId as HorarioGrupalId;
+  const slots = daySlotsIndividualFromOccupied(occupied, dateKey).filter((s) =>
+    evalConcreteFeasibleForGrupal(occupied, hid, s.dateKey, s.timeLocal),
+  );
+  return slots.map((s) => ({
+    value: JSON.stringify({
+      dateKey: s.dateKey,
+      timeLocal: s.timeLocal,
+      templateId: s.templateId,
+    }),
+    label: formatDisplayFechaHora(s.dateKey, s.timeLocal),
+  }));
 }

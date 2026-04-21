@@ -65,6 +65,18 @@ export function slotKey(dateKey: string, timeLocal: string): string {
   return `${dateKey}|${normalizeTimeLocal(timeLocal)}`;
 }
 
+/** Claves `dateKey|HH:mm` deduplicadas; alineado con ocupación pública y panel. */
+export function blockingSlotKeysFromCitas(citas: CitaDoc[] | undefined): string[] {
+  if (!Array.isArray(citas) || citas.length === 0) return [];
+  const keys = new Set<string>();
+  for (const c of citas) {
+    if (c?.dateKey && c?.timeLocal) {
+      keys.add(slotKey(String(c.dateKey).trim(), normalizeTimeLocal(String(c.timeLocal))));
+    }
+  }
+  return [...keys];
+}
+
 export function parseSlotKey(key: string): { dateKey: string; timeLocal: string } | null {
   const i = key.indexOf("|");
   if (i <= 0) return null;

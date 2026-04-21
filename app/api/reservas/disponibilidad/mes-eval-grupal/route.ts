@@ -1,15 +1,20 @@
 import { NextResponse } from "next/server";
 import { getDb } from "../../../../../lib/mongodb";
-import { monthAvailabilityIndividual } from "../../../../../lib/turnos/disponibilidad-publica";
+import { monthAvailabilityGrupalEval } from "../../../../../lib/turnos/disponibilidad-publica";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-/** Disponibilidad mensual para consulta/evaluación (misma grilla). `monthIndex` 0–11. */
+/** Disponibilidad mensual de días donde hay hueco de evaluación compatible con la banda grupal. */
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const year = Number(url.searchParams.get("year"));
   const monthIndex = Number(url.searchParams.get("monthIndex"));
+  const horario = url.searchParams.get("horario")?.trim() ?? "";
+
+  if (!horario) {
+    return NextResponse.json({ error: "Falta horario grupal." }, { status: 400 });
+  }
   if (!Number.isFinite(year) || year < 2000 || year > 2100) {
     return NextResponse.json({ error: "Año inválido." }, { status: 400 });
   }
@@ -19,10 +24,10 @@ export async function GET(request: Request) {
 
   try {
     const db = await getDb();
-    const availability = await monthAvailabilityIndividual(db, year, monthIndex + 1);
+    const availability = await monthAvailabilityGrupalEval(db, year, monthIndex + 1, horario);
     return NextResponse.json({ availability });
   } catch (e) {
-    console.error("[disponibilidad/mes]", e);
+    console.error("[disponibilidad/mes-eval-grupal]", e);
     return NextResponse.json({ error: "No se pudo calcular la disponibilidad." }, { status: 500 });
   }
 }

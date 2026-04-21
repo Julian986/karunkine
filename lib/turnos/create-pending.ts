@@ -2,7 +2,7 @@ import { ObjectId } from "mongodb";
 import { getDb } from "../mongodb";
 import type { CrearReservaTurnoInput } from "../validators/reserva-turno";
 import { getReservaPagoTimeoutMs } from "../mercadopago/env";
-import type { CitaDoc } from "./wanda-schedule";
+import { blockingSlotKeysFromCitas, type CitaDoc } from "./wanda-schedule";
 import { buildTurnoDetalleFromCitas } from "./turno-detalle-copy";
 
 export type TurnoInsertDoc = {
@@ -19,6 +19,8 @@ export type TurnoInsertDoc = {
   horarioEvaluacion?: string;
   formatoEvaluacion?: "presencial" | "virtual";
   citas?: CitaDoc[];
+  /** Índice único parcial: evita dos turnos activos con el mismo hueco (carrera entre POST). */
+  blockingSlotKeys?: string[];
   precioReferenciaArs: number;
   estado: "pending_payment";
   notaInterna: string;
@@ -60,6 +62,7 @@ export async function insertarTurnoPendienteDePago(
     turnoDetalle,
     turnoCodigo: data.turnoCodigo,
     citas: data.citas,
+    blockingSlotKeys: blockingSlotKeysFromCitas(data.citas),
     ...(data.modalidad === "consulta_individual" && data.formatoConsulta
       ? { formatoConsulta: data.formatoConsulta }
       : {}),

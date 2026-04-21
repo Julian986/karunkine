@@ -47,6 +47,19 @@ function findFirstGrupalAnchorForEval(
   return null;
 }
 
+/** Si ese turno puntual puede ser evaluación de un plan grupal `horG` (libre + existe ancla mar/jue). */
+export function evalConcreteFeasibleForGrupal(
+  occupied: Set<string>,
+  horG: HorarioGrupalId,
+  evalDateKey: string,
+  evalTimeLocal: string,
+): boolean {
+  const etl = normalizeTimeLocal(evalTimeLocal);
+  if (!isSlotFreePublic(occupied, evalDateKey, etl)) return false;
+  const from = utcTodayDateKey();
+  return Boolean(findFirstGrupalAnchorForEval(occupied, horG, evalDateKey, etl, from));
+}
+
 /** Hay al menos una fecha de evaluación libre (plantilla `hevId`) y una ancla grupal compatible. */
 export function hasGrupalEvalCombo(
   occupied: Set<string>,

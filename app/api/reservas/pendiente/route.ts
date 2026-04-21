@@ -1,3 +1,4 @@
+import { MongoServerError } from "mongodb";
 import { NextResponse } from "next/server";
 import { crearReservaTurnoSchema } from "../../../../lib/validators/reserva-turno";
 import { insertarTurnoPendienteDePago } from "../../../../lib/turnos/create-pending";
@@ -59,6 +60,15 @@ export async function POST(request: Request) {
       { status: 201 }
     );
   } catch (e) {
+    if (e instanceof MongoServerError && e.code === 11000) {
+      return NextResponse.json(
+        {
+          error: "Ese horario acaba de ocuparse. Elegí otro horario o actualizá el calendario.",
+          code: "SLOT_TAKEN",
+        },
+        { status: 409 }
+      );
+    }
     console.error("[reservas/pendiente]", e);
     return NextResponse.json({ error: "No se pudo crear la reserva." }, { status: 500 });
   }
