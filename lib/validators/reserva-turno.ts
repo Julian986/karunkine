@@ -39,6 +39,8 @@ export const crearReservaTurnoSchema = z
     turnoCodigo: z.string().trim().min(1),
     precioReferenciaArs: z.number().int().positive(),
     formatoConsulta: z.enum(["presencial", "virtual"]).optional(),
+    horarioEvaluacion: z.string().trim().optional(),
+    formatoEvaluacion: z.enum(["presencial", "virtual"]).optional(),
   })
   .superRefine((value, ctx) => {
     if (!MOTIVOS_VALIDOS.has(value.motivo)) {
@@ -75,6 +77,41 @@ export const crearReservaTurnoSchema = z
         path: ["formatoConsulta"],
         message: "Formato de consulta solo aplica a consulta individual.",
       });
+    }
+
+    if (value.modalidad === "grupal") {
+      const he = value.horarioEvaluacion?.trim() ?? "";
+      if (!he || !HORARIOS_INDIVIDUAL.has(he)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["horarioEvaluacion"],
+          message: "Elegí horario para la evaluación inicial (misma grilla que consulta individual).",
+        });
+      }
+      if (!value.formatoEvaluacion) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["formatoEvaluacion"],
+          message: "Elegí si la evaluación es presencial o virtual.",
+        });
+      }
+    }
+
+    if (value.modalidad === "consulta_individual") {
+      if (value.horarioEvaluacion?.trim()) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["horarioEvaluacion"],
+          message: "Horario de evaluación solo aplica a clases grupales.",
+        });
+      }
+      if (value.formatoEvaluacion) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["formatoEvaluacion"],
+          message: "Formato de evaluación solo aplica a clases grupales.",
+        });
+      }
     }
   });
 

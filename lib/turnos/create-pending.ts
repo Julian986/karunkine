@@ -14,6 +14,8 @@ export type TurnoInsertDoc = {
   turnoDetalle: string;
   turnoCodigo: string;
   formatoConsulta?: "presencial" | "virtual";
+  horarioEvaluacion?: string;
+  formatoEvaluacion?: "presencial" | "virtual";
   precioReferenciaArs: number;
   estado: "pending_payment";
   notaInterna: string;
@@ -49,6 +51,12 @@ export async function insertarTurnoPendienteDePago(
     turnoCodigo: data.turnoCodigo,
     ...(data.modalidad === "consulta_individual" && data.formatoConsulta
       ? { formatoConsulta: data.formatoConsulta }
+      : {}),
+    ...(data.modalidad === "grupal" && data.horarioEvaluacion && data.formatoEvaluacion
+      ? {
+          horarioEvaluacion: data.horarioEvaluacion,
+          formatoEvaluacion: data.formatoEvaluacion,
+        }
       : {}),
     precioReferenciaArs: data.precioReferenciaArs,
     estado: "pending_payment",
