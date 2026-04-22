@@ -134,7 +134,7 @@ function StatusBadge({ estado }: { estado: string }) {
   }
   if (estado === "expirado") {
     return (
-      <span className="inline-block rounded-full bg-zinc-500/22 px-2.5 py-1 text-[11px] font-semibold tracking-wide text-zinc-200/90">
+      <span className="inline-block rounded-full bg-zinc-500/20 px-2.5 py-1 text-[11px] font-semibold tracking-wide text-zinc-200/90">
         Expirado
       </span>
     );
@@ -220,6 +220,18 @@ function IconMessage({ className }: { className?: string }) {
         strokeLinecap="round"
         strokeLinejoin="round"
         d="M20.25 8.511c.884.284 1.5 1.128 1.5 2.097v4.286c0 1.136-.847 2.1-1.98 2.193-.34.027-.68.052-1.02.072v3.091l-3-3c-1.354 0-2.694-.055-4.02-.163a2.115 2.115 0 01-.825-.242m9.345-8.334a23.922 23.922 0 012.622 4.031 2.251 2.251 0 01-2.213 3.076 19.9 19.9 0 01-6.107-.955m-.62-8.058c.16.049.32.102.48.158M12 21.75c-2.685 0-5.173-.332-7.19-.922m15.854-2.128C19.62 16.98 18.09 15.75 16.5 15.75c-1.088 0-2.103.33-2.968.893m0 0a25.652 25.652 0 01-7.037 2.184M12 2.25c-2.625 0-4.854.463-6.709 1.21a2.25 2.25 0 00-1.616 2.16c0 1.176.94 2.163 2.068 2.928.492.29.99.559 1.516.792M12 2.25c2.625 0 4.854.463 6.709 1.21a2.25 2.25 0 011.616 2.16c0 1.176-.94 2.163-2.068 2.928a24.816 24.816 0 01-1.516.792"
+      />
+    </svg>
+  );
+}
+
+function IconUser({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.9}>
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M15.75 6.75a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.5 19.125a7.5 7.5 0 0115 0"
       />
     </svg>
   );
@@ -413,7 +425,7 @@ export function PanelTurnosDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-[var(--panel-bg)] pb-24 text-[var(--brand-cream)]">
+    <div className="min-h-screen bg-[var(--panel-bg)] pb-24 text-[var(--brand-cream)]/92">
       <div className="mx-auto max-w-md px-4 font-medium">
         <header className="flex items-start justify-between gap-4 pt-6 pb-1">
           <div className="flex items-center gap-3">
@@ -421,7 +433,7 @@ export function PanelTurnosDashboard() {
               <IconSparkles className="h-6 w-6 text-[var(--panel-bg)]" />
             </div>
             <div>
-              <h1 className="text-[20px] font-bold leading-tight text-[var(--brand-cream)]">Karün · Wanda</h1>
+              <h1 className="text-[20px] font-bold leading-tight text-[var(--brand-cream)]/96">Karün · Wanda</h1>
               <p className="text-[13px] leading-relaxed text-[var(--brand-cream)]/78">Panel de turnos</p>
             </div>
           </div>
@@ -513,14 +525,14 @@ export function PanelTurnosDashboard() {
 
         <div className="mt-5 flex items-start justify-between gap-4">
           <div>
-            <p className="text-[34px] font-extrabold leading-tight tracking-tight text-[var(--brand-cream)]">
+            <p className="text-[34px] font-extrabold leading-tight tracking-tight text-[var(--brand-cream)]/95">
               {weekdayLongFromKey(selectedKey)}
             </p>
             <p className="mt-0.5 text-[18px] font-semibold text-[var(--brand-cream)]/78">{dayLongFromKey(selectedKey)}</p>
           </div>
           <div className="flex shrink-0 items-center gap-2 rounded-2xl border border-white/16 bg-[var(--panel-surface)] px-3.5 py-2 text-[14px] text-[var(--brand-cream)]/95">
             <IconCalendar className="h-4.5 w-4.5 text-[var(--brand-accent-v1)]" />
-              <span className="font-semibold text-[var(--brand-cream)]/92">
+            <span className="font-semibold text-[var(--brand-cream)]/92">
               {dayRows.length} {dayRows.length === 1 ? "evento" : "eventos"}
             </span>
           </div>
@@ -593,12 +605,14 @@ export function PanelTurnosDashboard() {
                 >
                   <div className="flex gap-3">
                     <div className="w-[58px] shrink-0 text-left">
-                      <p className="text-[18px] font-bold leading-none text-[var(--brand-cream)]">{ev.timeLocal}</p>
+                      <p className="text-[18px] font-bold leading-none text-[var(--brand-cream)]/94">{ev.timeLocal}</p>
                     </div>
-                    <div className="min-w-0 flex-1 space-y-1.5">
-                      <p className="text-[16px] font-bold leading-snug text-[var(--brand-cream)]">{ev.titulo}</p>
-                      <p className="text-[14px] font-semibold leading-snug text-[var(--brand-cream)]/78">{ev.subtitulo}</p>
-                      <p className="truncate text-[19px] font-semibold leading-tight text-[var(--brand-cream)]">{ev.nombre || "Cliente"}</p>
+                    <div className="min-w-0 flex-1 space-y-2">
+                      <p className="text-[17px] font-bold leading-snug text-[var(--brand-cream)]/95">{ev.titulo}</p>
+                      <p className="flex items-center gap-1.5 text-[15px] font-semibold leading-tight text-[var(--brand-cream)]/90">
+                        <IconUser className="h-4 w-4 shrink-0 text-[var(--brand-cream)]/60" />
+                        <span className="truncate">{ev.nombre || "Cliente"}</span>
+                      </p>
                       <div className="flex flex-wrap items-center gap-2 pt-0.5">
                         <StatusBadge estado={ev.estado} />
                         {waUrl ? (
