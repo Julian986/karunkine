@@ -414,15 +414,15 @@ export function PanelTurnosDashboard() {
 
   return (
     <div className="min-h-screen bg-[var(--panel-bg)] pb-24 text-[var(--brand-cream)]">
-      <div className="mx-auto max-w-md px-4">
+      <div className="mx-auto max-w-md px-4 font-medium">
         <header className="flex items-start justify-between gap-4 pt-6 pb-1">
           <div className="flex items-center gap-3">
             <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-[var(--brand-accent-v2)] to-[var(--brand-accent-v1)] shadow-[0_10px_28px_rgba(165,106,66,0.35)]">
               <IconSparkles className="h-6 w-6 text-[var(--panel-bg)]" />
             </div>
             <div>
-              <h1 className="text-[18px] font-semibold leading-tight text-[var(--brand-cream)]">Karün · Wanda</h1>
-              <p className="text-[12px] leading-relaxed text-[var(--brand-cream)]/58">Panel de turnos</p>
+              <h1 className="text-[20px] font-bold leading-tight text-[var(--brand-cream)]">Karün · Wanda</h1>
+              <p className="text-[13px] leading-relaxed text-[var(--brand-cream)]/78">Panel de turnos</p>
             </div>
           </div>
           <div className="flex shrink-0 items-center gap-2">
@@ -443,7 +443,7 @@ export function PanelTurnosDashboard() {
           </div>
         </header>
 
-        <section className="mt-5 rounded-[28px] border border-white/10 bg-[var(--panel-surface)] p-4 shadow-[0_18px_45px_rgba(0,0,0,0.38)]">
+        <section className="mt-5 rounded-[28px] border border-white/14 bg-[var(--panel-surface)] p-4 shadow-[0_18px_45px_rgba(0,0,0,0.38)]">
           <div className="relative mb-3 flex items-center justify-center px-10">
             <button
               type="button"
@@ -453,7 +453,7 @@ export function PanelTurnosDashboard() {
             >
               <IconChevronLeft className="h-5 w-5" />
             </button>
-            <span className="text-center text-[15px] font-semibold capitalize tracking-tight text-[var(--brand-cream)]">
+            <span className="text-center text-[18px] font-bold capitalize tracking-tight text-[var(--brand-cream)]/98">
               {panelMonthTitle(year, month)}
             </span>
             <button
@@ -466,7 +466,7 @@ export function PanelTurnosDashboard() {
             </button>
           </div>
 
-          <div className="grid grid-cols-7 gap-y-1 text-center text-[11px] font-semibold tracking-wide text-[var(--brand-cream)]/45">
+          <div className="grid grid-cols-7 gap-y-1 text-center text-[12px] font-bold tracking-wide text-[var(--brand-cream)]/74">
             {PANEL_WEEK_LETTERS.map((L) => (
               <div key={L} className="py-2">
                 {L}
@@ -489,8 +489,8 @@ export function PanelTurnosDashboard() {
                 >
                   <span
                     className={[
-                      "flex h-9 w-9 items-center justify-center rounded-full text-[14px] font-semibold leading-none transition",
-                      inMonth ? "text-[var(--brand-cream)]" : "text-[var(--brand-cream)]/30",
+                      "flex h-10 w-10 items-center justify-center rounded-full text-[17px] font-bold leading-none transition",
+                      inMonth ? "text-[var(--brand-cream)]/96" : "text-[var(--brand-cream)]/38",
                       sel
                         ? "bg-gradient-to-br from-[var(--brand-accent-v2)] to-[var(--brand-accent-v1)] text-[var(--panel-bg)] shadow-[0_8px_24px_rgba(165,106,66,0.35)]"
                         : "hover:bg-white/5",
@@ -500,9 +500,9 @@ export function PanelTurnosDashboard() {
                   </span>
                   <span className="mt-0.5 flex h-2 items-center justify-center">
                     {count > 0 ? (
-                      <span className="block h-1 w-1 rounded-full bg-[var(--brand-accent-v1)]" />
+                      <span className="block h-1.5 w-1.5 rounded-full bg-[var(--brand-accent-v1)]" />
                     ) : (
-                      <span className="block h-1 w-1 rounded-full bg-transparent" />
+                      <span className="block h-1.5 w-1.5 rounded-full bg-transparent" />
                     )}
                   </span>
                 </button>
@@ -513,14 +513,14 @@ export function PanelTurnosDashboard() {
 
         <div className="mt-5 flex items-start justify-between gap-4">
           <div>
-            <p className="text-[22px] font-bold leading-tight tracking-tight text-[var(--brand-cream)]">
+            <p className="text-[34px] font-extrabold leading-tight tracking-tight text-[var(--brand-cream)]">
               {weekdayLongFromKey(selectedKey)}
             </p>
-            <p className="mt-0.5 text-[14px] text-[var(--brand-cream)]/55">{dayLongFromKey(selectedKey)}</p>
+            <p className="mt-0.5 text-[18px] font-semibold text-[var(--brand-cream)]/78">{dayLongFromKey(selectedKey)}</p>
           </div>
-          <div className="flex shrink-0 items-center gap-2 rounded-2xl border border-white/10 bg-[var(--panel-surface)] px-3 py-2 text-[13px] text-[var(--brand-cream)]/88">
-            <IconCalendar className="h-4 w-4 text-[var(--brand-accent-v1)]" />
-            <span className="font-semibold">
+          <div className="flex shrink-0 items-center gap-2 rounded-2xl border border-white/16 bg-[var(--panel-surface)] px-3.5 py-2 text-[14px] text-[var(--brand-cream)]/95">
+            <IconCalendar className="h-4.5 w-4.5 text-[var(--brand-accent-v1)]" />
+              <span className="font-semibold text-[var(--brand-cream)]/92">
               {dayRows.length} {dayRows.length === 1 ? "evento" : "eventos"}
             </span>
           </div>
@@ -541,25 +541,25 @@ export function PanelTurnosDashboard() {
                 return (
                   <article
                     key={`block-${b.id}`}
-                    className="rounded-[20px] border border-[var(--brand-ui-primary)]/30 bg-[var(--panel-surface)] px-4 py-4 shadow-[0_10px_32px_rgba(0,0,0,0.32)]"
+                    className="rounded-[20px] border border-[var(--brand-ui-primary)]/42 bg-[var(--panel-surface)] px-4 py-4 shadow-[0_10px_32px_rgba(0,0,0,0.32)]"
                   >
                     <div className="flex gap-3">
-                      <div className="w-[52px] shrink-0 text-left">
-                        <p className="text-[15px] font-bold leading-none text-[var(--brand-ui-primary)]">{b.timeLocal}</p>
-                        <p className="mt-2 text-[11px] leading-none text-[var(--brand-cream)]/48">{b.durationMinutes} min</p>
+                      <div className="w-[58px] shrink-0 text-left">
+                        <p className="text-[17px] font-extrabold leading-none text-[var(--brand-ui-primary)]">{b.timeLocal}</p>
+                        <p className="mt-2 text-[12px] font-semibold leading-none text-[var(--brand-cream)]/72">{b.durationMinutes} min</p>
                       </div>
                       <div className="min-w-0 flex-1">
                         <div className="flex gap-2">
                           <IconLock className="h-5 w-5 shrink-0 text-[var(--brand-ui-primary)]" />
                           <div className="min-w-0 flex-1">
-                            <p className="text-[15px] font-bold leading-snug text-[var(--brand-cream)]">Bloqueo de agenda</p>
-                            <p className="mt-1 text-[12px] text-[var(--brand-cream)]/58">{scopeLabel(b.scope)}</p>
+                            <p className="text-[17px] font-bold leading-snug text-[var(--brand-cream)]/96">Bloqueo de agenda</p>
+                            <p className="mt-1 text-[13px] font-medium text-[var(--brand-cream)]/80">{scopeLabel(b.scope)}</p>
                             <div className="mt-2 flex flex-wrap items-center gap-2">
-                              <span className="inline-block rounded-full bg-[var(--brand-ui-primary)]/20 px-2.5 py-1 text-[11px] font-semibold tracking-wide text-[var(--brand-ui-primary)]">
+                              <span className="inline-block rounded-full bg-[var(--brand-ui-primary)]/24 px-3 py-1 text-[12px] font-bold tracking-wide text-[var(--brand-ui-primary)]">
                                 Bloqueo
                               </span>
                               {weekly ? (
-                                <span className="inline-block rounded-full bg-white/8 px-2.5 py-1 text-[11px] font-semibold text-[var(--brand-cream)]/78">
+                                <span className="inline-block rounded-full bg-white/12 px-3 py-1 text-[12px] font-semibold text-[var(--brand-cream)]/88">
                                   Semanal
                                   {b.recurrence?.untilDateKey ? ` hasta ${b.recurrence.untilDateKey}` : ""}
                                 </span>
@@ -567,13 +567,13 @@ export function PanelTurnosDashboard() {
                               <button
                                 type="button"
                                 onClick={() => void handleDeleteBlock(b.id)}
-                                className="cursor-pointer text-[11px] font-semibold text-red-300/90 underline-offset-2 hover:underline"
+                                className="cursor-pointer text-[12px] font-bold text-red-300/95 underline-offset-2 hover:underline"
                               >
                                 Eliminar
                               </button>
                             </div>
                             {b.notes ? (
-                              <p className="mt-2 text-[12px] leading-snug text-[var(--brand-cream)]/55">{b.notes}</p>
+                              <p className="mt-2 text-[13px] leading-snug text-[var(--brand-cream)]/78">{b.notes}</p>
                             ) : null}
                           </div>
                         </div>
@@ -589,16 +589,16 @@ export function PanelTurnosDashboard() {
               return (
                 <article
                   key={ev.id}
-                  className="rounded-[20px] border border-white/10 bg-[var(--panel-surface)] px-4 py-3.5 shadow-[0_10px_32px_rgba(0,0,0,0.32)]"
+                  className="rounded-[20px] border border-white/18 bg-[var(--panel-surface)] px-4 py-4 shadow-[0_10px_32px_rgba(0,0,0,0.32)]"
                 >
                   <div className="flex gap-3">
-                    <div className="w-[48px] shrink-0 text-left">
-                      <p className="text-[15px] font-bold leading-none text-[var(--brand-cream)]">{ev.timeLocal}</p>
+                    <div className="w-[58px] shrink-0 text-left">
+                      <p className="text-[18px] font-bold leading-none text-[var(--brand-cream)]">{ev.timeLocal}</p>
                     </div>
                     <div className="min-w-0 flex-1 space-y-1.5">
-                      <p className="text-[14px] font-semibold leading-snug text-[var(--brand-cream)]">{ev.titulo}</p>
-                      <p className="text-[12px] leading-snug text-[var(--brand-cream)]/55">{ev.subtitulo}</p>
-                      <p className="truncate text-[12px] text-[var(--brand-cream)]/72">{ev.nombre || "Cliente"}</p>
+                      <p className="text-[16px] font-bold leading-snug text-[var(--brand-cream)]">{ev.titulo}</p>
+                      <p className="text-[14px] font-semibold leading-snug text-[var(--brand-cream)]/78">{ev.subtitulo}</p>
+                      <p className="truncate text-[19px] font-semibold leading-tight text-[var(--brand-cream)]">{ev.nombre || "Cliente"}</p>
                       <div className="flex flex-wrap items-center gap-2 pt-0.5">
                         <StatusBadge estado={ev.estado} />
                         {waUrl ? (
@@ -606,7 +606,7 @@ export function PanelTurnosDashboard() {
                             href={waUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex cursor-pointer items-center gap-1.5 rounded-full bg-[#25D366]/16 px-3 py-1.5 text-[11px] font-semibold text-[#6ee7a5] ring-1 ring-[#25D366]/35 transition hover:bg-[#25D366]/24"
+                            className="inline-flex cursor-pointer items-center gap-1.5 rounded-full bg-[#25D366]/16 px-3 py-1.5 text-[12px] font-bold text-[#6ee7a5] ring-1 ring-[#25D366]/40 transition hover:bg-[#25D366]/24"
                           >
                             <IconMessage className="h-3.5 w-3.5" />
                             WhatsApp
@@ -615,7 +615,7 @@ export function PanelTurnosDashboard() {
                         <button
                           type="button"
                           onClick={() => setEdicionEventoId((id) => (id === ev.id ? null : ev.id))}
-                          className="cursor-pointer rounded-full border border-[var(--brand-accent-v1)]/35 bg-[var(--panel-input)] px-3 py-1.5 text-[11px] font-semibold text-[var(--brand-accent-v1)] transition hover:bg-[var(--panel-surface-hover)]"
+                          className="cursor-pointer rounded-full border border-[var(--brand-accent-v1)]/45 bg-[var(--panel-input)] px-3 py-1.5 text-[12px] font-bold text-[var(--brand-accent-v1)] transition hover:bg-[var(--panel-surface-hover)]"
                         >
                           {edicionAbierta ? "Cerrar" : "Gestionar"}
                         </button>

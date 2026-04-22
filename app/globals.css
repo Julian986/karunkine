@@ -7,17 +7,17 @@
   --primary: #d4602c;
 
   /* Marca (mismos hex que `lib/brand/karunkine-colors.ts`) */
-  --brand-accent-v1: #a56a42;
-  --brand-accent-v2: #843921;
+  --brand-accent-v1: #c89b52;
+  --brand-accent-v2: #8a5f2a;
   --brand-primary-red: #963417;
-  --brand-ui-primary: #d4602c;
-  --brand-cream: #f5ebe3;
+  --brand-ui-primary: #d7a44e;
+  --brand-cream: #f1f4f8;
 
   /* Panel privado: superficies oscuras sobre la misma gama cálida */
-  --panel-bg: #100504;
-  --panel-surface: #1a0d08;
-  --panel-surface-hover: #24120c;
-  --panel-input: #120604;
+  --panel-bg: #0c111b;
+  --panel-surface: #151c28;
+  --panel-surface-hover: #1d2634;
+  --panel-input: #101722;
 }
 
 @theme inline {
