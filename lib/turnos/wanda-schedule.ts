@@ -17,6 +17,9 @@ export const HORARIOS_GRUPAL_IDS = [
   "grupal_17",
 ] as const;
 
+/** Cupo máximo de personas simultáneas por franja grupal (mismo código `horario` mar/jue). */
+export const GRUPAL_CUPO_MAX_POR_BANDA = 12;
+
 export const HORARIOS_INDIVIDUAL_IDS = [
   "lun_1600",
   "lun_1700",
@@ -65,11 +68,15 @@ export function slotKey(dateKey: string, timeLocal: string): string {
   return `${dateKey}|${normalizeTimeLocal(timeLocal)}`;
 }
 
-/** Claves `dateKey|HH:mm` deduplicadas; alineado con ocupación pública y panel. */
+/**
+ * Claves `dateKey|HH:mm` deduplicadas para índice único y conflictos entre turnos.
+ * No incluye `clase_grupal`: varias personas comparten la misma franja hasta `GRUPAL_CUPO_MAX_POR_BANDA`.
+ */
 export function blockingSlotKeysFromCitas(citas: CitaDoc[] | undefined): string[] {
   if (!Array.isArray(citas) || citas.length === 0) return [];
   const keys = new Set<string>();
   for (const c of citas) {
+    if (c?.tipo === "clase_grupal") continue;
     if (c?.dateKey && c?.timeLocal) {
       keys.add(slotKey(String(c.dateKey).trim(), normalizeTimeLocal(String(c.timeLocal))));
     }
@@ -122,6 +129,26 @@ export function formatDisplayFechaHora(dateKey: string, timeLocal: string): stri
   const ds = diaSem.charAt(0).toUpperCase() + diaSem.slice(1);
   const fechaCorta = `${String(day).padStart(2, "0")}/${String(m[2]).padStart(2, "0")}`;
   return `${ds} ${fechaCorta} ${timeLocal}`;
+}
+
+/** Solo día y fecha (sin hora), para layouts en dos líneas. */
+export function formatDisplaySoloFecha(dateKey: string): string {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateKey);
+  if (!m) return dateKey;
+  const y = Number(m[1]);
+  const mo = Number(m[2]) - 1;
+  const day = Number(m[3]);
+  const dt = new Date(Date.UTC(y, mo, day, 12, 0, 0));
+  const diaSem = new Intl.DateTimeFormat("es-AR", { weekday: "long" }).format(dt);
+  const ds = diaSem.charAt(0).toUpperCase() + diaSem.slice(1);
+  const fechaCorta = `${String(day).padStart(2, "0")}/${String(m[2]).padStart(2, "0")}`;
+  return `${ds} ${fechaCorta}`;
+}
+
+/** Hora en línea aparte (reproducible en UI separada de la fecha). */
+export function formatDisplaySoloHora(timeLocal: string): string {
+  const tl = normalizeTimeLocal(timeLocal);
+  return tl;
 }
 
 export function individualTemplatesForWeekday(weekday: number): HorarioIndividualId[] {

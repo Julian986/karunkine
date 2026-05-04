@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import {
@@ -72,6 +72,17 @@ function dayLongFromKey(dateKey: string) {
 function scopeLabel(scope: string) {
   if (scope === "agenda") return "Agenda";
   return scope;
+}
+
+/** Mismos estados que en `customer-turnos` para reprogramar consulta individual. */
+const PANEL_REPROGRAM_ESTADOS = new Set(["pending_payment", "pendiente", "contactado", "confirmado"]);
+
+function canReprogramConsultaIndividual(ev: PanelCalendarioEvento): boolean {
+  return (
+    ev.modalidad === "consulta_individual" &&
+    ev.tipoCita === "consulta_individual" &&
+    PANEL_REPROGRAM_ESTADOS.has(ev.estado)
+  );
 }
 
 function normalizePhoneForWhatsApp(rawPhone: string): string | null {
@@ -239,6 +250,8 @@ function IconUser({ className }: { className?: string }) {
 
 export function PanelTurnosDashboard() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const reprogramadoOk = searchParams.get("reprogramado") === "1";
   const now = useMemo(() => new Date(), []);
   const [year, setYear] = useState(now.getFullYear());
   const [month, setMonth] = useState(now.getMonth() + 1);
@@ -455,6 +468,15 @@ export function PanelTurnosDashboard() {
           </div>
         </header>
 
+        {reprogramadoOk ? (
+          <div
+            role="status"
+            className="mt-4 rounded-2xl border border-emerald-400/35 bg-emerald-950/45 px-4 py-3 text-center text-[14px] font-semibold leading-snug text-emerald-100"
+          >
+            Turno reprogramado. La agenda ya refleja el nuevo horario (alineado con Mis turnos).
+          </div>
+        ) : null}
+
         <section className="mt-5 rounded-[28px] border border-white/14 bg-[var(--panel-surface)] p-4 shadow-[0_18px_45px_rgba(0,0,0,0.38)]">
           <div className="relative mb-3 flex items-center justify-center px-10">
             <button
@@ -625,6 +647,14 @@ export function PanelTurnosDashboard() {
                             <IconMessage className="h-3.5 w-3.5" />
                             WhatsApp
                           </a>
+                        ) : null}
+                        {canReprogramConsultaIndividual(ev) ? (
+                          <Link
+                            href={`/panel-turnos/reprogramar/${encodeURIComponent(ev.turnoId)}`}
+                            className="inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-[var(--brand-accent-v1)]/55 bg-[var(--brand-accent-v1)]/14 px-3 py-1.5 text-[12px] font-bold text-[var(--brand-accent-v1)] ring-1 ring-[var(--brand-accent-v1)]/35 transition hover:bg-[var(--brand-accent-v1)]/24"
+                          >
+                            Reprogramar
+                          </Link>
                         ) : null}
                         <button
                           type="button"

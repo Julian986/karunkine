@@ -6,6 +6,7 @@ import {
   PANEL_WEEK_LETTERS,
   panelMonthTitle,
 } from "../../lib/booking/panel-month-grid";
+import { GRUPAL_CUPO_MAX_POR_BANDA } from "../../lib/turnos/wanda-schedule";
 const iconChevronLeft = (
   <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
     <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
@@ -101,6 +102,8 @@ export function ReservaHuecosCalendario({
   });
 
   const [availability, setAvailability] = useState<Record<string, boolean> | null>(null);
+  /** La banda grupal elegida alcanzó el cupo máximo de reservas activas. */
+  const [bandSinCupo, setBandSinCupo] = useState(false);
   const [mesError, setMesError] = useState<string | null>(null);
   const [cargandoMes, setCargandoMes] = useState(false);
 
@@ -118,6 +121,7 @@ export function ReservaHuecosCalendario({
     setCargandoMes(true);
     setMesError(null);
     setAvailability(null);
+    setBandSinCupo(false);
     setDiaSeleccionado(null);
     setSlots(null);
     setSlotMarcadoValue(null);
@@ -128,7 +132,11 @@ export function ReservaHuecosCalendario({
           ? `/api/reservas/disponibilidad/mes?year=${year}&monthIndex=${monthIndex}`
           : `/api/reservas/disponibilidad/mes-eval-grupal?year=${year}&monthIndex=${monthIndex}&horario=${encodeURIComponent(horarioGrupalId ?? "")}`;
       const res = await fetch(base, { cache: "no-store" });
-      const j = (await res.json().catch(() => ({}))) as { availability?: unknown; error?: string };
+      const j = (await res.json().catch(() => ({}))) as {
+        availability?: unknown;
+        bandSinCupo?: unknown;
+        error?: string;
+      };
       if (!res.ok) {
         setMesError(j.error ?? "No se pudo cargar el mes.");
         return;
@@ -139,6 +147,7 @@ export function ReservaHuecosCalendario({
         return;
       }
       setAvailability(av as Record<string, boolean>);
+      setBandSinCupo(j.bandSinCupo === true);
     } catch {
       setMesError("Error de red al cargar el calendario.");
     } finally {
@@ -256,6 +265,17 @@ export function ReservaHuecosCalendario({
       {mesError && (
         <p className="mt-2 text-sm text-red-600" role="alert">
           {mesError}
+        </p>
+      )}
+
+      {mode === "grupal-eval" && !mesError && !cargandoMes && bandSinCupo && (
+        <p
+          className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs leading-snug text-amber-950"
+          role="status"
+        >
+          Esta franja de clases grupales (martes y jueves a esa hora) ya alcanzó el cupo de{" "}
+          {GRUPAL_CUPO_MAX_POR_BANDA} reservas activas. Por eso no podés elegir fecha de evaluación aquí.
+          Probá otra franja horaria o escribinos si necesitás ayuda.
         </p>
       )}
 

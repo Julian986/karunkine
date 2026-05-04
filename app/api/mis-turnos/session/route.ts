@@ -1,0 +1,105 @@
+import { cookies } from "next/headers";
+import { NextResponse } from "next/server";
+
+import { canonicalPhoneDigitsAR } from "../../../../lib/customer/phone-canonical-ar";
+import { isLikelyWhatsappNumber } from "../../../../lib/customer/phone";
+import {
+  mintCustomerSessionToken,
+  readCustomerSessionPhoneDigits,
+  WANDA_CUSTOMER_SESSION_COOKIE,
+} from "../../../../lib/customer/customer-session";
+import { getDb } from "../../../../lib/mongodb";
+import { buildTurnoListFilter } from "../../../../lib/turnos/customer-turnos";
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
+const WINDOW_MS = 60_000;
+const MAX_POSTS_PER_WINDOW = 12;
+const hits = new Map<string, { windowStart: number; count: number }>();
+
+function clientIp(request: Request): string {
+  const xf = request.headers.get("x-forwarded-for");
+  if (xf) return xf.split(",")[0]?.trim() ?? "unknown";
+  return request.headers.get("x-real-ip") ?? "unknown";
+}
+
+function allowSessionPost(ip: string): boolean {
+  const now = Date.now();
+  const row = hits.get(ip);
+  if (!row || now - row.windowStart > WINDOW_MS) {
+    hits.set(ip, { windowStart: now, count: 1 });
+    return true;
+  }
+  if (row.count >= MAX_POSTS_PER_WINDOW) return false;
+  row.count++;
+  return true;
+}
+
+export async function POST(request: Request) {
+  if (!allowSessionPost(clientIp(request))) {
+    return NextResponse.json({ error: "Demasiados intentos. Probá en un minuto." }, { status: 429 });
+  }
+
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "JSON inválido." }, { status: 400 });
+  }
+  const phone =
+    typeof body === "object" && body && "phone" in body ? String((body as { phone?: unknown }).phone) : "";
+  if (!isLikelyWhatsappNumber(phone)) {
+    return NextResponse.json({ error: "Ingresá un número de WhatsApp válido (10 a 15 dígitos)." }, { status: 400 });
+  }
+
+  const digits = canonicalPhoneDigitsAR(phone);
+  if (!digits) {
+    return NextResponse.json({ error: "Número inválido." }, { status: 400 });
+  }
+
+  try {
+    const db = await getDb();
+    const found = await db.collection("turnos").findOne(buildTurnoListFilter(digits), { projection: { _id: 1 } });
+    if (!found) {
+      return NextResponse.json(
+        { error: "No encontramos turnos con ese número. Usá el mismo WhatsApp que al reservar." },
+        { status: 404 },
+      );
+    }
+  } catch (e) {
+    console.error("[mis-turnos/session] db", e);
+  }
+
+  const token = mintCustomerSessionToken(digits);
+  const cookieStore = await cookies();
+  cookieStore.set(WANDA_CUSTOMER_SESSION_COOKIE, token, {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+    maxAge: 60 * 24 * 60 * 60,
+  });
+
+  return NextResponse.json({ ok: true as const });
+}
+
+export async function DELETE() {
+  const cookieStore = await cookies();
+  cookieStore.set(WANDA_CUSTOMER_SESSION_COOKIE, "", {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+    maxAge: 0,
+  });
+  return NextResponse.json({ ok: true as const });
+}
+
+/** Estado de sesión (sin datos sensibles). */
+export async function GET() {
+  const cookieStore = await cookies();
+  const raw = cookieStore.get(WANDA_CUSTOMER_SESSION_COOKIE)?.value;
+  const digits = readCustomerSessionPhoneDigits(raw);
+  return NextResponse.json({ authed: Boolean(digits) });
+}

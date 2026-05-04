@@ -327,6 +327,14 @@ export default function CheckoutStatus({ estado }: { estado?: string }) {
         >
           {cfg.ctaLabel}
         </a>
+        {(status === "success" || status === "pending") && (
+          <a
+            href="/mis-turnos"
+            className="animate-fade-up animate-delay-300 text-center text-sm font-medium text-[#963417] underline-offset-2 hover:underline"
+          >
+            Ver o cancelar mis turnos (WhatsApp de la reserva)
+          </a>
+        )}
         <p className="animate-fade-up animate-delay-400 mt-1 max-w-xs text-center text-xs leading-relaxed text-stone-400">
           {cfg.note}
         </p>

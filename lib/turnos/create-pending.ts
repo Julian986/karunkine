@@ -1,6 +1,7 @@
 import { ObjectId } from "mongodb";
 import { getDb } from "../mongodb";
 import type { CrearReservaTurnoInput } from "../validators/reserva-turno";
+import { canonicalPhoneDigitsAR } from "../customer/phone-canonical-ar";
 import { getReservaPagoTimeoutMs } from "../mercadopago/env";
 import { blockingSlotKeysFromCitas, type CitaDoc } from "./wanda-schedule";
 import { buildTurnoDetalleFromCitas } from "./turno-detalle-copy";
@@ -21,6 +22,8 @@ export type TurnoInsertDoc = {
   citas?: CitaDoc[];
   /** Índice único parcial: evita dos turnos activos con el mismo hueco (carrera entre POST). */
   blockingSlotKeys?: string[];
+  /** Dígitos canónicos AR para cruzar con sesión "mis turnos". */
+  celularDigits?: string;
   precioReferenciaArs: number;
   estado: "pending_payment";
   notaInterna: string;
@@ -56,6 +59,7 @@ export async function insertarTurnoPendienteDePago(
     nombre: data.nombre,
     mail: data.mail,
     celular: data.celular,
+    celularDigits: canonicalPhoneDigitsAR(data.celular) || undefined,
     motivo: data.motivo,
     modalidad: data.modalidad,
     horario: data.horario,

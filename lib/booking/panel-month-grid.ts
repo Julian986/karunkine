@@ -1,4 +1,4 @@
-/** Grilla de mes alineada a lunes (misma lógica que el panel de turnos privado). */
+/** Grilla de mes alineada a lunes. Fechas civiles en UTC (mediodía), alineado a `isoDateWeekday` / ocupación — evita desvíos entre localhost y Vercel. */
 
 function pad2(n: number) {
   return String(n).padStart(2, "0");
@@ -8,16 +8,20 @@ export const PANEL_WEEK_LETTERS = ["L", "M", "X", "J", "V", "S", "D"] as const;
 
 export type PanelMonthCell = { day: number; inMonth: boolean; dateKey: string };
 
-/** `month`: 1–12 (enero = 1). */
+/** Días del mes civil `month` (1–12), último día inclusive. */
+function daysInCalendarMonthUtc(year: number, month1to12: number): number {
+  return new Date(Date.UTC(year, month1to12, 0, 12, 0, 0)).getUTCDate();
+}
+
+/** `month`: 1–12 (enero = 1). Siempre UTC para coincidir con turnos y APIs de disponibilidad. */
 export function buildPanelMonthGrid(year: number, month: number): PanelMonthCell[] {
-  const first = new Date(year, month - 1, 1);
-  const lastDay = new Date(year, month, 0).getDate();
-  const startDow = first.getDay();
+  const lastDay = daysInCalendarMonthUtc(year, month);
+  const startDow = new Date(Date.UTC(year, month - 1, 1, 12, 0, 0)).getUTCDay();
   const mondayOffset = startDow === 0 ? 6 : startDow - 1;
 
-  const prevLast = new Date(year, month - 1, 0).getDate();
   const pm = month === 1 ? 12 : month - 1;
   const py = month === 1 ? year - 1 : year;
+  const prevLast = daysInCalendarMonthUtc(py, pm);
 
   const cells: PanelMonthCell[] = [];
 
@@ -56,7 +60,9 @@ export function buildPanelMonthGrid(year: number, month: number): PanelMonthCell
 }
 
 export function panelMonthTitle(year: number, month: number) {
-  return new Intl.DateTimeFormat("es-AR", { month: "long", year: "numeric" }).format(
-    new Date(year, month - 1, 1),
-  );
+  return new Intl.DateTimeFormat("es-AR", {
+    month: "long",
+    year: "numeric",
+    timeZone: "UTC",
+  }).format(new Date(Date.UTC(year, month - 1, 1, 12, 0, 0)));
 }

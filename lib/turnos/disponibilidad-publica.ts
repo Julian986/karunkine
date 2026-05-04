@@ -1,4 +1,4 @@
-import type { Db } from "mongodb";
+import type { Db, ObjectId } from "mongodb";
 
 import { buildPanelMonthGrid } from "../booking/panel-month-grid";
 import {
@@ -20,9 +20,10 @@ import { HORARIOS_INDIVIDUAL } from "../validators/reserva-turno";
 import { evalConcreteFeasibleForGrupal, hasGrupalEvalCombo } from "./resolve-reserva-citas";
 import {
   grupalBandFree,
-  isGrupalHorarioGloballyTaken,
+  isGrupalBandaSinCupo,
   isSlotFreePublic,
   loadOccupiedSlotKeysForMonth,
+  loadOccupiedSlotKeysForMonthExcludingTurno,
   loadOccupiedSlotKeysGlobal,
 } from "./wanda-occupancy";
 
@@ -58,10 +59,13 @@ export async function monthAvailabilityIndividual(
 export async function daySlotsIndividual(
   db: Db,
   dateKey: string,
+  excludeTurnoId?: ObjectId,
 ): Promise<{ value: string; label: string }[]> {
   const y = Number(dateKey.slice(0, 4));
   const m = Number(dateKey.slice(5, 7));
-  const occupied = await loadOccupiedSlotKeysForMonth(db, y, m);
+  const occupied = excludeTurnoId
+    ? await loadOccupiedSlotKeysForMonthExcludingTurno(db, y, m, excludeTurnoId)
+    : await loadOccupiedSlotKeysForMonth(db, y, m);
   const wd = isoDateWeekday(dateKey);
   if (wd === null) return [];
   const templates = individualTemplatesForWeekday(wd);
@@ -77,6 +81,55 @@ export async function daySlotsIndividual(
   return out;
 }
 
+/** Disponibilidad mensual solo para un template individual (reprogramación misma franja). */
+export async function monthAvailabilityIndividualHorario(
+  db: Db,
+  year: number,
+  month: number,
+  horarioId: HorarioIndividualId,
+  excludeTurnoId?: ObjectId,
+): Promise<Record<string, boolean>> {
+  const occupied = excludeTurnoId
+    ? await loadOccupiedSlotKeysForMonthExcludingTurno(db, year, month, excludeTurnoId)
+    : await loadOccupiedSlotKeysForMonth(db, year, month);
+  const grid = buildPanelMonthGrid(year, month);
+  const tl = normalizeTimeLocal(timeForIndividualTemplate(horarioId));
+  const out: Record<string, boolean> = {};
+  for (const cell of grid) {
+    if (!cell.inMonth) continue;
+    const wd = isoDateWeekday(cell.dateKey);
+    if (wd === null) {
+      out[cell.dateKey] = false;
+      continue;
+    }
+    const templates = individualTemplatesForWeekday(wd);
+    if (!templates.includes(horarioId)) {
+      out[cell.dateKey] = false;
+      continue;
+    }
+    out[cell.dateKey] = !occupied.has(slotKey(cell.dateKey, tl));
+  }
+  return out;
+}
+
+/** Slots de un día filtrados a un solo horario individual. */
+export async function daySlotsIndividualHorario(
+  db: Db,
+  dateKey: string,
+  horarioId: HorarioIndividualId,
+  excludeTurnoId?: ObjectId,
+): Promise<{ value: string; label: string }[]> {
+  const all = await daySlotsIndividual(db, dateKey, excludeTurnoId);
+  return all.filter((s) => {
+    try {
+      const o = JSON.parse(s.value) as { templateId?: string };
+      return o.templateId === horarioId;
+    } catch {
+      return false;
+    }
+  });
+}
+
 /** Opciones de primera clase (ancla mar/jue) para una banda grupal, próximas `maxWeeks` semanas. */
 export async function listGrupalAnclaOpciones(
   db: Db,
@@ -84,7 +137,7 @@ export async function listGrupalAnclaOpciones(
   maxWeeks: number,
 ): Promise<{ value: string; label: string }[]> {
   if (!isHorarioGrupalId(horarioId)) return [];
-  if (await isGrupalHorarioGloballyTaken(db, horarioId)) return [];
+  if (await isGrupalBandaSinCupo(db, horarioId)) return [];
 
   const occupied = await loadOccupiedSlotKeysGlobal(db);
   const hid = horarioId as HorarioGrupalId;
@@ -129,7 +182,7 @@ export async function listHorariosEvaluacionParaGrupal(
   horarioGrupalId: string,
 ): Promise<string[]> {
   if (!isHorarioGrupalId(horarioGrupalId)) return [];
-  if (await isGrupalHorarioGloballyTaken(db, horarioGrupalId)) return [];
+  if (await isGrupalBandaSinCupo(db, horarioGrupalId)) return [];
   const occupied = await loadOccupiedSlotKeysGlobal(db);
   const fromKey = utcTodayDateKey();
   const hid = horarioGrupalId as HorarioGrupalId;
@@ -177,21 +230,29 @@ function daySlotsIndividualFromOccupied(
   return out;
 }
 
+export type MonthAvailabilityGrupalEvalResult = {
+  availability: Record<string, boolean>;
+  /** True cuando la banda alcanzó el cupo máximo de reservas activas (misma franja grupal). */
+  bandSinCupo: boolean;
+};
+
 /** Días del mes con al menos un hueco de evaluación compatible con la banda grupal. */
 export async function monthAvailabilityGrupalEval(
   db: Db,
   year: number,
   month: number,
   horarioGrupalId: string,
-): Promise<Record<string, boolean>> {
-  if (!isHorarioGrupalId(horarioGrupalId)) return {};
+): Promise<MonthAvailabilityGrupalEvalResult> {
+  if (!isHorarioGrupalId(horarioGrupalId)) {
+    return { availability: {}, bandSinCupo: false };
+  }
   const grid = buildPanelMonthGrid(year, month);
   const out: Record<string, boolean> = {};
-  if (await isGrupalHorarioGloballyTaken(db, horarioGrupalId)) {
+  if (await isGrupalBandaSinCupo(db, horarioGrupalId)) {
     for (const cell of grid) {
       if (cell.inMonth) out[cell.dateKey] = false;
     }
-    return out;
+    return { availability: out, bandSinCupo: true };
   }
   const occupied = await loadOccupiedSlotKeysGlobal(db);
   const hid = horarioGrupalId as HorarioGrupalId;
@@ -203,7 +264,7 @@ export async function monthAvailabilityGrupalEval(
     );
     out[cell.dateKey] = any;
   }
-  return out;
+  return { availability: out, bandSinCupo: false };
 }
 
 /** Huecos de un día que sirven como evaluación para `horarioGrupalId`. */
@@ -214,7 +275,7 @@ export async function daySlotsEvalGrupal(
 ): Promise<{ value: string; label: string }[]> {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(dateKey)) return [];
   if (!isHorarioGrupalId(horarioGrupalId)) return [];
-  if (await isGrupalHorarioGloballyTaken(db, horarioGrupalId)) return [];
+  if (await isGrupalBandaSinCupo(db, horarioGrupalId)) return [];
   const occupied = await loadOccupiedSlotKeysGlobal(db);
   const hid = horarioGrupalId as HorarioGrupalId;
   const slots = daySlotsIndividualFromOccupied(occupied, dateKey).filter((s) =>

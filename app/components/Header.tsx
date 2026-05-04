@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { usePathname } from "next/navigation";
@@ -120,7 +121,7 @@ export default function Header() {
     }, 320);
   };
 
-  if (pathname?.startsWith("/panel-turnos")) {
+  if (pathname?.startsWith("/panel-turnos") || pathname?.startsWith("/mis-turnos")) {
     return null;
   }
 
@@ -131,8 +132,15 @@ export default function Header() {
           Karunkine
         </a>
 
-        {/* Desktop nav */}
-        <nav className="hidden md:flex md:items-center md:gap-6">
+        {/* Desktop nav — Mis turnos primero y destacado */}
+        <nav className="hidden md:flex md:items-center md:gap-5">
+          <Link
+            href="/mis-turnos"
+            prefetch
+            className="shrink-0 rounded-full bg-white px-4 py-2 text-sm font-bold text-[#963417] shadow-[0_4px_16px_rgba(0,0,0,0.18)] ring-2 ring-white/90 transition hover:bg-amber-50 hover:brightness-[1.02] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+          >
+            Mis turnos
+          </Link>
           {NAV_LINKS.map(({ href, label }) => (
             <a
               key={href + label}
@@ -196,6 +204,21 @@ export default function Header() {
                 </button>
               </div>
               <div className="flex flex-col pb-8 pt-4">
+                <Link
+                  href="/mis-turnos"
+                  prefetch
+                  onClick={() => closeMenu()}
+                  className="mx-4 mb-3 flex items-center justify-center gap-2 rounded-2xl bg-[#963417] px-5 py-4 text-center text-base font-bold text-white shadow-[0_8px_24px_rgba(150,52,23,0.45)] ring-2 ring-[#963417]/30 transition hover:bg-[#a8431c] hover:shadow-lg active:scale-[0.99]"
+                >
+                  <svg className="h-5 w-5 shrink-0 opacity-95" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5a2.25 2.25 0 002.25-2.25m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5a2.25 2.25 0 012.25 2.25v7.5"
+                    />
+                  </svg>
+                  Mis turnos
+                </Link>
                 {NAV_LINKS.map(({ href, label }) => (
                   <a
                     key={href + label}

@@ -33,6 +33,7 @@ export async function ensureReservaPaymentIndexes(db: Db): Promise<void> {
   await db.collection("turnos").createIndex({ externalReference: 1 }, { unique: true, sparse: true });
   await db.collection("turnos").createIndex({ estado: 1, paymentExpiresAt: 1 });
   await db.collection("turnos").createIndex({ "citas.dateKey": 1 }, { sparse: true, name: "turnos_citas_dateKey" });
+  await db.collection("turnos").createIndex({ celularDigits: 1 }, { sparse: true, name: "turnos_celularDigits" });
   await ensureTurnoBlockingSlotUniqueIndex(db);
   await db.collection("mp_webhook_events").createIndex({ receivedAt: -1 });
   ensured = true;

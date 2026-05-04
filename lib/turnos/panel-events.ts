@@ -84,6 +84,13 @@ function tipoLabel(tipo: string): string {
   return tipo;
 }
 
+const DATE_KEY_YMD = /^\d{4}-\d{2}-\d{2}$/;
+
+function isValidCitaForPanel(c: CitaDoc | undefined): c is CitaDoc {
+  if (!c?.dateKey || c.timeLocal == null) return false;
+  return DATE_KEY_YMD.test(String(c.dateKey).trim());
+}
+
 export function expandTurnoToPanelEventos(
   row: Record<string, unknown> & { _id: ObjectId },
 ): PanelCalendarioEvento[] {
@@ -95,12 +102,14 @@ export function expandTurnoToPanelEventos(
   const notaInterna = String(row.notaInterna ?? "");
   const modalidad = row.modalidad === "consulta_individual" ? "consulta_individual" : "grupal";
   const rawCitas = row.citas as CitaDoc[] | undefined;
+  const fromDoc =
+    Array.isArray(rawCitas) && rawCitas.length > 0 ? rawCitas.filter((c) => isValidCitaForPanel(c)) : [];
   const citas =
-    Array.isArray(rawCitas) && rawCitas.length > 0
-      ? rawCitas
+    fromDoc.length > 0
+      ? fromDoc
       : (() => {
           const one = legacyPreviewCita(row as { modalidad?: string; horario?: string; horarioEvaluacion?: string });
-          return one ? [one] : [];
+          return one && isValidCitaForPanel(one) ? [one] : [];
         })();
 
   return citas.map((c, idx) => ({

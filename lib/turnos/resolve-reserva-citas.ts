@@ -18,7 +18,7 @@ import {
 import {
   assertIndividualSlotMatchesTemplate,
   grupalBandFree,
-  isGrupalHorarioGloballyTaken,
+  isGrupalBandaSinCupo,
   isSlotFreePublic,
   loadOccupiedSlotKeysGlobal,
 } from "./wanda-occupancy";
@@ -149,11 +149,12 @@ export async function resolveCitasForReserva(
   }
   const horG = input.horario as HorarioGrupalId;
 
-  if (await isGrupalHorarioGloballyTaken(db, horG)) {
+  if (await isGrupalBandaSinCupo(db, horG)) {
     return {
       ok: false,
-      error: "Esa franja de clases grupales ya tiene una reserva activa.",
-      code: "GRUPAL_TAKEN",
+      error:
+        "Esa franja de clases grupales ya completó el cupo máximo de reservas activas. Probá otra franja u horario.",
+      code: "GRUPAL_BAND_FULL",
     };
   }
 
