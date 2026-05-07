@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { ReservaHuecosCalendario, type HuecoSeleccionado } from "../../components/ReservaHuecosCalendario";
@@ -27,6 +27,21 @@ const iconChevronDown = (
   </svg>
 );
 
+type FieldErrorMap = Partial<Record<string, string>>;
+
+function firstFieldErrorsFromApi(details: unknown): FieldErrorMap {
+  if (!details || typeof details !== "object") return {};
+  const raw = details as { fieldErrors?: Record<string, unknown> };
+  if (!raw.fieldErrors || typeof raw.fieldErrors !== "object") return {};
+  const out: FieldErrorMap = {};
+  for (const [key, value] of Object.entries(raw.fieldErrors)) {
+    if (!Array.isArray(value) || value.length === 0) continue;
+    const first = value[0];
+    if (typeof first === "string" && first.trim()) out[key] = first.trim();
+  }
+  return out;
+}
+
 export function PanelNuevoTurnoClient() {
   const router = useRouter();
   const [nombre, setNombre] = useState("");
@@ -45,6 +60,8 @@ export function PanelNuevoTurnoClient() {
   const [notaInterna, setNotaInterna] = useState("");
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<FieldErrorMap>({});
+  const evalCalendarWrapRef = useRef<HTMLDivElement | null>(null);
 
   const esIndividual = modalidad === "consulta_individual";
   const esGrupal = modalidad === "grupal";
@@ -89,11 +106,63 @@ export function PanelNuevoTurnoClient() {
     };
   }, [esGrupal, horarioGrupal]);
 
+  useEffect(() => {
+    const evaluacionAbierta =
+      esGrupal &&
+      agregarEvaluacionGrupal &&
+      Boolean(horarioGrupal) &&
+      (formatoEvaluacion === "presencial" || formatoEvaluacion === "virtual");
+    if (!evaluacionAbierta) return;
+    const doScroll = () => {
+      const scroller = document.scrollingElement ?? document.documentElement;
+      const maxTop = Math.max(
+        scroller.scrollHeight,
+        document.documentElement.scrollHeight,
+        document.body.scrollHeight,
+      );
+      window.scrollTo({ top: maxTop, behavior: "smooth" });
+    };
+    window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(doScroll);
+    });
+    const t = window.setTimeout(doScroll, 140);
+    return () => window.clearTimeout(t);
+  }, [agregarEvaluacionGrupal, esGrupal, formatoEvaluacion, horarioGrupal]);
+
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setMsg(null);
+    setFieldErrors({});
     setBusy(true);
     try {
+      const nextErrors: FieldErrorMap = {};
+      const cleanNombre = nombre.trim();
+      const cleanMail = mail.trim();
+      const cleanCelular = celular.trim();
+      if (cleanNombre.length < 3) nextErrors.nombre = "Ingresá nombre y apellido (mínimo 3 caracteres).";
+      if (cleanMail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanMail)) {
+        nextErrors.mail = "Ingresá un mail válido o dejalo vacío.";
+      }
+      if (cleanCelular.length < 8) nextErrors.celular = "Ingresá un celular válido.";
+      if (!motivo) nextErrors.motivo = "Elegí un motivo.";
+      if (!modalidad) nextErrors.modalidad = "Elegí una modalidad.";
+      if (modalidad === "consulta_individual") {
+        if (!formatoConsulta) nextErrors.formatoConsulta = "Elegí el formato de consulta.";
+        if (!huecoIndividual) nextErrors.principalSlot = "Elegí día y horario de consulta.";
+      }
+      if (modalidad === "grupal") {
+        if (!horarioGrupal) nextErrors.horario = "Elegí una franja grupal.";
+        if (agregarEvaluacionGrupal) {
+          if (!formatoEvaluacion) nextErrors.formatoEvaluacion = "Elegí el formato de evaluación.";
+          if (!huecoEvalGrupal) nextErrors.evalSlot = "Elegí día y horario de evaluación.";
+        }
+      }
+      if (Object.keys(nextErrors).length > 0) {
+        setFieldErrors(nextErrors);
+        setMsg("Revisá los campos marcados.");
+        return;
+      }
+
       const payload =
         esIndividual && huecoIndividual
           ? {
@@ -149,12 +218,21 @@ export function PanelNuevoTurnoClient() {
         credentials: "same-origin",
         body: JSON.stringify(payload),
       });
-      const data = (await res.json().catch(() => ({}))) as { error?: string };
+      const data = (await res.json().catch(() => ({}))) as {
+        error?: string;
+        details?: unknown;
+      };
       if (!res.ok) {
-        setMsg(data.error ?? "No se pudo crear el turno.");
+        const apiFieldErrors = firstFieldErrorsFromApi(data.details);
+        if (Object.keys(apiFieldErrors).length > 0) {
+          setFieldErrors(apiFieldErrors);
+          setMsg("Revisá los campos marcados.");
+        } else {
+          setMsg(data.error ?? "No se pudo crear el turno.");
+        }
         return;
       }
-      router.push("/panel-turnos");
+      router.push("/panel-turnos?creado=1");
       router.refresh();
     } catch {
       setMsg("Error de red.");
@@ -164,19 +242,22 @@ export function PanelNuevoTurnoClient() {
   }
 
   return (
-    <section className="rounded-[28px] border border-white/10 bg-[var(--panel-surface)] p-5 shadow-[0_18px_45px_rgba(0,0,0,0.38)]">
-      <h1 className="text-lg font-semibold text-[var(--brand-accent-v1)]">Nuevo turno manual</h1>
+    <section className="panel-light-theme rounded-[28px] border border-black/10 bg-[var(--panel-surface)] p-5 shadow-[0_14px_32px_rgba(17,24,39,0.14)]">
+      <h1 className="text-lg font-semibold text-[var(--brand-cream)]/95">Nuevo turno manual</h1>
       <p className="mt-1 text-xs text-[var(--brand-cream)]/60">Alta directa sin pago (confirmado en el momento).</p>
 
       <form className="mt-4 space-y-3" onSubmit={onSubmit}>
-        <input value={nombre} onChange={(e) => setNombre(e.target.value)} placeholder="Nombre y apellido" className="w-full rounded-xl border border-white/15 bg-[var(--panel-input)] px-3 py-2 text-sm text-[var(--brand-cream)] outline-none" />
-        <input value={mail} onChange={(e) => setMail(e.target.value)} placeholder="Mail" type="email" className="w-full rounded-xl border border-white/15 bg-[var(--panel-input)] px-3 py-2 text-sm text-[var(--brand-cream)] outline-none" />
-        <input value={celular} onChange={(e) => setCelular(e.target.value)} placeholder="Celular" className="w-full rounded-xl border border-white/15 bg-[var(--panel-input)] px-3 py-2 text-sm text-[var(--brand-cream)] outline-none" />
+        <input value={nombre} onChange={(e) => setNombre(e.target.value)} placeholder="Nombre y apellido" className="w-full rounded-xl border border-black/15 bg-[var(--panel-input)] px-3 py-2 text-sm text-[var(--brand-cream)] outline-none" />
+        {fieldErrors.nombre ? <p className="text-xs text-red-700">{fieldErrors.nombre}</p> : null}
+        <input value={mail} onChange={(e) => setMail(e.target.value)} placeholder="Mail (opcional)" type="email" className="w-full rounded-xl border border-black/15 bg-[var(--panel-input)] px-3 py-2 text-sm text-[var(--brand-cream)] outline-none" />
+        {fieldErrors.mail ? <p className="text-xs text-red-700">{fieldErrors.mail}</p> : null}
+        <input value={celular} onChange={(e) => setCelular(e.target.value)} placeholder="Celular" className="w-full rounded-xl border border-black/15 bg-[var(--panel-input)] px-3 py-2 text-sm text-[var(--brand-cream)] outline-none" />
+        {fieldErrors.celular ? <p className="text-xs text-red-700">{fieldErrors.celular}</p> : null}
         <div className="relative">
           <select
             value={motivo}
             onChange={(e) => setMotivo(e.target.value)}
-            className={`w-full appearance-none rounded-xl border border-white/15 bg-[var(--panel-input)] px-3 py-2 pr-10 text-sm outline-none ${
+            className={`w-full appearance-none rounded-xl border border-black/15 bg-[var(--panel-input)] px-3 py-2 pr-10 text-sm outline-none ${
               motivo ? "text-[var(--brand-cream)]" : "text-[var(--brand-cream)]/55"
             }`}
           >
@@ -189,6 +270,7 @@ export function PanelNuevoTurnoClient() {
             {iconChevronDown}
           </span>
         </div>
+        {fieldErrors.motivo ? <p className="text-xs text-red-700">{fieldErrors.motivo}</p> : null}
         <div className="relative">
           <select
             value={modalidad}
@@ -202,7 +284,7 @@ export function PanelNuevoTurnoClient() {
               setFormatoConsulta("");
               setFormatoEvaluacion("");
             }}
-            className={`w-full appearance-none rounded-xl border border-white/15 bg-[var(--panel-input)] px-3 py-2 pr-10 text-sm outline-none ${
+            className={`w-full appearance-none rounded-xl border border-black/15 bg-[var(--panel-input)] px-3 py-2 pr-10 text-sm outline-none ${
               modalidad ? "text-[var(--brand-cream)]" : "text-[var(--brand-cream)]/55"
             }`}
           >
@@ -214,11 +296,12 @@ export function PanelNuevoTurnoClient() {
             {iconChevronDown}
           </span>
         </div>
+        {fieldErrors.modalidad ? <p className="text-xs text-red-700">{fieldErrors.modalidad}</p> : null}
 
         {esIndividual && (
           <>
             <div className="relative">
-              <select value={formatoConsulta} onChange={(e) => setFormatoConsulta(e.target.value as "presencial" | "virtual" | "")} className={`w-full appearance-none rounded-xl border border-white/15 bg-[var(--panel-input)] px-3 py-2 pr-10 text-sm outline-none ${formatoConsulta ? "text-[var(--brand-cream)]" : "text-[var(--brand-cream)]/55"}`}>
+              <select value={formatoConsulta} onChange={(e) => setFormatoConsulta(e.target.value as "presencial" | "virtual" | "")} className={`w-full appearance-none rounded-xl border border-black/15 bg-[var(--panel-input)] px-3 py-2 pr-10 text-sm outline-none ${formatoConsulta ? "text-[var(--brand-cream)]" : "text-[var(--brand-cream)]/55"}`}>
                 <option value="" disabled hidden>Formato de consulta</option>
                 <option value="presencial">Presencial</option>
                 <option value="virtual">Virtual</option>
@@ -227,14 +310,16 @@ export function PanelNuevoTurnoClient() {
                 {iconChevronDown}
               </span>
             </div>
+            {fieldErrors.formatoConsulta ? <p className="text-xs text-red-700">{fieldErrors.formatoConsulta}</p> : null}
             {(formatoConsulta === "presencial" || formatoConsulta === "virtual") && (
               <ReservaHuecosCalendario
                 mode="individual"
-                accentColor="#D3A24C"
+                accentColor="#4F7CAC"
                 titulo="Elegí día y horario"
                 onSeleccion={(h) => setHuecoIndividual(h)}
               />
             )}
+            {fieldErrors.principalSlot ? <p className="text-xs text-red-700">{fieldErrors.principalSlot}</p> : null}
           </>
         )}
 
@@ -244,7 +329,7 @@ export function PanelNuevoTurnoClient() {
               <select value={horarioGrupal} onChange={(e) => {
                 setHorarioGrupal(e.target.value);
                 setHuecoEvalGrupal(null);
-              }} disabled={horariosGrupalLoading || opcionesGrupalDisponibles.length === 0} className={`w-full appearance-none rounded-xl border border-white/15 bg-[var(--panel-input)] px-3 py-2 pr-10 text-sm outline-none disabled:opacity-60 ${horarioGrupal ? "text-[var(--brand-cream)]" : "text-[var(--brand-cream)]/55"}`}>
+              }} disabled={horariosGrupalLoading || opcionesGrupalDisponibles.length === 0} className={`w-full appearance-none rounded-xl border border-black/15 bg-[var(--panel-input)] px-3 py-2 pr-10 text-sm outline-none disabled:opacity-60 ${horarioGrupal ? "text-[var(--brand-cream)]" : "text-[var(--brand-cream)]/55"}`}>
                 <option value="" disabled hidden>
                   {horariosGrupalLoading ? "Cargando franjas..." : "Elegir franja grupal"}
                 </option>
@@ -256,12 +341,13 @@ export function PanelNuevoTurnoClient() {
                 {iconChevronDown}
               </span>
             </div>
+            {fieldErrors.horario ? <p className="text-xs text-red-700">{fieldErrors.horario}</p> : null}
             {!horariosGrupalLoading && opcionesGrupalDisponibles.length === 0 && (
               <p className="text-xs text-[var(--brand-cream)]/60">
                 No hay franjas grupales disponibles en este momento.
               </p>
             )}
-            <label className="flex items-start gap-3 rounded-xl border border-white/10 bg-black/15 px-3 py-2.5">
+            <label className="flex items-start gap-3 rounded-xl border border-black/10 bg-black/[0.03] px-3 py-2.5">
               <input
                 type="checkbox"
                 checked={agregarEvaluacionGrupal}
@@ -273,7 +359,7 @@ export function PanelNuevoTurnoClient() {
                     setHuecoEvalGrupal(null);
                   }
                 }}
-                className="mt-0.5 h-4 w-4 rounded border-white/20 accent-[var(--brand-ui-primary)]"
+                className="mt-0.5 h-4 w-4 rounded border-black/20 accent-[var(--brand-ui-primary)]"
               />
               <span className="text-sm text-[var(--brand-cream)]/85">
                 Agregar evaluación individual (opcional)
@@ -282,7 +368,7 @@ export function PanelNuevoTurnoClient() {
             {agregarEvaluacionGrupal && (
               <>
                 <div className="relative">
-                  <select value={formatoEvaluacion} onChange={(e) => setFormatoEvaluacion(e.target.value as "presencial" | "virtual" | "")} className={`w-full appearance-none rounded-xl border border-white/15 bg-[var(--panel-input)] px-3 py-2 pr-10 text-sm outline-none ${formatoEvaluacion ? "text-[var(--brand-cream)]" : "text-[var(--brand-cream)]/55"}`}>
+                  <select value={formatoEvaluacion} onChange={(e) => setFormatoEvaluacion(e.target.value as "presencial" | "virtual" | "")} className={`w-full appearance-none rounded-xl border border-black/15 bg-[var(--panel-input)] px-3 py-2 pr-10 text-sm outline-none ${formatoEvaluacion ? "text-[var(--brand-cream)]" : "text-[var(--brand-cream)]/55"}`}>
                     <option value="" disabled hidden>Formato de evaluación</option>
                     <option value="presencial">Presencial</option>
                     <option value="virtual">Virtual</option>
@@ -291,15 +377,19 @@ export function PanelNuevoTurnoClient() {
                     {iconChevronDown}
                   </span>
                 </div>
+                {fieldErrors.formatoEvaluacion ? <p className="text-xs text-red-700">{fieldErrors.formatoEvaluacion}</p> : null}
                 {horarioGrupal && (formatoEvaluacion === "presencial" || formatoEvaluacion === "virtual") && (
-                  <ReservaHuecosCalendario
-                    mode="grupal-eval"
-                    horarioGrupalId={horarioGrupal}
-                    accentColor="#D3A24C"
-                    titulo="Elegí evaluación"
-                    onSeleccion={(h) => setHuecoEvalGrupal(h)}
-                  />
+                  <div ref={evalCalendarWrapRef}>
+                    <ReservaHuecosCalendario
+                      mode="grupal-eval"
+                      horarioGrupalId={horarioGrupal}
+                      accentColor="#4F7CAC"
+                      titulo="Elegí evaluación"
+                      onSeleccion={(h) => setHuecoEvalGrupal(h)}
+                    />
+                  </div>
                 )}
+                {fieldErrors.evalSlot ? <p className="text-xs text-red-700">{fieldErrors.evalSlot}</p> : null}
               </>
             )}
           </>
@@ -311,15 +401,15 @@ export function PanelNuevoTurnoClient() {
           rows={2}
           maxLength={2000}
           placeholder="Nota interna (opcional)"
-          className="max-h-32 w-full resize-y overflow-y-auto rounded-xl border border-white/15 bg-[var(--panel-input)] px-3 py-2 text-sm text-[var(--brand-cream)] outline-none"
+          className="max-h-32 w-full resize-y overflow-y-auto rounded-xl border border-black/15 bg-[var(--panel-input)] px-3 py-2 text-sm text-[var(--brand-cream)] outline-none"
         />
 
-        {msg && <p className="text-sm text-red-300">{msg}</p>}
+        {msg && <p className="text-sm text-red-700">{msg}</p>}
 
         <button
           type="submit"
           disabled={busy}
-          className="w-full rounded-2xl bg-gradient-to-br from-[var(--brand-ui-primary)] to-[var(--brand-accent-v1)] py-3 text-sm font-semibold text-white disabled:opacity-50"
+          className="w-full rounded-2xl bg-[var(--brand-ui-primary)] py-3 text-sm font-semibold text-[var(--color-primary-contrast)] disabled:opacity-50"
         >
           {busy ? "Guardando..." : "Crear turno confirmado"}
         </button>

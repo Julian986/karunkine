@@ -29,7 +29,7 @@ const slotObj = z.object({
 const crearManualSchema = z
   .object({
     nombre: z.string().trim().min(3).max(80),
-    mail: z.string().trim().email(),
+    mail: z.union([z.literal(""), z.string().trim().email()]),
     celular: z.string().trim().min(8).max(30),
     motivo: z.string().trim().min(1),
     modalidad: z.enum(["grupal", "consulta_individual"]),

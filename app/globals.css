@@ -13,11 +13,34 @@
   --brand-ui-primary: #d7a44e;
   --brand-cream: #f1f4f8;
 
-  /* Panel privado: superficies oscuras sobre la misma gama cálida */
-  --panel-bg: #0c111b;
-  --panel-surface: #151c28;
-  --panel-surface-hover: #1d2634;
-  --panel-input: #101722;
+  /* Tokens unificados de marca (base cálida para home + panel) */
+  --color-app-bg: #963417;
+  --color-surface-1: #3f1e12;
+  --color-surface-2: #4d2716;
+  --color-surface-3: #3a2f2a;
+  --color-text-primary: #f1f4f8;
+  --color-text-muted: #d7c3a0;
+  --color-primary: #d7a44e;
+  --color-primary-contrast: #1f120a;
+  --color-accent-1: #c89b52;
+  --color-accent-2: #8a5f2a;
+
+  /* Compatibilidad con variables actuales del panel */
+  --panel-bg: #963417;
+  --panel-surface: var(--color-surface-1);
+  --panel-surface-hover: var(--color-surface-2);
+  --panel-input: var(--color-surface-3);
+}
+
+/* Tema claro local para pantallas internas del panel (sin tocar toda la app). */
+.panel-light-theme {
+  --brand-cream: #1f2937;
+  --brand-ui-primary: #4f7cac;
+  --color-primary-contrast: #ffffff;
+  --panel-page-bg: #e3d3b4;
+  --panel-surface: #f8fafc;
+  --panel-surface-hover: #f1f5f9;
+  --panel-input: #ffffff;
 }
 
 @theme inline {

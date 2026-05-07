@@ -339,12 +339,12 @@ export function PanelBloqueoClient() {
   }
 
   return (
-    <div className="space-y-5">
+    <div className="panel-light-theme space-y-5">
       <section
         ref={consultaIndividualSectionRef}
-        className="rounded-[28px] border border-white/10 bg-[var(--panel-surface)] p-5 shadow-[0_18px_45px_rgba(0,0,0,0.38)]"
+        className="rounded-[28px] border border-black/10 bg-[var(--panel-surface)] p-5 shadow-[0_14px_32px_rgba(17,24,39,0.14)]"
       >
-        <h1 className="text-lg font-semibold text-[var(--brand-accent-v1)]">Gestionar cupo grupal</h1>
+        <h1 className="text-lg font-semibold text-[var(--brand-cream)]/95">Gestionar cupo grupal</h1>
         <p className="mt-1 text-xs text-[var(--brand-cream)]/55">
           Cerrá una franja cuando ya no quieras tomar más reservas web.
         </p>
@@ -353,7 +353,7 @@ export function PanelBloqueoClient() {
             <select
               value={grupalHorario}
               onChange={(e) => setGrupalHorario(e.target.value)}
-              className={`w-full appearance-none rounded-xl border border-white/15 bg-[var(--panel-input)] px-3 py-2 pr-10 text-sm outline-none ${
+              className={`w-full appearance-none rounded-xl border border-black/15 bg-[var(--panel-input)] px-3 py-2 pr-10 text-sm outline-none ${
                 grupalHorario ? "text-[var(--brand-cream)]" : "text-[var(--brand-cream)]/55"
               }`}
             >
@@ -384,7 +384,7 @@ export function PanelBloqueoClient() {
                 value={grupalNota}
                 onChange={(e) => setGrupalNota(e.target.value)}
                 rows={2}
-                className="mt-1 w-full resize-none rounded-xl border border-white/15 bg-[var(--panel-input)] px-3 py-2 text-sm text-[var(--brand-cream)] outline-none"
+                className="mt-1 w-full resize-none rounded-xl border border-black/15 bg-[var(--panel-input)] px-3 py-2 text-sm text-[var(--brand-cream)] outline-none"
                 placeholder="Ej: cupo completo por pacientes regulares"
               />
             </label>
@@ -392,7 +392,7 @@ export function PanelBloqueoClient() {
           <button
             type="submit"
             disabled={grupalBusy || !grupalHorario}
-            className="mt-2 rounded-2xl bg-gradient-to-br from-[var(--brand-ui-primary)] to-[var(--brand-accent-v1)] py-3 text-sm font-semibold text-white shadow-lg disabled:opacity-50"
+            className="mt-2 rounded-2xl bg-[var(--brand-ui-primary)] py-3 text-sm font-semibold text-[var(--color-primary-contrast)] shadow-lg disabled:opacity-50"
           >
             {grupalBusy ? "Guardando…" : "Cerrar franja"}
           </button>
@@ -400,15 +400,15 @@ export function PanelBloqueoClient() {
         </form>
       </section>
 
-      <section className="rounded-[28px] border border-white/10 bg-[var(--panel-surface)] p-5 shadow-[0_18px_45px_rgba(0,0,0,0.38)]">
-        <h2 className="text-base font-semibold text-[var(--brand-accent-v1)]">
+      <section className="rounded-[28px] border border-black/10 bg-[var(--panel-surface)] p-5 shadow-[0_14px_32px_rgba(17,24,39,0.14)]">
+        <h2 className="text-base font-semibold text-[var(--brand-cream)]/95">
           Bloqueos activos ({bloqueosActivosTotal})
         </h2>
         <p className="mt-2 text-xs text-[var(--brand-cream)]/60">
           Revisá y reabrí bloqueos de grupal o de consulta individual.
         </p>
 
-        <div className="mt-4 rounded-2xl border border-white/10 bg-black/10 p-3.5">
+        <div className="mt-4 rounded-2xl border border-black/10 bg-black/[0.03] p-3.5">
           <h3 className="text-sm font-semibold text-[var(--brand-cream)]/95">
             Franjas grupales cerradas ({franjasCerradas.length})
           </h3>
@@ -424,7 +424,7 @@ export function PanelBloqueoClient() {
                 return (
                   <div
                     key={h.value}
-                    className="flex items-start justify-between gap-3 rounded-xl border border-white/10 bg-[var(--panel-input)] px-3 py-2.5"
+                    className="flex items-start justify-between gap-3 rounded-xl border border-black/10 bg-[var(--panel-input)] px-3 py-2.5"
                   >
                     <div className="min-w-0">
                       <p className="text-sm font-semibold text-[var(--brand-cream)]">{h.label}</p>
@@ -435,7 +435,7 @@ export function PanelBloqueoClient() {
                       type="button"
                       onClick={() => void desbloquearFranjaGrupal(h.value)}
                       disabled={grupalBusy}
-                      className="shrink-0 rounded-xl border border-red-300/45 px-2.5 py-1.5 text-xs font-semibold text-red-200 disabled:opacity-50"
+                      className="shrink-0 rounded-xl border border-emerald-300 bg-emerald-50 px-2.5 py-1.5 text-xs font-semibold text-emerald-700 transition-colors hover:bg-emerald-100 disabled:opacity-50"
                     >
                       Reabrir
                     </button>
@@ -446,7 +446,7 @@ export function PanelBloqueoClient() {
           )}
         </div>
 
-        <div className="mt-4 rounded-2xl border border-white/10 bg-black/10 p-3.5">
+        <div className="mt-4 rounded-2xl border border-black/10 bg-black/[0.03] p-3.5">
           <h3 className="text-sm font-semibold text-[var(--brand-cream)]/95">
             Consulta individual bloqueada ({agendaRows.length})
           </h3>
@@ -460,7 +460,7 @@ export function PanelBloqueoClient() {
               {agendaRows.map((b) => (
                 <div
                   key={b.id}
-                  className="flex items-start justify-between gap-3 rounded-xl border border-white/10 bg-[var(--panel-input)] px-3 py-2.5"
+                  className="flex items-start justify-between gap-3 rounded-xl border border-black/10 bg-[var(--panel-input)] px-3 py-2.5"
                 >
                   <div className="min-w-0">
                     <p className="text-sm font-semibold text-[var(--brand-cream)]">
@@ -478,7 +478,7 @@ export function PanelBloqueoClient() {
                     type="button"
                     onClick={() => void desbloquearBloqueoAgenda(b.id)}
                     disabled={busy}
-                    className="shrink-0 rounded-xl border border-red-300/45 px-2.5 py-1.5 text-xs font-semibold text-red-200 disabled:opacity-50"
+                    className="shrink-0 rounded-xl border border-emerald-300 bg-emerald-50 px-2.5 py-1.5 text-xs font-semibold text-emerald-700 transition-colors hover:bg-emerald-100 disabled:opacity-50"
                   >
                     Reabrir
                   </button>
@@ -489,24 +489,24 @@ export function PanelBloqueoClient() {
         </div>
       </section>
 
-      <section className="rounded-[28px] border border-white/10 bg-[var(--panel-surface)] p-5 shadow-[0_18px_45px_rgba(0,0,0,0.38)]">
+      <section className="rounded-[28px] border border-black/10 bg-[var(--panel-surface)] p-5 shadow-[0_14px_32px_rgba(17,24,39,0.14)]">
         <button
           type="button"
           onClick={() => setMostrarAgendaAvanzada((v) => !v)}
           className="flex w-full items-center justify-between text-left"
         >
-          <span className="text-base font-semibold text-[var(--brand-accent-v1)]">Consulta individual</span>
+          <span className="text-base font-semibold text-[var(--brand-cream)]/95">Consulta individual</span>
           <span className="text-xs text-[var(--brand-cream)]/65">
             {mostrarAgendaAvanzada ? "Ocultar" : "Bloquear horario puntual"}
           </span>
         </button>
         {mostrarAgendaAvanzada ? (
-          <form className="mt-4 flex flex-col gap-3 border-t border-white/10 pt-4" onSubmit={handleSubmit}>
+          <form className="mt-4 flex flex-col gap-3 border-t border-black/10 pt-4" onSubmit={handleSubmit}>
             <div ref={calendarWrapRef} className="relative">
               <button
                 type="button"
                 onClick={toggleCalendar}
-                className="mt-1 flex w-full items-center justify-between rounded-xl border border-white/15 bg-[var(--panel-input)] px-3 py-2 text-sm text-[var(--brand-cream)] outline-none"
+                className="mt-1 flex w-full items-center justify-between rounded-xl border border-black/15 bg-[var(--panel-input)] px-3 py-2 text-sm text-[var(--brand-cream)] outline-none"
               >
                 <span className={anchorDateKey ? "text-[var(--brand-cream)]" : "text-[var(--brand-cream)]/55"}>
                   {anchorDateKey ? formatDateLabel(anchorDateKey) : "Elegir fecha"}
@@ -514,12 +514,12 @@ export function PanelBloqueoClient() {
                 <span className="text-xs text-[var(--brand-cream)]/60">{calendarOpen ? "Cerrar" : null}</span>
               </button>
               {calendarOpen ? (
-                <div className="absolute z-20 mt-2 w-full rounded-2xl border border-white/10 bg-[var(--panel-surface)] p-3 shadow-[0_14px_30px_rgba(0,0,0,0.45)]">
+                <div className="absolute z-20 mt-2 w-full rounded-2xl border border-black/10 bg-[var(--panel-surface)] p-3 shadow-[0_12px_26px_rgba(17,24,39,0.16)]">
                   <div className="mb-2 flex items-center justify-between">
                     <button
                       type="button"
                       onClick={prevCalMonth}
-                      className="rounded-lg px-2 py-1 text-sm text-[var(--brand-cream)]/70 hover:bg-white/5"
+                      className="rounded-lg px-2 py-1 text-sm text-[var(--brand-cream)]/70 hover:bg-black/5"
                       aria-label="Mes anterior"
                     >
                       {"<"}
@@ -530,7 +530,7 @@ export function PanelBloqueoClient() {
                     <button
                       type="button"
                       onClick={nextCalMonth}
-                      className="rounded-lg px-2 py-1 text-sm text-[var(--brand-cream)]/70 hover:bg-white/5"
+                      className="rounded-lg px-2 py-1 text-sm text-[var(--brand-cream)]/70 hover:bg-black/5"
                       aria-label="Mes siguiente"
                     >
                       {">"}
@@ -567,7 +567,7 @@ export function PanelBloqueoClient() {
                                 ? "opacity-35"
                                 : selected
                                   ? "bg-[var(--brand-ui-primary)] text-black"
-                                  : "hover:bg-white/5",
+                                  : "hover:bg-black/5",
                             ].join(" ")}
                           >
                             {cell.day}
@@ -583,7 +583,7 @@ export function PanelBloqueoClient() {
               <select
                 value={timeLocal}
                 onChange={(e) => setTimeLocal(e.target.value.trim())}
-                className={`w-full appearance-none rounded-xl border border-white/15 bg-[var(--panel-input)] px-3 py-2 pr-10 text-sm outline-none focus:border-[var(--brand-ui-primary)] ${
+              className={`w-full appearance-none rounded-xl border border-black/15 bg-[var(--panel-input)] px-3 py-2 pr-10 text-sm outline-none focus:border-black/40 ${
                   timeLocal ? "text-[var(--brand-cream)]" : "text-[var(--brand-cream)]/55"
                 }`}
               >
@@ -605,12 +605,12 @@ export function PanelBloqueoClient() {
               onChange={(e) => setNotes(e.target.value)}
               rows={2}
               placeholder="Nota interna"
-              className="mt-1 w-full resize-none rounded-xl border border-white/15 bg-[var(--panel-input)] px-3 py-2 text-sm text-[var(--brand-cream)] outline-none"
+              className="mt-1 w-full resize-none rounded-xl border border-black/15 bg-[var(--panel-input)] px-3 py-2 text-sm text-[var(--brand-cream)] outline-none"
             />
             <button
               type="submit"
               disabled={busy || opcionesHoraConsulta.length === 0 || !timeLocal}
-              className="mt-2 rounded-2xl bg-gradient-to-br from-[var(--brand-ui-primary)] to-[var(--brand-accent-v1)] py-3 text-sm font-semibold text-white shadow-lg disabled:opacity-50"
+              className="mt-2 rounded-2xl bg-[var(--brand-ui-primary)] py-3 text-sm font-semibold text-[var(--color-primary-contrast)] shadow-lg disabled:opacity-50"
             >
               {busy ? "Guardando…" : "Bloquear horario"}
             </button>

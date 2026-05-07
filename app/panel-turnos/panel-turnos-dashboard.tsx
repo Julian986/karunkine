@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import {
   agendaBlockAppliesToDateKey,
@@ -252,6 +252,9 @@ export function PanelTurnosDashboard() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const reprogramadoOk = searchParams.get("reprogramado") === "1";
+  const creadoOk = searchParams.get("creado") === "1";
+  const [toastMsg, setToastMsg] = useState<string | null>(null);
+  const toastHandledRef = useRef(false);
   const now = useMemo(() => new Date(), []);
   const [year, setYear] = useState(now.getFullYear());
   const [month, setMonth] = useState(now.getMonth() + 1);
@@ -289,6 +292,29 @@ export function PanelTurnosDashboard() {
   useEffect(() => {
     setEdicionEventoId(null);
   }, [selectedKey, year, month]);
+
+  useEffect(() => {
+    if (toastHandledRef.current) return;
+    const msg = creadoOk
+      ? "Turno agregado correctamente."
+      : reprogramadoOk
+        ? "Turno reprogramado. La agenda ya refleja el nuevo horario."
+        : null;
+    if (!msg) return;
+    toastHandledRef.current = true;
+    setToastMsg(msg);
+    window.history.replaceState({}, "", "/panel-turnos");
+  }, [creadoOk, reprogramadoOk]);
+
+  useEffect(() => {
+    if (!toastMsg) return;
+    const hideTimer = window.setTimeout(() => {
+      setToastMsg(null);
+    }, 2600);
+    return () => {
+      window.clearTimeout(hideTimer);
+    };
+  }, [toastMsg]);
 
   useEffect(() => {
     let alive = true;
@@ -439,6 +465,16 @@ export function PanelTurnosDashboard() {
 
   return (
     <div className="min-h-screen bg-[var(--panel-bg)] pb-24 text-[var(--brand-cream)]/92">
+      {toastMsg ? (
+        <div className="pointer-events-none fixed inset-x-0 top-20 z-50 flex justify-center px-4">
+          <div
+            role="status"
+            className="rounded-2xl border border-emerald-400/40 bg-emerald-950/90 px-4 py-3 text-center text-[14px] font-semibold leading-snug text-emerald-100 shadow-[0_16px_40px_rgba(6,78,59,0.35)]"
+          >
+            {toastMsg}
+          </div>
+        </div>
+      ) : null}
       <div className="mx-auto max-w-md px-4 font-medium">
         <header className="flex items-start justify-between gap-4 pt-6 pb-1">
           <div className="flex items-center gap-3">
@@ -467,15 +503,6 @@ export function PanelTurnosDashboard() {
             </Link>
           </div>
         </header>
-
-        {reprogramadoOk ? (
-          <div
-            role="status"
-            className="mt-4 rounded-2xl border border-emerald-400/35 bg-emerald-950/45 px-4 py-3 text-center text-[14px] font-semibold leading-snug text-emerald-100"
-          >
-            Turno reprogramado. La agenda ya refleja el nuevo horario (alineado con Mis turnos).
-          </div>
-        ) : null}
 
         <section className="mt-5 rounded-[28px] border border-white/14 bg-[var(--panel-surface)] p-4 shadow-[0_18px_45px_rgba(0,0,0,0.38)]">
           <div className="relative mb-3 flex items-center justify-center px-10">
