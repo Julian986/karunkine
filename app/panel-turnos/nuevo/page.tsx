@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { isPanelAuthenticated } from "../../../lib/panel-auth";
+import { PanelNuevoTurnoClient } from "./panel-nuevo-turno-client";
 
 export const metadata: Metadata = {
   title: "Nuevo turno | Karün",
@@ -21,14 +22,7 @@ export default async function PanelNuevoTurnoPage() {
         >
           ← Volver al panel
         </Link>
-        <section className="rounded-[28px] border border-white/10 bg-[var(--panel-surface)] p-5 shadow-[0_18px_45px_rgba(0,0,0,0.38)]">
-          <h1 className="text-lg font-semibold text-[var(--brand-accent-v1)]">Nuevo turno manual</h1>
-          <p className="mt-2 text-sm leading-relaxed text-[var(--brand-cream)]/65">
-            El alta manual con validación de cupos en el mismo flujo que la web está en desarrollo.
-            Por ahora podés registrar bloqueos de agenda o gestionar las reservas que entran por la web
-            desde el calendario y la tabla del panel.
-          </p>
-        </section>
+        <PanelNuevoTurnoClient />
       </div>
     </main>
   );

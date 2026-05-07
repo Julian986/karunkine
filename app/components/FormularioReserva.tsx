@@ -476,6 +476,8 @@ export default function FormularioReserva() {
   const [envioError, setEnvioError] = useState<string | null>(null);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [pagoError, setPagoError] = useState<string | null>(null);
+  const [horariosGrupalDisponibles, setHorariosGrupalDisponibles] = useState<string[] | null>(null);
+  const [horariosGrupalLoading, setHorariosGrupalLoading] = useState(false);
 
   const motivoTriggerRef = useRef<HTMLButtonElement>(null);
   const modalidadTriggerRef = useRef<HTMLButtonElement>(null);
@@ -597,9 +599,11 @@ export default function FormularioReserva() {
   }, []);
 
   const opcionesHorarioPrincipal = useMemo(() => {
-    if (selectedModalidad === "grupal") return HORARIOS_GRUPAL;
-    return [];
-  }, [selectedModalidad]);
+    if (selectedModalidad !== "grupal") return [];
+    if (!horariosGrupalDisponibles) return [];
+    const enabled = new Set(horariosGrupalDisponibles);
+    return HORARIOS_GRUPAL.filter((o) => enabled.has(o.value));
+  }, [selectedModalidad, horariosGrupalDisponibles]);
 
   const esGrupal = selectedModalidad === "grupal";
   const esIndividual = selectedModalidad === "consulta_individual";
@@ -805,6 +809,41 @@ export default function FormularioReserva() {
 
     return () => window.cancelAnimationFrame(id);
   }, [turnoCompleto, selectedHorario, huecoIndividual, huecoEvalGrupal]);
+
+  useEffect(() => {
+    if (selectedModalidad !== "grupal") {
+      setHorariosGrupalDisponibles(null);
+      setHorariosGrupalLoading(false);
+      return;
+    }
+    let alive = true;
+    (async () => {
+      setHorariosGrupalLoading(true);
+      try {
+        const res = await fetch("/api/reservas/disponibilidad/grupal-horarios", { cache: "no-store" });
+        const json = (await res.json().catch(() => ({}))) as { horarios?: string[] };
+        if (!alive) return;
+        const horarios = Array.isArray(json.horarios)
+          ? json.horarios.filter((h): h is string => typeof h === "string")
+          : [];
+        setHorariosGrupalDisponibles(horarios);
+        if (selectedHorario && !horarios.includes(selectedHorario)) {
+          setSelectedHorario("");
+          setSelectedHorarioEvaluacion("");
+          setSelectedFormatoEvaluacion("");
+          setHuecoEvalGrupal(null);
+        }
+      } catch {
+        if (!alive) return;
+        setHorariosGrupalDisponibles([]);
+      } finally {
+        if (alive) setHorariosGrupalLoading(false);
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [selectedModalidad]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -1226,7 +1265,11 @@ export default function FormularioReserva() {
                   <CustomPickerField
                     id="horario"
                     ariaLabel="Horario clases grupales martes y jueves"
-                    placeholder={PLACEHOLDER_HORARIO}
+                    placeholder={
+                      horariosGrupalLoading
+                        ? "Cargando franjas disponibles..."
+                        : "Horario de clases grupales (martes y jueves)"
+                    }
                     value={selectedHorario}
                     options={opcionesHorarioPrincipal}
                     isOpen={openPicker === "horario"}
@@ -1251,7 +1294,17 @@ export default function FormularioReserva() {
                     }}
                     accentColor={accentColor}
                     error={shouldShowError("horario") ? fieldErrors.horario : undefined}
+                    disabled={
+                      horariosGrupalLoading ||
+                      !horariosGrupalDisponibles ||
+                      opcionesHorarioPrincipal.length === 0
+                    }
                   />
+                )}
+                {esGrupal && !horariosGrupalLoading && horariosGrupalDisponibles !== null && opcionesHorarioPrincipal.length === 0 && (
+                  <p className="-mt-3 px-1 text-sm text-zinc-600" role="status">
+                    No hay franjas grupales disponibles por el momento.
+                  </p>
                 )}
                 {shouldShowError("horario") && fieldErrors.horario && (
                   <p className="-mt-3 px-1 text-sm font-medium text-red-600" role="alert">

@@ -41,6 +41,16 @@ export async function listWandaAgendaBlocksForMonth(
   );
 }
 
+export async function listWandaAgendaBlocksLatest(
+  db: Db,
+  limit = 120,
+): Promise<WandaAgendaBlockDoc[]> {
+  await ensureWandaAgendaBlockIndexes(db);
+  const safeLimit = Math.max(1, Math.min(500, Math.trunc(limit)));
+  const col = db.collection<WandaAgendaBlockDoc>(WANDA_AGENDA_BLOCKS_COLLECTION);
+  return col.find({}).sort({ anchorDateKey: 1, timeLocal: 1 }).limit(safeLimit).toArray();
+}
+
 export function blockToPanelShape(doc: WandaAgendaBlockDoc) {
   return {
     id: doc._id.toHexString(),

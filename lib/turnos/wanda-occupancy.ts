@@ -23,6 +23,7 @@ import {
   occupiedSlotKeysFromBlocksInMonth,
   type WandaAgendaBlockDoc,
 } from "./wanda-agenda-blocks";
+import { isWandaGrupalHorarioBloqueado } from "./wanda-grupal-bloqueos";
 
 const BLOCKING_ESTADOS = new Set([
   "pending_payment",
@@ -178,6 +179,9 @@ export async function loadOccupiedSlotKeysGlobalExcludingTurno(
 
 /** True cuando la banda grupal (`horario`) ya alcanzó el cupo máximo de reservas activas. */
 export async function isGrupalBandaSinCupo(db: Db, horarioId: string): Promise<boolean> {
+  if (await isWandaGrupalHorarioBloqueado(db, horarioId)) {
+    return true;
+  }
   const col = db.collection("turnos");
   const n = await col.countDocuments({
     estado: { $in: [...BLOCKING_ESTADOS] },

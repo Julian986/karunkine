@@ -18,7 +18,7 @@ export const HORARIOS_GRUPAL_IDS = [
 ] as const;
 
 /** Cupo máximo de personas simultáneas por franja grupal (mismo código `horario` mar/jue). */
-export const GRUPAL_CUPO_MAX_POR_BANDA = 12;
+export const GRUPAL_CUPO_MAX_POR_BANDA = 4;
 
 export const HORARIOS_INDIVIDUAL_IDS = [
   "lun_1600",

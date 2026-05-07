@@ -649,12 +649,15 @@ export function PanelTurnosDashboard() {
                           </a>
                         ) : null}
                         {canReprogramConsultaIndividual(ev) ? (
-                          <Link
-                            href={`/panel-turnos/reprogramar/${encodeURIComponent(ev.turnoId)}`}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              window.alert("Reprogramación en desarrollo. Esta funcionalidad estará disponible próximamente.");
+                            }}
                             className="inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-[var(--brand-accent-v1)]/55 bg-[var(--brand-accent-v1)]/14 px-3 py-1.5 text-[12px] font-bold text-[var(--brand-accent-v1)] ring-1 ring-[var(--brand-accent-v1)]/35 transition hover:bg-[var(--brand-accent-v1)]/24"
                           >
                             Reprogramar
-                          </Link>
+                          </button>
                         ) : null}
                         <button
                           type="button"

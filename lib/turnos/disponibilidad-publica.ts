@@ -4,6 +4,7 @@ import { buildPanelMonthGrid } from "../booking/panel-month-grid";
 import {
   eachIndividualOccurrenceFrom,
   formatDisplayFechaHora,
+  HORARIOS_GRUPAL_IDS,
   individualTemplatesForWeekday,
   isHorarioGrupalId,
   isHorarioIndividualId,
@@ -208,6 +209,18 @@ export async function listHorariosIndividualDisponibles(db: Db): Promise<string[
     const id = hid as HorarioIndividualId;
     const occs = eachIndividualOccurrenceFrom(id, fromKey, INDIVIDUAL_SEARCH_WEEKS);
     if (occs.some((o) => isSlotFreePublic(occupied, o.dateKey, o.timeLocal))) {
+      out.push(hid);
+    }
+  }
+  return out;
+}
+
+/** Códigos grupales (grupal_930…) que aún admiten al menos una evaluación compatible. */
+export async function listHorariosGrupalDisponibles(db: Db): Promise<string[]> {
+  const out: string[] = [];
+  for (const hid of HORARIOS_GRUPAL_IDS) {
+    const horariosEval = await listHorariosEvaluacionParaGrupal(db, hid);
+    if (horariosEval.length > 0) {
       out.push(hid);
     }
   }

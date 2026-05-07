@@ -2,11 +2,29 @@ import { NextResponse } from "next/server";
 import { getDb } from "../../../../lib/mongodb";
 import { isPanelAuthenticated } from "../../../../lib/panel-auth";
 import {
+  blockToPanelShape,
+  listWandaAgendaBlocksLatest,
   deleteWandaAgendaBlockById,
   insertWandaAgendaBlock,
 } from "../../../../lib/turnos/wanda-agenda-blocks";
+import { matchIndividualTemplate, normalizeTimeLocal } from "../../../../lib/turnos/wanda-schedule";
 
 export const runtime = "nodejs";
+
+export async function GET() {
+  const ok = await isPanelAuthenticated();
+  if (!ok) {
+    return NextResponse.json({ error: "No autorizado." }, { status: 401 });
+  }
+  try {
+    const db = await getDb();
+    const rows = await listWandaAgendaBlocksLatest(db, 120);
+    return NextResponse.json({ blocks: rows.map(blockToPanelShape) });
+  } catch (e) {
+    console.error("[panel-turnos/agenda-blocks GET]", e);
+    return NextResponse.json({ error: "No se pudieron cargar los bloqueos." }, { status: 500 });
+  }
+}
 
 export async function POST(request: Request) {
   const ok = await isPanelAuthenticated();
@@ -36,6 +54,16 @@ export async function POST(request: Request) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(anchorDateKey) || !/^\d{2}:\d{2}$/.test(timeLocal)) {
     return NextResponse.json({ error: "Fecha u hora inválida." }, { status: 400 });
   }
+  const normalizedTime = normalizeTimeLocal(timeLocal);
+  if (!matchIndividualTemplate(anchorDateKey, normalizedTime)) {
+    return NextResponse.json(
+      {
+        error:
+          "Ese día y horario no corresponde a una franja real de consulta individual (lun/mie/vie).",
+      },
+      { status: 400 },
+    );
+  }
   if (!Number.isFinite(durationMinutes) || durationMinutes < 15 || durationMinutes > 480) {
     return NextResponse.json({ error: "Duración inválida." }, { status: 400 });
   }
@@ -51,7 +79,7 @@ export async function POST(request: Request) {
     const db = await getDb();
     const result = await insertWandaAgendaBlock(db, {
       anchorDateKey,
-      timeLocal,
+      timeLocal: normalizedTime,
       durationMinutes,
       recurrence,
       notes,
