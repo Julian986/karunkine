@@ -13,6 +13,7 @@ export type CitaDoc = {
 export const HORARIOS_GRUPAL_IDS = [
   "grupal_930",
   "grupal_1030",
+  "grupal_15",
   "grupal_16",
   "grupal_17",
 ] as const;
@@ -37,6 +38,7 @@ export type HorarioIndividualId = (typeof HORARIOS_INDIVIDUAL_IDS)[number];
 const GRUPAL_TIME: Record<HorarioGrupalId, string> = {
   grupal_930: "09:30",
   grupal_1030: "10:30",
+  grupal_15: "15:00",
   grupal_16: "16:00",
   grupal_17: "17:00",
 };

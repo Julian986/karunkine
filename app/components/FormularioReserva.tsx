@@ -58,6 +58,7 @@ const MODALIDAD_OPCIONES = [
 const HORARIOS_GRUPAL = [
   { value: "grupal_930", label: "Martes y Jueves - 9:30H" },
   { value: "grupal_1030", label: "Martes y Jueves - 10:30H" },
+  { value: "grupal_15", label: "Martes y Jueves - 15:00H" },
   { value: "grupal_16", label: "Martes y Jueves - 16H" },
   { value: "grupal_17", label: "Martes y Jueves - 17H" },
 ] as const;
