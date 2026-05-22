@@ -74,7 +74,7 @@ function scopeLabel(scope: string) {
   return scope;
 }
 
-/** Mismos estados que en `customer-turnos` para reprogramar consulta individual. */
+/* Reprogramar (panel) deshabilitado por ahora
 const PANEL_REPROGRAM_ESTADOS = new Set(["pending_payment", "pendiente", "contactado", "confirmado"]);
 
 function canReprogramConsultaIndividual(ev: PanelCalendarioEvento): boolean {
@@ -84,6 +84,7 @@ function canReprogramConsultaIndividual(ev: PanelCalendarioEvento): boolean {
     PANEL_REPROGRAM_ESTADOS.has(ev.estado)
   );
 }
+*/
 
 function normalizePhoneForWhatsApp(rawPhone: string): string | null {
   const onlyDigits = rawPhone.replace(/\D/g, "");
@@ -112,7 +113,120 @@ function buildWhatsAppMessage(ev: PanelCalendarioEvento): string {
   const nombrePaciente = ev.nombre.trim() || "te";
   const horarioTexto = ev.subtitulo.trim();
   const cuerpoHorario = horarioTexto ? `, ${horarioTexto}` : "";
-  return `Hola ${nombrePaciente}, soy ${PROFESIONAL_WHATSAPP_FIRMA}. Te escribo por tu reserva (${ev.titulo})${cuerpoHorario}.`;
+  const contexto = [ev.motivoLabel, ev.formatoConsultaLabel].filter(Boolean).join(", ");
+  const motivoParte = contexto ? ` Motivo: ${contexto}.` : "";
+  return `Hola ${nombrePaciente}, soy ${PROFESIONAL_WHATSAPP_FIRMA}. Te escribo por tu reserva (${ev.titulo})${cuerpoHorario}.${motivoParte}`;
+}
+
+function panelResumenVisible(ev: PanelCalendarioEvento): string {
+  const formato =
+    ev.formatoConsultaLabel ||
+    (ev.tipoCita === "evaluacion_grupal" ? ev.formatoEvaluacionLabel : "");
+  return [ev.motivoLabel, formato].filter(Boolean).join(" · ");
+}
+
+/** Líneas extra solo para grupal (no repetir lo que ya está en la tarjeta). */
+function panelDetalleLineasGrupal(ev: PanelCalendarioEvento): string[] {
+  const out: string[] = [];
+  if (ev.tipoCita === "clase_grupal" && ev.horarioReservaLabel) {
+    out.push(`Franja mensual: ${ev.horarioReservaLabel}`);
+  }
+  if (ev.tipoCita === "clase_grupal" && ev.horarioEvaluacionLabel) {
+    const fmt = ev.formatoEvaluacionLabel ? ` · ${ev.formatoEvaluacionLabel}` : "";
+    out.push(`Evaluación: ${ev.horarioEvaluacionLabel}${fmt}`);
+  }
+  return out;
+}
+
+function DetalleFila({ etiqueta, valor }: { etiqueta: string; valor: string }) {
+  const v = valor.trim();
+  if (!v) return null;
+  return (
+    <div className="grid grid-cols-[minmax(0,7.5rem)_1fr] gap-x-2 gap-y-0.5 text-[12px] leading-snug">
+      <span className="font-medium text-[var(--brand-cream)]/48">{etiqueta}</span>
+      <span className="text-[var(--brand-cream)]/88">{v}</span>
+    </div>
+  );
+}
+
+function PanelTurnoDetalleExpand({
+  ev,
+  guardandoId,
+  onEstadoChange,
+  onNotaChange,
+  onNotaBlur,
+}: {
+  ev: PanelCalendarioEvento;
+  guardandoId: string | null;
+  onEstadoChange: (estado: TurnoEstado) => void;
+  onNotaChange: (value: string) => void;
+  onNotaBlur: (value: string) => void;
+}) {
+  const lineasGrupal = panelDetalleLineasGrupal(ev);
+  const hayContacto = Boolean(ev.mail.trim() || ev.celular.trim());
+
+  return (
+    <div className="mt-3 space-y-3 border-t border-white/10 pt-3">
+      {hayContacto ? (
+        <div className="space-y-1.5">
+          <DetalleFila etiqueta="Mail" valor={ev.mail} />
+          <DetalleFila etiqueta="Celular" valor={ev.celular} />
+        </div>
+      ) : null}
+
+      {lineasGrupal.length > 0 ? (
+        <div className="space-y-1 text-[12px] leading-snug text-[var(--brand-cream)]/78">
+          {lineasGrupal.map((linea) => (
+            <p key={linea}>{linea}</p>
+          ))}
+        </div>
+      ) : null}
+
+      {ev.mpPaymentId ? (
+        <p className="text-[11px] text-[var(--brand-cream)]/50">
+          Ref. Mercado Pago: <span className="text-[var(--brand-cream)]/75">{ev.mpPaymentId}</span>
+        </p>
+      ) : null}
+
+      <div className="space-y-3 border-t border-white/8 pt-3">
+        <div>
+          <label className="block text-[11px] font-medium text-[var(--brand-cream)]/55" htmlFor={`estado-${ev.id}`}>
+            Estado
+          </label>
+          <select
+            id={`estado-${ev.id}`}
+            className="mt-1 w-full cursor-pointer rounded-xl border border-white/12 bg-[var(--panel-input)] px-2.5 py-2 text-[12px] text-[var(--brand-cream)] outline-none focus:border-[var(--brand-accent-v1)]/60"
+            value={
+              ESTADO_OPCIONES.some((o) => o.value === ev.estado) ? (ev.estado as TurnoEstado) : "pendiente"
+            }
+            onChange={(e) => onEstadoChange(e.target.value as TurnoEstado)}
+          >
+            {ESTADO_OPCIONES.map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label className="block text-[11px] font-medium text-[var(--brand-cream)]/55" htmlFor={`nota-${ev.id}`}>
+            Nota interna
+          </label>
+          <textarea
+            id={`nota-${ev.id}`}
+            className="mt-1 min-h-[80px] w-full rounded-xl border border-white/12 bg-[var(--panel-input)] px-2.5 py-2 text-[12px] text-[var(--brand-cream)] outline-none focus:border-[var(--brand-accent-v1)]/60"
+            placeholder="Nota interna…"
+            value={ev.notaInterna}
+            onChange={(e) => onNotaChange(e.target.value)}
+            onBlur={(e) => onNotaBlur(e.target.value)}
+          />
+        </div>
+        {guardandoId === ev.turnoId ? (
+          <p className="text-[11px] text-[var(--brand-cream)]/45">Guardando…</p>
+        ) : null}
+      </div>
+    </div>
+  );
 }
 
 function buildWhatsAppLink(ev: PanelCalendarioEvento): string | null {
@@ -264,7 +378,7 @@ export function PanelTurnosDashboard() {
   const [logoutBusy, setLogoutBusy] = useState(false);
   const [refreshTick, setRefreshTick] = useState(0);
   const [guardandoId, setGuardandoId] = useState<string | null>(null);
-  const [edicionEventoId, setEdicionEventoId] = useState<string | null>(null);
+  const [detalleEventoId, setDetalleEventoId] = useState<string | null>(null);
 
   const grid = useMemo(() => buildPanelMonthGrid(year, month), [year, month]);
   const todayKey = todayYmd(now);
@@ -290,7 +404,7 @@ export function PanelTurnosDashboard() {
   }, [year, month, selectedKey, todayKey]);
 
   useEffect(() => {
-    setEdicionEventoId(null);
+    setDetalleEventoId(null);
   }, [selectedKey, year, month]);
 
   useEffect(() => {
@@ -646,7 +760,8 @@ export function PanelTurnosDashboard() {
 
               const ev = row.item;
               const waUrl = buildWhatsAppLink(ev);
-              const edicionAbierta = edicionEventoId === ev.id;
+              const detalleAbierto = detalleEventoId === ev.id;
+              const resumenLinea = panelResumenVisible(ev);
               return (
                 <article
                   key={ev.id}
@@ -662,7 +777,17 @@ export function PanelTurnosDashboard() {
                         <IconUser className="h-4 w-4 shrink-0 text-[var(--brand-cream)]/60" />
                         <span className="truncate">{ev.nombre || "Cliente"}</span>
                       </p>
+                      {resumenLinea ? (
+                        <p className="text-[13px] font-medium leading-snug text-[var(--brand-cream)]/72">{resumenLinea}</p>
+                      ) : null}
                       <div className="flex flex-wrap items-center gap-2 pt-0.5">
+                        <button
+                          type="button"
+                          onClick={() => setDetalleEventoId((id) => (id === ev.id ? null : ev.id))}
+                          className="cursor-pointer rounded-full border border-sky-400/50 bg-sky-500/20 px-3 py-1.5 text-[12px] font-bold text-sky-100 ring-1 ring-sky-400/40 transition hover:bg-sky-500/30"
+                        >
+                          {detalleAbierto ? "Cerrar" : "Detalle"}
+                        </button>
                         <StatusBadge estado={ev.estado} />
                         {waUrl ? (
                           <a
@@ -675,75 +800,30 @@ export function PanelTurnosDashboard() {
                             WhatsApp
                           </a>
                         ) : null}
+                        {/* Reprogramar deshabilitado por ahora
                         {canReprogramConsultaIndividual(ev) ? (
-                          <button
-                            type="button"
-                            onClick={() => {
-                              window.alert("Reprogramación en desarrollo. Esta funcionalidad estará disponible próximamente.");
-                            }}
+                          <Link
+                            href={`/panel-turnos/reprogramar/${ev.turnoId}`}
                             className="inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-[var(--brand-accent-v1)]/55 bg-[var(--brand-accent-v1)]/14 px-3 py-1.5 text-[12px] font-bold text-[var(--brand-accent-v1)] ring-1 ring-[var(--brand-accent-v1)]/35 transition hover:bg-[var(--brand-accent-v1)]/24"
                           >
                             Reprogramar
-                          </button>
+                          </Link>
                         ) : null}
-                        <button
-                          type="button"
-                          onClick={() => setEdicionEventoId((id) => (id === ev.id ? null : ev.id))}
-                          className="cursor-pointer rounded-full border border-[var(--brand-accent-v1)]/45 bg-[var(--panel-input)] px-3 py-1.5 text-[12px] font-bold text-[var(--brand-accent-v1)] transition hover:bg-[var(--panel-surface-hover)]"
-                        >
-                          {edicionAbierta ? "Cerrar" : "Gestionar"}
-                        </button>
+                        */}
                       </div>
 
-                      {edicionAbierta ? (
-                        <div className="mt-3 space-y-3 border-t border-white/10 pt-3">
-                          <p className="text-[11px] font-medium text-[var(--brand-cream)]/50">Edición del turno</p>
-                          {ev.mail ? (
-                            <p className="truncate text-[12px] text-[var(--brand-cream)]/55">{ev.mail}</p>
-                          ) : null}
-                          <div>
-                            <label className="block text-[11px] font-medium text-[var(--brand-cream)]/55" htmlFor={`estado-${ev.id}`}>
-                              Estado
-                            </label>
-                            <select
-                              id={`estado-${ev.id}`}
-                              className="mt-1 w-full cursor-pointer rounded-xl border border-white/12 bg-[var(--panel-input)] px-2.5 py-2 text-[12px] text-[var(--brand-cream)] outline-none focus:border-[var(--brand-accent-v1)]/60"
-                              value={
-                                ESTADO_OPCIONES.some((o) => o.value === ev.estado)
-                                  ? (ev.estado as TurnoEstado)
-                                  : "pendiente"
-                              }
-                              onChange={(e) => void actualizarEstado(ev.turnoId, e.target.value as TurnoEstado)}
-                            >
-                              {ESTADO_OPCIONES.map((o) => (
-                                <option key={o.value} value={o.value}>
-                                  {o.label}
-                                </option>
-                              ))}
-                            </select>
-                          </div>
-                          <div>
-                            <label className="block text-[11px] font-medium text-[var(--brand-cream)]/55" htmlFor={`nota-${ev.id}`}>
-                              Nota interna
-                            </label>
-                            <textarea
-                              id={`nota-${ev.id}`}
-                              className="mt-1 min-h-[80px] w-full rounded-xl border border-white/12 bg-[var(--panel-input)] px-2.5 py-2 text-[12px] text-[var(--brand-cream)] outline-none focus:border-[var(--brand-accent-v1)]/60"
-                              placeholder="Nota interna…"
-                              value={ev.notaInterna}
-                              onChange={(e) => {
-                                const v = e.target.value;
-                                setEventos((prev) =>
-                                  prev.map((x) => (x.turnoId === ev.turnoId ? { ...x, notaInterna: v } : x)),
-                                );
-                              }}
-                              onBlur={(e) => void guardarNota(ev.turnoId, e.target.value)}
-                            />
-                          </div>
-                          {guardandoId === ev.turnoId && (
-                            <p className="text-[11px] text-[var(--brand-cream)]/45">Guardando…</p>
-                          )}
-                        </div>
+                      {detalleAbierto ? (
+                        <PanelTurnoDetalleExpand
+                          ev={ev}
+                          guardandoId={guardandoId}
+                          onEstadoChange={(estado) => void actualizarEstado(ev.turnoId, estado)}
+                          onNotaChange={(v) => {
+                            setEventos((prev) =>
+                              prev.map((x) => (x.turnoId === ev.turnoId ? { ...x, notaInterna: v } : x)),
+                            );
+                          }}
+                          onNotaBlur={(v) => void guardarNota(ev.turnoId, v)}
+                        />
                       ) : null}
                     </div>
                   </div>

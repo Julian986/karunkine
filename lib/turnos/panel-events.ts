@@ -1,5 +1,11 @@
 import type { ObjectId } from "mongodb";
 
+import {
+  panelFormatoLabel,
+  panelHorarioTemplateLabel,
+  panelModalidadLabel,
+  panelMotivoLabel,
+} from "./panel-display-labels";
 import type { CitaDoc } from "./wanda-schedule";
 import { formatDisplayFechaHora } from "./wanda-schedule";
 import {
@@ -25,6 +31,21 @@ export type PanelCalendarioEvento = {
   notaInterna: string;
   modalidad: "grupal" | "consulta_individual";
   tipoCita: string;
+  motivo: string;
+  motivoLabel: string;
+  formatoConsulta: "" | "presencial" | "virtual";
+  formatoConsultaLabel: string;
+  formatoEvaluacion: "" | "presencial" | "virtual";
+  formatoEvaluacionLabel: string;
+  modalidadLabel: string;
+  turnoDetalle: string;
+  horarioReserva: string;
+  horarioReservaLabel: string;
+  horarioEvaluacion: string;
+  horarioEvaluacionLabel: string;
+  citaTemplateId: string;
+  citaTemplateLabel: string;
+  mpPaymentId: string;
 };
 
 function pad2(n: number) {
@@ -101,6 +122,15 @@ export function expandTurnoToPanelEventos(
   const celular = String(row.celular ?? "");
   const notaInterna = String(row.notaInterna ?? "");
   const modalidad = row.modalidad === "consulta_individual" ? "consulta_individual" : "grupal";
+  const motivo = String(row.motivo ?? "").trim();
+  const formatoConsulta =
+    row.formatoConsulta === "presencial" || row.formatoConsulta === "virtual" ? row.formatoConsulta : "";
+  const formatoEvaluacion =
+    row.formatoEvaluacion === "presencial" || row.formatoEvaluacion === "virtual" ? row.formatoEvaluacion : "";
+  const horarioReserva = String(row.horario ?? "").trim();
+  const horarioEvaluacion = String(row.horarioEvaluacion ?? "").trim();
+  const turnoDetalle = String(row.turnoDetalle ?? "").trim();
+  const mpPaymentId = String(row.mpPaymentId ?? "").trim();
   const rawCitas = row.citas as CitaDoc[] | undefined;
   const fromDoc =
     Array.isArray(rawCitas) && rawCitas.length > 0 ? rawCitas.filter((c) => isValidCitaForPanel(c)) : [];
@@ -112,21 +142,39 @@ export function expandTurnoToPanelEventos(
           return one && isValidCitaForPanel(one) ? [one] : [];
         })();
 
-  return citas.map((c, idx) => ({
-    id: `${id}-${idx}-${c.dateKey}-${c.timeLocal}`,
-    turnoId: id,
-    dateKey: c.dateKey,
-    timeLocal: c.timeLocal,
-    titulo: tipoLabel(c.tipo),
-    subtitulo: formatDisplayFechaHora(c.dateKey, c.timeLocal),
-    estado,
-    nombre,
-    mail,
-    celular,
-    notaInterna,
-    modalidad,
-    tipoCita: c.tipo,
-  }));
+  return citas.map((c, idx) => {
+    const citaTemplateId = String(c.templateId ?? "").trim();
+    return {
+      id: `${id}-${idx}-${c.dateKey}-${c.timeLocal}`,
+      turnoId: id,
+      dateKey: c.dateKey,
+      timeLocal: c.timeLocal,
+      titulo: tipoLabel(c.tipo),
+      subtitulo: formatDisplayFechaHora(c.dateKey, c.timeLocal),
+      estado,
+      nombre,
+      mail,
+      celular,
+      notaInterna,
+      modalidad,
+      tipoCita: c.tipo,
+      motivo,
+      motivoLabel: panelMotivoLabel(motivo),
+      formatoConsulta,
+      formatoConsultaLabel: panelFormatoLabel(formatoConsulta),
+      formatoEvaluacion,
+      formatoEvaluacionLabel: panelFormatoLabel(formatoEvaluacion),
+      modalidadLabel: panelModalidadLabel(modalidad),
+      turnoDetalle,
+      horarioReserva,
+      horarioReservaLabel: panelHorarioTemplateLabel(horarioReserva),
+      horarioEvaluacion,
+      horarioEvaluacionLabel: panelHorarioTemplateLabel(horarioEvaluacion),
+      citaTemplateId,
+      citaTemplateLabel: panelHorarioTemplateLabel(citaTemplateId),
+      mpPaymentId,
+    };
+  });
 }
 
 export function eventoInMonth(e: PanelCalendarioEvento, year: number, month: number): boolean {
