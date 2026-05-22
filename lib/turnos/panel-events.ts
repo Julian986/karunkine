@@ -6,6 +6,7 @@ import {
   panelModalidadLabel,
   panelMotivoLabel,
 } from "./panel-display-labels";
+import { PANEL_HORARIO_LIBRE } from "./panel-manual-schedule-shared";
 import type { CitaDoc } from "./wanda-schedule";
 import { formatDisplayFechaHora } from "./wanda-schedule";
 import {
@@ -134,13 +135,21 @@ export function expandTurnoToPanelEventos(
   const rawCitas = row.citas as CitaDoc[] | undefined;
   const fromDoc =
     Array.isArray(rawCitas) && rawCitas.length > 0 ? rawCitas.filter((c) => isValidCitaForPanel(c)) : [];
-  const citas =
+  const citasRaw =
     fromDoc.length > 0
       ? fromDoc
       : (() => {
           const one = legacyPreviewCita(row as { modalidad?: string; horario?: string; horarioEvaluacion?: string });
           return one && isValidCitaForPanel(one) ? [one] : [];
         })();
+
+  /** Turnos manuales con evaluación libre: no mostrar ciclo mar/jue guardado por error en versiones anteriores. */
+  const ocultarClaseGrupalPanel =
+    modalidad === "grupal" &&
+    (horarioReserva === PANEL_HORARIO_LIBRE || horarioEvaluacion === PANEL_HORARIO_LIBRE);
+  const citas = citasRaw.filter(
+    (c) => !(ocultarClaseGrupalPanel && c.tipo === "clase_grupal"),
+  );
 
   return citas.map((c, idx) => {
     const citaTemplateId = String(c.templateId ?? "").trim();

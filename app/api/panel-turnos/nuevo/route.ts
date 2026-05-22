@@ -6,17 +6,8 @@ import { ensureReservaPaymentIndexes } from "../../../../lib/mongodb/ensure-inde
 import { getDb } from "../../../../lib/mongodb";
 import { isPanelAuthenticated } from "../../../../lib/panel-auth";
 import { insertarTurnoManualConfirmado } from "../../../../lib/turnos/create-manual";
-import { resolveCitasForReserva } from "../../../../lib/turnos/resolve-reserva-citas";
-import { grupalBandFree, isGrupalBandaSinCupo, loadOccupiedSlotKeysGlobal } from "../../../../lib/turnos/wanda-occupancy";
-import {
-  addDaysDateKey,
-  expandGrupalCitas,
-  isHorarioGrupalId,
-  isoDateWeekday,
-  type CitaDoc,
-  type HorarioGrupalId,
-  utcTodayDateKey,
-} from "../../../../lib/turnos/wanda-schedule";
+import { resolvePanelManualCitas } from "../../../../lib/turnos/panel-manual-schedule";
+import { isHorarioGrupalId } from "../../../../lib/turnos/wanda-schedule";
 import { MOTIVOS_VALIDOS } from "../../../../lib/validators/reserva-turno";
 
 export const runtime = "nodejs";
@@ -30,15 +21,20 @@ const crearManualSchema = z
   .object({
     nombre: z.string().trim().min(3).max(80),
     mail: z.union([z.literal(""), z.string().trim().email()]),
-    celular: z.string().trim().min(8).max(30),
+    celular: z.union([z.literal(""), z.string().trim().min(8).max(30)]),
     motivo: z.string().trim().min(1),
     modalidad: z.enum(["grupal", "consulta_individual"]),
-    horario: z.string().trim().min(1),
+    horario: z.string().trim(),
     formatoConsulta: z.enum(["presencial", "virtual"]).optional(),
-    horarioEvaluacion: z.string().trim().optional(),
     formatoEvaluacion: z.enum(["presencial", "virtual"]).optional(),
     principalSlot: slotObj.optional(),
     evalSlot: slotObj.optional(),
+    repeatMode: z.enum(["weekly", "monthly"]).optional(),
+    repeatWeekly: z.boolean().optional(),
+    repeatUntilDateKey: z
+      .union([z.literal(""), z.string().regex(/^\d{4}-\d{2}-\d{2}$/)])
+      .optional()
+      .nullable(),
     notaInterna: z.string().trim().max(2000).optional(),
   })
   .superRefine((value, ctx) => {
@@ -63,19 +59,16 @@ const crearManualSchema = z
         message: "Elegí día y hora de consulta.",
       });
     }
+    if (value.modalidad === "consulta_individual" && !value.horario.trim()) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["horario"],
+        message: "Horario inválido.",
+      });
+    }
     if (value.modalidad === "grupal") {
-      const hasEval =
-        Boolean(value.horarioEvaluacion?.trim()) ||
-        Boolean(value.formatoEvaluacion) ||
-        Boolean(value.evalSlot);
-      if (hasEval) {
-        if (!value.horarioEvaluacion?.trim()) {
-          ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            path: ["horarioEvaluacion"],
-            message: "Elegí horario de evaluación.",
-          });
-        }
+      const tieneEval = Boolean(value.evalSlot);
+      if (tieneEval) {
         if (!value.formatoEvaluacion) {
           ctx.addIssue({
             code: z.ZodIssueCode.custom,
@@ -83,57 +76,31 @@ const crearManualSchema = z
             message: "Elegí si la evaluación es presencial o virtual.",
           });
         }
-        if (!value.evalSlot) {
-          ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            path: ["evalSlot"],
-            message: "Elegí día y hora de evaluación.",
-          });
-        }
+      } else if (!isHorarioGrupalId(value.horario)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["horario"],
+          message: "Elegí una franja de clases mar/jue.",
+        });
       }
     }
+    const until = value.repeatUntilDateKey?.trim();
+    const repite = Boolean(value.repeatMode || value.repeatWeekly);
+    if (repite && until && value.principalSlot && until < value.principalSlot.dateKey) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["repeatUntilDateKey"],
+        message: "La fecha de fin debe ser posterior al primer turno.",
+      });
+    }
+    if (repite && until && value.evalSlot && until < value.evalSlot.dateKey) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["repeatUntilDateKey"],
+        message: "La fecha de fin debe ser posterior a la primera evaluación.",
+      });
+    }
   });
-
-const GRUPAL_WEEKS = 26;
-
-async function resolveCitasGrupalSoloClase(
-  db: Awaited<ReturnType<typeof getDb>>,
-  horarioIdRaw: string,
-): Promise<{ ok: true; citas: CitaDoc[] } | { ok: false; error: string; code?: string }> {
-  if (!isHorarioGrupalId(horarioIdRaw)) {
-    return { ok: false, error: "Horario grupal inválido.", code: "BAD_GRUPAL" };
-  }
-  const horarioId = horarioIdRaw as HorarioGrupalId;
-  if (await isGrupalBandaSinCupo(db, horarioId)) {
-    return {
-      ok: false,
-      error:
-        "Esa franja de clases grupales ya completó el cupo máximo de reservas activas. Probá otra franja u horario.",
-      code: "GRUPAL_BAND_FULL",
-    };
-  }
-  const occupied = await loadOccupiedSlotKeysGlobal(db);
-  const from = utcTodayDateKey();
-  for (let i = 0; i <= 730; i++) {
-    const dk = addDaysDateKey(from, i);
-    const wd = isoDateWeekday(dk);
-    if (wd !== 2 && wd !== 4) continue;
-    if (!grupalBandFree(occupied, horarioId, dk, GRUPAL_WEEKS)) continue;
-    return {
-      ok: true,
-      citas: expandGrupalCitas({
-        horarioId,
-        anchorMarOrJueDateKey: dk,
-        weeks: GRUPAL_WEEKS,
-      }),
-    };
-  }
-  return {
-    ok: false,
-    error: "No hay semana de inicio disponible para esa franja grupal.",
-    code: "GRUPAL_NO_ANCLA",
-  };
-}
 
 export async function POST(request: Request) {
   if (!(await isPanelAuthenticated())) {
@@ -155,25 +122,25 @@ export async function POST(request: Request) {
     );
   }
 
+  const repeatUntilRaw = parsed.data.repeatUntilDateKey?.trim();
+  const repeatUntilDateKey = repeatUntilRaw ? repeatUntilRaw : null;
+
   try {
     const db = await getDb();
     await ensureReservaPaymentIndexes(db);
 
-    const hasEvalInGrupal =
-      parsed.data.modalidad === "grupal" &&
-      Boolean(parsed.data.horarioEvaluacion?.trim()) &&
-      Boolean(parsed.data.evalSlot);
+    const soloClaseGrupal =
+      parsed.data.modalidad === "grupal" && !parsed.data.evalSlot;
 
-    const resolved =
-      parsed.data.modalidad === "grupal" && !hasEvalInGrupal
-        ? await resolveCitasGrupalSoloClase(db, parsed.data.horario)
-        : await resolveCitasForReserva(db, {
-            modalidad: parsed.data.modalidad,
-            horario: parsed.data.horario,
-            principalSlot: parsed.data.principalSlot,
-            evalSlot: parsed.data.evalSlot,
-            horarioEvaluacion: parsed.data.horarioEvaluacion,
-          });
+    const resolved = await resolvePanelManualCitas(db, {
+      modalidad: parsed.data.modalidad,
+      horarioGrupal: parsed.data.horario,
+      principalSlot: parsed.data.principalSlot,
+      evalSlot: parsed.data.evalSlot,
+      repeatMode: parsed.data.repeatMode ?? (parsed.data.repeatWeekly ? "weekly" : null),
+      repeatUntilDateKey,
+      soloClaseGrupal,
+    });
 
     if (!resolved.ok) {
       return NextResponse.json({ error: resolved.error, code: resolved.code }, { status: 409 });
@@ -185,15 +152,23 @@ export async function POST(request: Request) {
       celular: parsed.data.celular,
       motivo: parsed.data.motivo,
       modalidad: parsed.data.modalidad,
-      horario: parsed.data.horario,
+      horario: resolved.horario,
       formatoConsulta: parsed.data.formatoConsulta,
-      horarioEvaluacion: parsed.data.horarioEvaluacion,
+      horarioEvaluacion: resolved.horarioEvaluacion,
       formatoEvaluacion: parsed.data.formatoEvaluacion,
       citas: resolved.citas,
       notaInterna: parsed.data.notaInterna,
     });
 
-    return NextResponse.json({ ok: true, id: insertedId.toHexString() }, { status: 201 });
+    return NextResponse.json(
+      {
+        ok: true,
+        id: insertedId.toHexString(),
+        citasCreadas: resolved.citas.filter((c) => c.tipo !== "clase_grupal").length,
+        fechasOmitidas: resolved.fechasOmitidas,
+      },
+      { status: 201 },
+    );
   } catch (e) {
     if (e instanceof MongoServerError && e.code === 11000) {
       return NextResponse.json(

@@ -27,7 +27,7 @@ const GRUPAL_WEEKS = 26;
 const INDIVIDUAL_SEARCH_WEEKS = 52;
 
 /** Primer martes o jueves (ancla) desde `fromDateKey` donde la banda grupal es libre y no pisa la evaluación. */
-function findFirstGrupalAnchorForEval(
+export function findFirstGrupalAnchorForEval(
   occupied: Set<string>,
   horG: HorarioGrupalId,
   evalDateKey: string,

@@ -11,6 +11,10 @@ export const PANEL_MOTIVO_OPCIONES = [
 
 const MOTIVO_MAP = new Map<string, string>(PANEL_MOTIVO_OPCIONES.map((o) => [o.value, o.label]));
 
+const HORARIO_EXTRA_MAP: Record<string, string> = {
+  panel_libre: "Horario libre (panel)",
+};
+
 const HORARIO_GRUPAL_MAP: Record<string, string> = {
   grupal_930: "Martes y Jueves - 9:30H",
   grupal_1030: "Martes y Jueves - 10:30H",
@@ -45,7 +49,7 @@ export function panelFormatoLabel(formato: string): string {
 export function panelHorarioTemplateLabel(id: string): string {
   const k = id.trim();
   if (!k) return "";
-  return HORARIO_GRUPAL_MAP[k] ?? HORARIO_INDIVIDUAL_MAP[k] ?? k;
+  return HORARIO_EXTRA_MAP[k] ?? HORARIO_GRUPAL_MAP[k] ?? HORARIO_INDIVIDUAL_MAP[k] ?? k;
 }
 
 export function panelModalidadLabel(modalidad: "grupal" | "consulta_individual"): string {

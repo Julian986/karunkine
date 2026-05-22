@@ -3,7 +3,18 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
-import { ReservaHuecosCalendario, type HuecoSeleccionado } from "../../components/ReservaHuecosCalendario";
+import {
+  PanelTurnoFechaHoraPicker,
+  type PanelFechaHoraSeleccion,
+} from "../../components/PanelTurnoFechaHoraPicker";
+import { matchGrupalTemplate } from "../../../lib/turnos/wanda-schedule";
+import {
+  expandRecurringDateKeys,
+  type PanelRepeatMode,
+  PANEL_HORARIO_LIBRE,
+  PANEL_REPEAT_MAX_MONTHLY,
+  PANEL_REPEAT_MAX_WEEKLY,
+} from "../../../lib/turnos/panel-manual-schedule-shared";
 
 const MOTIVOS = [
   { value: "suelo_pelvico", label: "Disfunción de suelo pélvico" },
@@ -54,10 +65,12 @@ export function PanelNuevoTurnoClient() {
   const [horarioGrupal, setHorarioGrupal] = useState("");
   const [horariosGrupalDisponibles, setHorariosGrupalDisponibles] = useState<string[] | null>(null);
   const [horariosGrupalLoading, setHorariosGrupalLoading] = useState(false);
-  const [agregarEvaluacionGrupal, setAgregarEvaluacionGrupal] = useState(false);
+  const [soloClaseGrupal, setSoloClaseGrupal] = useState(false);
   const [formatoEvaluacion, setFormatoEvaluacion] = useState<"" | "presencial" | "virtual">("");
-  const [huecoIndividual, setHuecoIndividual] = useState<HuecoSeleccionado | null>(null);
-  const [huecoEvalGrupal, setHuecoEvalGrupal] = useState<HuecoSeleccionado | null>(null);
+  const [slotIndividual, setSlotIndividual] = useState<PanelFechaHoraSeleccion | null>(null);
+  const [slotEvalGrupal, setSlotEvalGrupal] = useState<PanelFechaHoraSeleccion | null>(null);
+  const [repetirModo, setRepetirModo] = useState<"" | PanelRepeatMode>("");
+  const [repetirHasta, setRepetirHasta] = useState("");
   const [notaInterna, setNotaInterna] = useState("");
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
@@ -66,6 +79,22 @@ export function PanelNuevoTurnoClient() {
 
   const esIndividual = modalidad === "consulta_individual";
   const esGrupal = modalidad === "grupal";
+  const puedeRepetir = esIndividual || (esGrupal && !soloClaseGrupal && Boolean(slotEvalGrupal));
+  const anclaRepeticion = esIndividual ? slotIndividual?.dateKey : slotEvalGrupal?.dateKey;
+
+  const previewRepeticion = useMemo(() => {
+    if (!puedeRepetir || !anclaRepeticion || !repetirModo) return { count: 0, sinFin: false, modo: "" as const };
+    const fechas = expandRecurringDateKeys({
+      anchorDateKey: anclaRepeticion,
+      repeatMode: repetirModo,
+      repeatUntilDateKey: repetirHasta.trim() || null,
+    });
+    return {
+      count: fechas.length,
+      sinFin: !repetirHasta.trim(),
+      modo: repetirModo,
+    };
+  }, [puedeRepetir, anclaRepeticion, repetirModo, repetirHasta]);
   const opcionesGrupalDisponibles = useMemo(() => {
     if (!horariosGrupalDisponibles) return [];
     const enabled = new Set(horariosGrupalDisponibles);
@@ -73,9 +102,11 @@ export function PanelNuevoTurnoClient() {
   }, [horariosGrupalDisponibles]);
 
   useEffect(() => {
-    if (!esGrupal) {
-      setHorariosGrupalDisponibles(null);
-      setHorariosGrupalLoading(false);
+    if (!esGrupal || !soloClaseGrupal) {
+      if (!esGrupal) {
+        setHorariosGrupalDisponibles(null);
+        setHorariosGrupalLoading(false);
+      }
       return;
     }
     let alive = true;
@@ -91,8 +122,7 @@ export function PanelNuevoTurnoClient() {
         setHorariosGrupalDisponibles(horarios);
         if (horarioGrupal && !horarios.includes(horarioGrupal)) {
           setHorarioGrupal("");
-          setHuecoEvalGrupal(null);
-          setAgregarEvaluacionGrupal(false);
+          setSlotEvalGrupal(null);
           setFormatoEvaluacion("");
         }
       } catch {
@@ -105,13 +135,12 @@ export function PanelNuevoTurnoClient() {
     return () => {
       alive = false;
     };
-  }, [esGrupal, horarioGrupal]);
+  }, [esGrupal, horarioGrupal, soloClaseGrupal]);
 
   useEffect(() => {
     const evaluacionAbierta =
       esGrupal &&
-      agregarEvaluacionGrupal &&
-      Boolean(horarioGrupal) &&
+      !soloClaseGrupal &&
       (formatoEvaluacion === "presencial" || formatoEvaluacion === "virtual");
     if (!evaluacionAbierta) return;
     const doScroll = () => {
@@ -128,7 +157,7 @@ export function PanelNuevoTurnoClient() {
     });
     const t = window.setTimeout(doScroll, 140);
     return () => window.clearTimeout(t);
-  }, [agregarEvaluacionGrupal, esGrupal, formatoEvaluacion, horarioGrupal]);
+  }, [soloClaseGrupal, esGrupal, formatoEvaluacion]);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -144,18 +173,26 @@ export function PanelNuevoTurnoClient() {
       if (cleanMail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanMail)) {
         nextErrors.mail = "Ingresá un mail válido o dejalo vacío.";
       }
-      if (cleanCelular.length < 8) nextErrors.celular = "Ingresá un celular válido.";
+      if (cleanCelular.length > 0 && cleanCelular.length < 8) {
+        nextErrors.celular = "Si cargás celular, usá al menos 8 caracteres.";
+      }
       if (!motivo) nextErrors.motivo = "Elegí un motivo.";
       if (!modalidad) nextErrors.modalidad = "Elegí una modalidad.";
       if (modalidad === "consulta_individual") {
         if (!formatoConsulta) nextErrors.formatoConsulta = "Elegí el formato de consulta.";
-        if (!huecoIndividual) nextErrors.principalSlot = "Elegí día y horario de consulta.";
+        if (!slotIndividual) nextErrors.principalSlot = "Elegí día y horario de consulta.";
       }
       if (modalidad === "grupal") {
-        if (!horarioGrupal) nextErrors.horario = "Elegí una franja grupal.";
-        if (agregarEvaluacionGrupal) {
+        if (soloClaseGrupal) {
+          if (!horarioGrupal) nextErrors.horario = "Elegí una franja de clases mar/jue.";
+        } else {
           if (!formatoEvaluacion) nextErrors.formatoEvaluacion = "Elegí el formato de evaluación.";
-          if (!huecoEvalGrupal) nextErrors.evalSlot = "Elegí día y horario de evaluación.";
+          if (!slotEvalGrupal) nextErrors.evalSlot = "Elegí día y horario de evaluación.";
+        }
+      }
+      if (puedeRepetir && repetirModo && repetirHasta.trim() && anclaRepeticion) {
+        if (repetirHasta.trim() < anclaRepeticion) {
+          nextErrors.repeatUntilDateKey = "La fecha de fin debe ser posterior al primer turno.";
         }
       }
       if (Object.keys(nextErrors).length > 0) {
@@ -164,23 +201,31 @@ export function PanelNuevoTurnoClient() {
         return;
       }
 
+      const repeatPayload = puedeRepetir && repetirModo
+        ? {
+            repeatMode: repetirModo,
+            repeatUntilDateKey: repetirHasta.trim() ? repetirHasta.trim() : undefined,
+          }
+        : {};
+
       const payload =
-        esIndividual && huecoIndividual
+        esIndividual && slotIndividual
           ? {
               nombre,
               mail,
               celular,
               motivo,
               modalidad,
-              horario: huecoIndividual.templateId,
+              horario: PANEL_HORARIO_LIBRE,
               formatoConsulta,
               principalSlot: {
-                dateKey: huecoIndividual.dateKey,
-                timeLocal: huecoIndividual.timeLocal,
+                dateKey: slotIndividual.dateKey,
+                timeLocal: slotIndividual.timeLocal,
               },
+              ...repeatPayload,
               notaInterna: notaInterna.trim() || undefined,
             }
-          : esGrupal && !agregarEvaluacionGrupal && Boolean(horarioGrupal)
+          : esGrupal && soloClaseGrupal && Boolean(horarioGrupal)
             ? {
                 nombre,
                 mail,
@@ -190,23 +235,26 @@ export function PanelNuevoTurnoClient() {
                 horario: horarioGrupal,
                 notaInterna: notaInterna.trim() || undefined,
               }
-            : esGrupal && agregarEvaluacionGrupal && Boolean(horarioGrupal) && huecoEvalGrupal
-            ? {
-                nombre,
-                mail,
-                celular,
-                motivo,
-                modalidad,
-                horario: horarioGrupal,
-                horarioEvaluacion: huecoEvalGrupal.templateId,
-                formatoEvaluacion,
-                evalSlot: {
-                  dateKey: huecoEvalGrupal.dateKey,
-                  timeLocal: huecoEvalGrupal.timeLocal,
-                },
-                notaInterna: notaInterna.trim() || undefined,
-              }
-            : null;
+            : esGrupal && !soloClaseGrupal && slotEvalGrupal
+              ? {
+                  nombre,
+                  mail,
+                  celular,
+                  motivo,
+                  modalidad,
+                  horario:
+                    (slotEvalGrupal &&
+                      matchGrupalTemplate(slotEvalGrupal.dateKey, slotEvalGrupal.timeLocal)) ||
+                    "",
+                  formatoEvaluacion,
+                  evalSlot: {
+                    dateKey: slotEvalGrupal.dateKey,
+                    timeLocal: slotEvalGrupal.timeLocal,
+                  },
+                  ...repeatPayload,
+                  notaInterna: notaInterna.trim() || undefined,
+                }
+              : null;
 
       if (!payload) {
         setMsg("Completá los datos obligatorios.");
@@ -222,6 +270,7 @@ export function PanelNuevoTurnoClient() {
       const data = (await res.json().catch(() => ({}))) as {
         error?: string;
         details?: unknown;
+        fechasOmitidas?: string[];
       };
       if (!res.ok) {
         const apiFieldErrors = firstFieldErrorsFromApi(data.details);
@@ -232,6 +281,14 @@ export function PanelNuevoTurnoClient() {
           setMsg(data.error ?? "No se pudo crear el turno.");
         }
         return;
+      }
+      const omitidas = Array.isArray(data.fechasOmitidas) ? data.fechasOmitidas : [];
+      if (omitidas.length > 0) {
+        const muestra = omitidas.slice(0, 5).join(", ");
+        const extra = omitidas.length > 5 ? ` y ${omitidas.length - 5} más` : "";
+        window.alert(
+          `Turno creado. ${omitidas.length} fecha(s) no se agregaron (ocupadas o bloqueadas): ${muestra}${extra}.`,
+        );
       }
       router.push("/panel-turnos?creado=1");
       router.refresh();
@@ -252,7 +309,7 @@ export function PanelNuevoTurnoClient() {
         {fieldErrors.nombre ? <p className="text-xs text-red-700">{fieldErrors.nombre}</p> : null}
         <input value={mail} onChange={(e) => setMail(e.target.value)} placeholder="Mail (opcional)" type="email" className="w-full rounded-xl border border-black/15 bg-[var(--panel-input)] px-3 py-2 text-sm text-[var(--brand-cream)] outline-none" />
         {fieldErrors.mail ? <p className="text-xs text-red-700">{fieldErrors.mail}</p> : null}
-        <input value={celular} onChange={(e) => setCelular(e.target.value)} placeholder="Celular" className="w-full rounded-xl border border-black/15 bg-[var(--panel-input)] px-3 py-2 text-sm text-[var(--brand-cream)] outline-none" />
+        <input value={celular} onChange={(e) => setCelular(e.target.value)} placeholder="Celular (opcional)" className="w-full rounded-xl border border-black/15 bg-[var(--panel-input)] px-3 py-2 text-sm text-[var(--brand-cream)] outline-none" />
         {fieldErrors.celular ? <p className="text-xs text-red-700">{fieldErrors.celular}</p> : null}
         <div className="relative">
           <select
@@ -278,12 +335,14 @@ export function PanelNuevoTurnoClient() {
             onChange={(e) => {
               const m = e.target.value as "" | "grupal" | "consulta_individual";
               setModalidad(m);
-              setHuecoIndividual(null);
-              setHuecoEvalGrupal(null);
+              setSlotIndividual(null);
+              setSlotEvalGrupal(null);
               setHorarioGrupal("");
-              setAgregarEvaluacionGrupal(false);
+              setSoloClaseGrupal(false);
               setFormatoConsulta("");
               setFormatoEvaluacion("");
+              setRepetirModo("");
+              setRepetirHasta("");
             }}
             className={`w-full appearance-none rounded-xl border border-black/15 bg-[var(--panel-input)] px-3 py-2 pr-10 text-sm outline-none ${
               modalidad ? "text-[var(--brand-cream)]" : "text-[var(--brand-cream)]/55"
@@ -313,11 +372,10 @@ export function PanelNuevoTurnoClient() {
             </div>
             {fieldErrors.formatoConsulta ? <p className="text-xs text-red-700">{fieldErrors.formatoConsulta}</p> : null}
             {(formatoConsulta === "presencial" || formatoConsulta === "virtual") && (
-              <ReservaHuecosCalendario
-                mode="individual"
+              <PanelTurnoFechaHoraPicker
                 accentColor="#4F7CAC"
                 titulo="Elegí día y horario"
-                onSeleccion={(h) => setHuecoIndividual(h)}
+                onSeleccion={(h) => setSlotIndividual(h)}
               />
             )}
             {fieldErrors.principalSlot ? <p className="text-xs text-red-700">{fieldErrors.principalSlot}</p> : null}
@@ -326,51 +384,69 @@ export function PanelNuevoTurnoClient() {
 
         {esGrupal && (
           <>
-            <div className="relative">
-              <select value={horarioGrupal} onChange={(e) => {
-                setHorarioGrupal(e.target.value);
-                setHuecoEvalGrupal(null);
-              }} disabled={horariosGrupalLoading || opcionesGrupalDisponibles.length === 0} className={`w-full appearance-none rounded-xl border border-black/15 bg-[var(--panel-input)] px-3 py-2 pr-10 text-sm outline-none disabled:opacity-60 ${horarioGrupal ? "text-[var(--brand-cream)]" : "text-[var(--brand-cream)]/55"}`}>
-                <option value="" disabled hidden>
-                  {horariosGrupalLoading ? "Cargando franjas..." : "Elegir franja grupal"}
-                </option>
-                {opcionesGrupalDisponibles.map((h) => (
-                  <option key={h.value} value={h.value}>{h.label}</option>
-                ))}
-              </select>
-              <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[var(--brand-cream)]/65">
-                {iconChevronDown}
-              </span>
-            </div>
-            {fieldErrors.horario ? <p className="text-xs text-red-700">{fieldErrors.horario}</p> : null}
-            {!horariosGrupalLoading && opcionesGrupalDisponibles.length === 0 && (
-              <p className="text-xs text-[var(--brand-cream)]/60">
-                No hay franjas grupales disponibles en este momento.
-              </p>
-            )}
             <label className="flex items-start gap-3 rounded-xl border border-black/10 bg-black/[0.03] px-3 py-2.5">
               <input
                 type="checkbox"
-                checked={agregarEvaluacionGrupal}
+                checked={soloClaseGrupal}
                 onChange={(e) => {
                   const checked = e.target.checked;
-                  setAgregarEvaluacionGrupal(checked);
-                  if (!checked) {
+                  setSoloClaseGrupal(checked);
+                  if (checked) {
                     setFormatoEvaluacion("");
-                    setHuecoEvalGrupal(null);
+                    setSlotEvalGrupal(null);
+                    setRepetirModo("");
+                    setRepetirHasta("");
+                  } else {
+                    setHorarioGrupal("");
                   }
                 }}
                 className="mt-0.5 h-4 w-4 rounded border-black/20 accent-[var(--brand-ui-primary)]"
               />
               <span className="text-sm text-[var(--brand-cream)]/85">
-                Agregar evaluación individual (opcional)
+                Solo ciclo de clases mar/jue (sin evaluación con horario libre)
               </span>
             </label>
-            {agregarEvaluacionGrupal && (
+
+            {soloClaseGrupal ? (
               <>
                 <div className="relative">
-                  <select value={formatoEvaluacion} onChange={(e) => setFormatoEvaluacion(e.target.value as "presencial" | "virtual" | "")} className={`w-full appearance-none rounded-xl border border-black/15 bg-[var(--panel-input)] px-3 py-2 pr-10 text-sm outline-none ${formatoEvaluacion ? "text-[var(--brand-cream)]" : "text-[var(--brand-cream)]/55"}`}>
-                    <option value="" disabled hidden>Formato de evaluación</option>
+                  <select
+                    value={horarioGrupal}
+                    onChange={(e) => setHorarioGrupal(e.target.value)}
+                    disabled={horariosGrupalLoading || opcionesGrupalDisponibles.length === 0}
+                    className={`w-full appearance-none rounded-xl border border-black/15 bg-[var(--panel-input)] px-3 py-2 pr-10 text-sm outline-none disabled:opacity-60 ${horarioGrupal ? "text-[var(--brand-cream)]" : "text-[var(--brand-cream)]/55"}`}
+                  >
+                    <option value="" disabled hidden>
+                      {horariosGrupalLoading ? "Cargando franjas..." : "Elegir franja de clases"}
+                    </option>
+                    {opcionesGrupalDisponibles.map((h) => (
+                      <option key={h.value} value={h.value}>
+                        {h.label}
+                      </option>
+                    ))}
+                  </select>
+                  <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[var(--brand-cream)]/65">
+                    {iconChevronDown}
+                  </span>
+                </div>
+                {fieldErrors.horario ? <p className="text-xs text-red-700">{fieldErrors.horario}</p> : null}
+                {!horariosGrupalLoading && opcionesGrupalDisponibles.length === 0 && (
+                  <p className="text-xs text-[var(--brand-cream)]/60">
+                    No hay franjas grupales disponibles en este momento.
+                  </p>
+                )}
+              </>
+            ) : (
+              <>
+                <div className="relative">
+                  <select
+                    value={formatoEvaluacion}
+                    onChange={(e) => setFormatoEvaluacion(e.target.value as "presencial" | "virtual" | "")}
+                    className={`w-full appearance-none rounded-xl border border-black/15 bg-[var(--panel-input)] px-3 py-2 pr-10 text-sm outline-none ${formatoEvaluacion ? "text-[var(--brand-cream)]" : "text-[var(--brand-cream)]/55"}`}
+                  >
+                    <option value="" disabled hidden>
+                      Formato de evaluación
+                    </option>
                     <option value="presencial">Presencial</option>
                     <option value="virtual">Virtual</option>
                   </select>
@@ -378,16 +454,20 @@ export function PanelNuevoTurnoClient() {
                     {iconChevronDown}
                   </span>
                 </div>
-                {fieldErrors.formatoEvaluacion ? <p className="text-xs text-red-700">{fieldErrors.formatoEvaluacion}</p> : null}
-                {horarioGrupal && (formatoEvaluacion === "presencial" || formatoEvaluacion === "virtual") && (
+                {fieldErrors.formatoEvaluacion ? (
+                  <p className="text-xs text-red-700">{fieldErrors.formatoEvaluacion}</p>
+                ) : null}
+                {(formatoEvaluacion === "presencial" || formatoEvaluacion === "virtual") && (
                   <div ref={evalCalendarWrapRef}>
-                    <ReservaHuecosCalendario
-                      mode="grupal-eval"
-                      horarioGrupalId={horarioGrupal}
+                    <PanelTurnoFechaHoraPicker
                       accentColor="#4F7CAC"
-                      titulo="Elegí evaluación"
-                      onSeleccion={(h) => setHuecoEvalGrupal(h)}
+                      titulo="Elegí evaluación (día y hora libres)"
+                      onSeleccion={(h) => setSlotEvalGrupal(h)}
                     />
+                    <p className="mt-2 text-xs leading-snug text-[var(--brand-cream)]/60">
+                      Evaluación libre (cualquier día y hora). En el calendario solo verás esas evaluaciones.
+                      El ciclo de clases mar/jue se carga solo con la opción &quot;Solo ciclo de clases&quot; abajo.
+                    </p>
                   </div>
                 )}
                 {fieldErrors.evalSlot ? <p className="text-xs text-red-700">{fieldErrors.evalSlot}</p> : null}
@@ -395,6 +475,68 @@ export function PanelNuevoTurnoClient() {
             )}
           </>
         )}
+
+        {puedeRepetir && (slotIndividual || slotEvalGrupal) ? (
+          <div className="space-y-2 rounded-xl border border-black/10 bg-black/[0.03] px-3 py-3">
+            <div className="relative">
+              <select
+                value={repetirModo}
+                onChange={(e) => {
+                  const v = e.target.value as "" | PanelRepeatMode;
+                  setRepetirModo(v);
+                  if (!v) setRepetirHasta("");
+                }}
+                className={`w-full appearance-none rounded-xl border border-black/15 bg-[var(--panel-input)] px-3 py-2 pr-10 text-sm outline-none ${
+                  repetirModo ? "text-[var(--brand-cream)]" : "text-[var(--brand-cream)]/55"
+                }`}
+              >
+                <option value="">No repetir (un solo turno)</option>
+                <option value="weekly">Cada semana (mismo día de la semana)</option>
+                <option value="monthly">Cada mes (mismo día de la semana, ej. cada miércoles)</option>
+              </select>
+              <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[var(--brand-cream)]/65">
+                {iconChevronDown}
+              </span>
+            </div>
+            {repetirModo ? (
+              <>
+                <div>
+                  <label className="block text-xs font-medium text-[var(--brand-cream)]/60" htmlFor="repetir-hasta">
+                    Fecha de fin (opcional)
+                  </label>
+                  <input
+                    id="repetir-hasta"
+                    type="date"
+                    value={repetirHasta}
+                    onChange={(e) => setRepetirHasta(e.target.value)}
+                    className="mt-1 w-full rounded-xl border border-black/15 bg-[var(--panel-input)] px-3 py-2 text-sm text-[var(--brand-cream)] outline-none"
+                  />
+                  {fieldErrors.repeatUntilDateKey ? (
+                    <p className="mt-1 text-xs text-red-700">{fieldErrors.repeatUntilDateKey}</p>
+                  ) : null}
+                  <p className="mt-1 text-xs text-[var(--brand-cream)]/55">
+                    Sin fecha de fin: hasta{" "}
+                    {repetirModo === "monthly"
+                      ? `${PANEL_REPEAT_MAX_MONTHLY} meses`
+                      : `${PANEL_REPEAT_MAX_WEEKLY} semanas`}{" "}
+                    hacia adelante.
+                  </p>
+                </div>
+                <p className="text-xs font-medium text-[var(--brand-cream)]/75">
+                  {previewRepeticion.sinFin
+                    ? `Vista previa: ${previewRepeticion.count} citas (máx. ${
+                        previewRepeticion.modo === "monthly"
+                          ? PANEL_REPEAT_MAX_MONTHLY
+                          : PANEL_REPEAT_MAX_WEEKLY
+                      } ${previewRepeticion.modo === "monthly" ? "meses" : "semanas"}).`
+                    : previewRepeticion.count > 0
+                      ? `Vista previa: ${previewRepeticion.count} citas en el rango.`
+                      : "No hay fechas en el rango elegido."}
+                </p>
+              </>
+            ) : null}
+          </div>
+        ) : null}
 
         <textarea
           value={notaInterna}
