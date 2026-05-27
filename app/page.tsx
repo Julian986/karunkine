@@ -196,13 +196,13 @@ export default function Home() {
                 <p className="mt-2">
                   Éstas tienen una duración estimada de 45&apos; y tienen un valor de $40.000.
                 </p>
-                <p className="mt-2">Podés elegir turno presencial u online, en estos horarios:</p>
-                <div className="mt-1 space-y-1">
+                <p className="mt-2">Podés elegir turno presencial u online. {/* en estos horarios: */}</p>
+                {/* <div className="mt-1 space-y-1">
                   <p>Lunes: 14:00H • 15:00H</p>
                   <p>Martes: 9:30H</p>
                   <p>Miércoles: 14:00H • 15:00H • 16:00H</p>
                   <p>Jueves: 9:30H</p>
-                </div>
+                </div> */}
               </li>
             </ul>
           </div>
