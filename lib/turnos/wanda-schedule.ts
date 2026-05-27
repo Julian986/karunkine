@@ -22,14 +22,13 @@ export const HORARIOS_GRUPAL_IDS = [
 export const GRUPAL_CUPO_MAX_POR_BANDA = 4;
 
 export const HORARIOS_INDIVIDUAL_IDS = [
-  "lun_1600",
-  "lun_1700",
-  "mie_900",
-  "mie_1000",
+  "lun_1400",
+  "lun_1500",
+  "mar_930",
+  "mie_1400",
+  "mie_1500",
   "mie_1600",
-  "mie_1700",
-  "vie_900",
-  "vie_1000",
+  "jue_930",
 ] as const;
 
 export type HorarioGrupalId = (typeof HORARIOS_GRUPAL_IDS)[number];
@@ -48,14 +47,13 @@ const INDIVIDUAL_RULES: Record<
   HorarioIndividualId,
   { weekday: number; timeLocal: string }
 > = {
-  lun_1600: { weekday: 1, timeLocal: "16:00" },
-  lun_1700: { weekday: 1, timeLocal: "17:00" },
-  mie_900: { weekday: 3, timeLocal: "09:00" },
-  mie_1000: { weekday: 3, timeLocal: "10:00" },
+  lun_1400: { weekday: 1, timeLocal: "14:00" },
+  lun_1500: { weekday: 1, timeLocal: "15:00" },
+  mar_930: { weekday: 2, timeLocal: "09:30" },
+  mie_1400: { weekday: 3, timeLocal: "14:00" },
+  mie_1500: { weekday: 3, timeLocal: "15:00" },
   mie_1600: { weekday: 3, timeLocal: "16:00" },
-  mie_1700: { weekday: 3, timeLocal: "17:00" },
-  vie_900: { weekday: 5, timeLocal: "09:00" },
-  vie_1000: { weekday: 5, timeLocal: "10:00" },
+  jue_930: { weekday: 4, timeLocal: "09:30" },
 };
 
 export function isHorarioGrupalId(v: string): v is HorarioGrupalId {
@@ -161,6 +159,10 @@ export function individualTemplatesForWeekday(weekday: number): HorarioIndividua
 
 export function timeForIndividualTemplate(id: HorarioIndividualId): string {
   return INDIVIDUAL_RULES[id].timeLocal;
+}
+
+export function weekdayForIndividualTemplate(id: HorarioIndividualId): number {
+  return INDIVIDUAL_RULES[id].weekday;
 }
 
 /**

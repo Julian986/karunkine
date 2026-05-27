@@ -18,14 +18,13 @@ export const HORARIOS_GRUPAL = new Set([
 ]);
 
 export const HORARIOS_INDIVIDUAL = new Set([
-  "lun_1600",
-  "lun_1700",
-  "mie_900",
-  "mie_1000",
+  "lun_1400",
+  "lun_1500",
+  "mar_930",
+  "mie_1400",
+  "mie_1500",
   "mie_1600",
-  "mie_1700",
-  "vie_900",
-  "vie_1000",
+  "jue_930",
 ]);
 
 const slotObj = z.object({

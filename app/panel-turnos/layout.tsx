@@ -3,6 +3,10 @@ import type { Metadata, Viewport } from "next";
 const PANEL_PWA_VERSION = "panel-v3";
 
 export const metadata: Metadata = {
+  robots: {
+    index: false,
+    follow: false,
+  },
   manifest: "/manifest-admin-panel-turnos.webmanifest",
   icons: {
     icon: [

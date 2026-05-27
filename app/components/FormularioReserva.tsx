@@ -64,14 +64,13 @@ const HORARIOS_GRUPAL = [
 ] as const;
 
 const HORARIOS_INDIVIDUAL = [
-  { value: "lun_1600", label: "Lunes 16:00H" },
-  { value: "lun_1700", label: "Lunes 17:00H" },
-  { value: "mie_900", label: "Miércoles 9:00H" },
-  { value: "mie_1000", label: "Miércoles 10:00H" },
+  { value: "lun_1400", label: "Lunes 14:00H" },
+  { value: "lun_1500", label: "Lunes 15:00H" },
+  { value: "mar_930", label: "Martes 9:30H" },
+  { value: "mie_1400", label: "Miércoles 14:00H" },
+  { value: "mie_1500", label: "Miércoles 15:00H" },
   { value: "mie_1600", label: "Miércoles 16:00H" },
-  { value: "mie_1700", label: "Miércoles 17:00H" },
-  { value: "vie_900", label: "Viernes 9:00H" },
-  { value: "vie_1000", label: "Viernes 10:00H" },
+  { value: "jue_930", label: "Jueves 9:30H" },
 ] as const;
 
 const FORMATO_CONSULTA_OPCIONES = [

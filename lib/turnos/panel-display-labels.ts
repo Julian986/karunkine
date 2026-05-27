@@ -24,14 +24,13 @@ const HORARIO_GRUPAL_MAP: Record<string, string> = {
 };
 
 const HORARIO_INDIVIDUAL_MAP: Record<string, string> = {
-  lun_1600: "Lunes 16:00H",
-  lun_1700: "Lunes 17:00H",
-  mie_900: "Miércoles 9:00H",
-  mie_1000: "Miércoles 10:00H",
+  lun_1400: "Lunes 14:00H",
+  lun_1500: "Lunes 15:00H",
+  mar_930: "Martes 9:30H",
+  mie_1400: "Miércoles 14:00H",
+  mie_1500: "Miércoles 15:00H",
   mie_1600: "Miércoles 16:00H",
-  mie_1700: "Miércoles 17:00H",
-  vie_900: "Viernes 9:00H",
-  vie_1000: "Viernes 10:00H",
+  jue_930: "Jueves 9:30H",
 };
 
 export function panelMotivoLabel(code: string): string {

@@ -5,6 +5,10 @@ import { MisTurnosClient } from "./mis-turnos-client";
 export const metadata: Metadata = {
   title: "Mis turnos",
   description: "Consultá, cancelá o reprogramá tus turnos con Karunkine.",
+  robots: {
+    index: false,
+    follow: false,
+  },
 };
 
 export default function MisTurnosPage() {

@@ -1,10 +1,12 @@
 import dynamic from "next/dynamic";
+import type { Metadata } from "next";
 import BrandBandSection from "./components/BrandBandSection";
 import ConsultaAgendarCta from "./components/ConsultaAgendarCta";
 import HeroFormularioSection from "./components/HeroFormularioSection";
 import HomeHero from "./components/HomeHero";
 import { LogoAccentProvider } from "./components/LogoAccentContext";
 import { BRAND_BG_LIGHT } from "./lib/brand-colors";
+import { getSiteUrl } from "../lib/site-url";
 
 const PreguntasFrecuentes = dynamic(() => import("./components/PreguntasFrecuentes"), {
   loading: () => (
@@ -21,10 +23,128 @@ const PreguntasFrecuentes = dynamic(() => import("./components/PreguntasFrecuent
   ),
 });
 
+const siteUrl = getSiteUrl();
+
+export const metadata: Metadata = {
+  title: "Kinesiología en Bahía Blanca | Evaluación, consultas y clases grupales",
+  description:
+    "Karunkine de Wanda Perrin: kinesiología y fisiatría en Bahía Blanca. Reservá evaluación inicial, consulta individual presencial/online o clases grupales de conciencia corporal y movimiento.",
+  alternates: {
+    canonical: "/",
+  },
+  keywords: [
+    "kinesiología bahía blanca",
+    "kinesiología y fisiatría",
+    "consulta kinesiológica presencial",
+    "consulta kinesiológica online",
+    "evaluación kinesiológica",
+    "clases grupales conciencia corporal",
+    "rehabilitación física",
+  ],
+  openGraph: {
+    title: "Karunkine | Kinesiología en Bahía Blanca",
+    description:
+      "Reservá evaluación inicial, consulta individual o clases grupales con Wanda Perrin.",
+    url: "/",
+    type: "website",
+  },
+  twitter: {
+    title: "Karunkine | Kinesiología en Bahía Blanca",
+    description:
+      "Reservá evaluación inicial, consulta individual o clases grupales con Wanda Perrin.",
+  },
+};
+
+const schemaOrg = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Physiotherapy",
+      "@id": `${siteUrl}/#business`,
+      name: "Karunkine - Wanda Perrin",
+      url: siteUrl,
+      image: `${siteUrl}/og.jpg?v=7`,
+      telephone: "+5492914296636",
+      email: "lic.wandaperrin@gmail.com",
+      address: {
+        "@type": "PostalAddress",
+        streetAddress: "Viamonte 1233",
+        addressLocality: "Bahía Blanca",
+        addressRegion: "Buenos Aires",
+        addressCountry: "AR",
+      },
+      sameAs: ["https://www.instagram.com/lic.wandaperrin"],
+      areaServed: "Bahía Blanca",
+    },
+    {
+      "@type": "Service",
+      "@id": `${siteUrl}/#consulta-individual`,
+      serviceType: "Consulta individual de kinesiología y fisiatría",
+      provider: { "@id": `${siteUrl}/#business` },
+      areaServed: "Bahía Blanca",
+      availableChannel: {
+        "@type": "ServiceChannel",
+        serviceLocation: {
+          "@type": "Place",
+          address: {
+            "@type": "PostalAddress",
+            streetAddress: "Viamonte 1233",
+            addressLocality: "Bahía Blanca",
+            addressCountry: "AR",
+          },
+        },
+      },
+      offers: {
+        "@type": "Offer",
+        price: "40000",
+        priceCurrency: "ARS",
+      },
+    },
+    {
+      "@type": "Service",
+      "@id": `${siteUrl}/#clases-grupales`,
+      serviceType: "Clases regulares grupales con evaluación inicial",
+      provider: { "@id": `${siteUrl}/#business` },
+      areaServed: "Bahía Blanca",
+      offers: {
+        "@type": "Offer",
+        price: "160000",
+        priceCurrency: "ARS",
+      },
+    },
+    {
+      "@type": "FAQPage",
+      "@id": `${siteUrl}/#faq`,
+      mainEntity: [
+        {
+          "@type": "Question",
+          name: "¿Cuánto dura una sesión?",
+          acceptedAnswer: {
+            "@type": "Answer",
+            text: "Las sesiones regulares grupales tienen una duración estimada de 50 minutos.",
+          },
+        },
+        {
+          "@type": "Question",
+          name: "¿Cuánto dura la evaluación?",
+          acceptedAnswer: {
+            "@type": "Answer",
+            text: "La consulta inicial de evaluación tiene una duración estimada de 30 minutos.",
+          },
+        },
+      ],
+    },
+  ],
+};
+
 export default function Home() {
   return (
     <LogoAccentProvider>
       <>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(schemaOrg) }}
+        />
         <HomeHero />
         <HeroFormularioSection />
 
@@ -63,9 +183,9 @@ export default function Home() {
                 <p className="brand-strong">
                   Por medio de CLASES REGULARES GRUPALES con evaluación previa.
                 </p>
-                <p className="mt-2">Los días Martes y Jueves</p>
+          {/*       <p className="mt-2">Los días Martes y Jueves</p>
                 <p className="mt-2">En los siguientes horarios:</p>
-                <p className="mt-1">9:30H • 10:30H • 16H • 17H</p>
+                <p className="mt-1">9:30H • 10:30H • 16H • 17H</p> */}
                 <p className="mt-2">Cada turno con un cupo máximo de 4 personas.</p>
                 <p className="mt-2">
                   Con un valor mensual de $160.000 que incluye la consulta individual para evaluación.
@@ -78,9 +198,10 @@ export default function Home() {
                 </p>
                 <p className="mt-2">Podés elegir turno presencial u online, en estos horarios:</p>
                 <div className="mt-1 space-y-1">
-                  <p>Lunes: 16:00H • 17:00H</p>
-                  <p>Miércoles: 9:00H • 10:00H • 16:00H • 17:00H</p>
-                  <p>Viernes: 9:00H • 10:00H</p>
+                  <p>Lunes: 14:00H • 15:00H</p>
+                  <p>Martes: 9:30H</p>
+                  <p>Miércoles: 14:00H • 15:00H • 16:00H</p>
+                  <p>Jueves: 9:30H</p>
                 </div>
               </li>
             </ul>

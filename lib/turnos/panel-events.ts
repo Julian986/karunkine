@@ -16,6 +16,7 @@ import {
   timeForGrupalTemplate,
   timeForIndividualTemplate,
   utcTodayDateKey,
+  weekdayForIndividualTemplate,
 } from "./wanda-schedule";
 
 export type PanelCalendarioEvento = {
@@ -72,9 +73,7 @@ function legacyPreviewCita(row: {
 }): CitaDoc | null {
   const from = utcTodayDateKey();
   if (row.modalidad === "consulta_individual" && row.horario && isHorarioIndividualId(row.horario)) {
-    const wd = { lun_1600: 1, lun_1700: 1, mie_900: 3, mie_1000: 3, mie_1600: 3, mie_1700: 3, vie_900: 5, vie_1000: 5 }[
-      row.horario
-    ] as number;
+    const wd = weekdayForIndividualTemplate(row.horario);
     const dk = firstWeekdayOnOrAfter(from, wd);
     const tl = timeForIndividualTemplate(row.horario);
     if (!dk) return null;
@@ -82,9 +81,7 @@ function legacyPreviewCita(row: {
   }
   if (row.modalidad === "grupal" && row.horarioEvaluacion && isHorarioIndividualId(row.horarioEvaluacion)) {
     const id = row.horarioEvaluacion;
-    const wd = { lun_1600: 1, lun_1700: 1, mie_900: 3, mie_1000: 3, mie_1600: 3, mie_1700: 3, vie_900: 5, vie_1000: 5 }[
-      id
-    ] as number;
+    const wd = weekdayForIndividualTemplate(id);
     const dk = firstWeekdayOnOrAfter(from, wd);
     const tl = timeForIndividualTemplate(id);
     if (!dk) return null;
