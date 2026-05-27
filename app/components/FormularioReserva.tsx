@@ -1484,6 +1484,12 @@ export default function FormularioReserva() {
                         <MercadoPagoButton
                           type="button"
                           onClick={() => {
+                            gaEvent("pagar_reservar_mercadopago_click", {
+                              modalidad: selectedModalidad || "sin_modalidad",
+                              turno_completo: turnoCompleto,
+                              value: resumenPrecio?.monto ?? 0,
+                              currency: "ARS",
+                            });
                             void iniciarCheckoutMercadoPago();
                           }}
                           label={

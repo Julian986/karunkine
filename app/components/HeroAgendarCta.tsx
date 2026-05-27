@@ -1,6 +1,7 @@
 "use client";
 
 import { useLogoAccent } from "./LogoAccentContext";
+import { event as gaEvent } from "../../lib/gtag";
 
 export default function HeroAgendarCta() {
   const { accentColor, isLogoV2 } = useLogoAccent();
@@ -8,6 +9,11 @@ export default function HeroAgendarCta() {
   return (
     <a
       href="#formulario-reserva"
+      onClick={() => {
+        gaEvent("agendar_evaluacion_click", {
+          location: "hero",
+        });
+      }}
       className="hero-cta mt-8 inline-flex items-center gap-2 rounded-xl px-8 py-4 font-semibold shadow-lg transition hover:shadow-xl"
       style={
         isLogoV2

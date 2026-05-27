@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { usePathname } from "next/navigation";
+import { event as gaEvent } from "../../lib/gtag";
 
 const NAV_LINKS = [
   { href: "#inicio", label: "Inicio" },
@@ -108,6 +109,12 @@ export default function Header() {
     setMenuOpen(false);
   };
 
+  const trackMisTurnosClick = (location: "header_desktop" | "header_mobile") => {
+    gaEvent("mis_turnos_click", {
+      location,
+    });
+  };
+
   const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
     if (!href.startsWith("#")) return;
     e.preventDefault();
@@ -137,6 +144,7 @@ export default function Header() {
           <Link
             href="/mis-turnos"
             prefetch
+            onClick={() => trackMisTurnosClick("header_desktop")}
             className="shrink-0 rounded-full bg-white px-4 py-2 text-sm font-bold text-[#963417] shadow-[0_4px_16px_rgba(0,0,0,0.18)] ring-2 ring-white/90 transition hover:bg-amber-50 hover:brightness-[1.02] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
           >
             Mis turnos
@@ -207,7 +215,10 @@ export default function Header() {
                 <Link
                   href="/mis-turnos"
                   prefetch
-                  onClick={() => closeMenu()}
+                  onClick={() => {
+                    trackMisTurnosClick("header_mobile");
+                    closeMenu();
+                  }}
                   className="mx-4 mb-3 flex items-center justify-center gap-2 rounded-2xl bg-[#963417] px-5 py-4 text-center text-base font-bold text-white shadow-[0_8px_24px_rgba(150,52,23,0.45)] ring-2 ring-[#963417]/30 transition hover:bg-[#a8431c] hover:shadow-lg active:scale-[0.99]"
                 >
                   <svg className="h-5 w-5 shrink-0 opacity-95" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
