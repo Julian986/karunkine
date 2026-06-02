@@ -12,13 +12,7 @@ export function reservaOrigenLabel(origen: ReservaOrigen): string {
   return ORIGEN_LABEL[origen];
 }
 
-export function reservaOrigenFromTurno(row: {
-  turnoCodigo?: unknown;
-  externalReference?: unknown;
-  mpPaymentId?: unknown;
-  horario?: unknown;
-  horarioEvaluacion?: unknown;
-}): ReservaOrigen {
+export function reservaOrigenFromTurno(row: Record<string, unknown>): ReservaOrigen {
   const codigo = String(row.turnoCodigo ?? "").trim();
   if (codigo.startsWith("panel_manual|")) return "manual";
 
