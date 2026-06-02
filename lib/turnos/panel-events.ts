@@ -7,6 +7,7 @@ import {
   panelMotivoLabel,
 } from "./panel-display-labels";
 import { PANEL_HORARIO_LIBRE } from "./panel-manual-schedule-shared";
+import { reservaOrigenFromTurno, type ReservaOrigen } from "./reserva-origen";
 import type { CitaDoc } from "./wanda-schedule";
 import { formatDisplayFechaHora } from "./wanda-schedule";
 import {
@@ -48,6 +49,7 @@ export type PanelCalendarioEvento = {
   citaTemplateId: string;
   citaTemplateLabel: string;
   mpPaymentId: string;
+  origenReserva: ReservaOrigen;
 };
 
 function pad2(n: number) {
@@ -129,6 +131,7 @@ export function expandTurnoToPanelEventos(
   const horarioEvaluacion = String(row.horarioEvaluacion ?? "").trim();
   const turnoDetalle = String(row.turnoDetalle ?? "").trim();
   const mpPaymentId = String(row.mpPaymentId ?? "").trim();
+  const origenReserva = reservaOrigenFromTurno(row);
   const rawCitas = row.citas as CitaDoc[] | undefined;
   const fromDoc =
     Array.isArray(rawCitas) && rawCitas.length > 0 ? rawCitas.filter((c) => isValidCitaForPanel(c)) : [];
@@ -179,6 +182,7 @@ export function expandTurnoToPanelEventos(
       citaTemplateId,
       citaTemplateLabel: panelHorarioTemplateLabel(citaTemplateId),
       mpPaymentId,
+      origenReserva,
     };
   });
 }

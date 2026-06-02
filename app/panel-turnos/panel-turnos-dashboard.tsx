@@ -14,6 +14,7 @@ import {
   panelMonthTitle,
 } from "../../lib/booking/panel-month-grid";
 import type { PanelCalendarioEvento } from "../../lib/turnos/panel-events";
+import { reservaOrigenLabel } from "../../lib/turnos/reserva-origen";
 
 type PanelAgendaBlockRow = {
   id: string;
@@ -125,9 +126,9 @@ function panelResumenVisible(ev: PanelCalendarioEvento): string {
   return [ev.motivoLabel, formato].filter(Boolean).join(" · ");
 }
 
-/** Líneas extra solo para grupal (no repetir lo que ya está en la tarjeta). */
-function panelDetalleLineasGrupal(ev: PanelCalendarioEvento): string[] {
-  const out: string[] = [];
+/** Líneas del detalle expandido (origen, franja grupal, etc.). */
+function panelDetalleLineas(ev: PanelCalendarioEvento): string[] {
+  const out: string[] = [`Origen: ${reservaOrigenLabel(ev.origenReserva)}`];
   if (ev.tipoCita === "clase_grupal" && ev.horarioReservaLabel) {
     out.push(`Franja mensual: ${ev.horarioReservaLabel}`);
   }
@@ -162,7 +163,7 @@ function PanelTurnoDetalleExpand({
   onNotaChange: (value: string) => void;
   onNotaBlur: (value: string) => void;
 }) {
-  const lineasGrupal = panelDetalleLineasGrupal(ev);
+  const lineasDetalle = panelDetalleLineas(ev);
   const hayContacto = Boolean(ev.mail.trim() || ev.celular.trim());
 
   return (
@@ -174,13 +175,11 @@ function PanelTurnoDetalleExpand({
         </div>
       ) : null}
 
-      {lineasGrupal.length > 0 ? (
-        <div className="space-y-1 text-[12px] leading-snug text-[var(--brand-cream)]/78">
-          {lineasGrupal.map((linea) => (
-            <p key={linea}>{linea}</p>
-          ))}
-        </div>
-      ) : null}
+      <div className="space-y-1 text-[12px] leading-snug text-[var(--brand-cream)]/78">
+        {lineasDetalle.map((linea) => (
+          <p key={linea}>{linea}</p>
+        ))}
+      </div>
 
       {ev.mpPaymentId ? (
         <p className="text-[11px] text-[var(--brand-cream)]/50">
