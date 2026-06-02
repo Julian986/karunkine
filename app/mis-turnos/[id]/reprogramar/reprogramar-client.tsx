@@ -67,6 +67,14 @@ export function ReprogramarClient({
   turnoId: string;
   variant?: ReprogramarVariant;
 }) {
+  const isPanel = variant === "panel";
+  const pageShell = isPanel
+    ? "panel-v2-theme min-h-screen bg-[#F0F1F3] px-4 pb-24 pt-8"
+    : "min-h-screen bg-gradient-to-b from-[#faf6f3] to-[#f0e8e2] px-4 pb-24 pt-8";
+  const backLinkClass = isPanel
+    ? "text-sm font-medium text-[#B88E2F] underline-offset-2 hover:underline"
+    : "text-sm font-medium text-[#963417] underline-offset-2 hover:underline";
+  const accentTextClass = isPanel ? "text-[#B88E2F]" : "text-[#963417]";
   const router = useRouter();
   const apiTurnoBase =
     variant === "panel" ? "/api/panel-turnos/turnos/" : "/api/mis-turnos/turnos/";
@@ -219,10 +227,10 @@ export function ReprogramarClient({
 
   if (loadError && !detail) {
     return (
-      <main className="min-h-screen bg-gradient-to-b from-[#faf6f3] to-[#f0e8e2] px-4 pb-24 pt-8">
+      <main className={pageShell}>
         <div className="mx-auto max-w-md">
           <p className="text-sm text-red-700">{loadError}</p>
-          <Link href={backHref} className="mt-4 inline-block text-sm font-medium text-[#963417] underline">
+          <Link href={backHref} className={`mt-4 inline-block ${backLinkClass}`}>
             Volver
           </Link>
         </div>
@@ -232,7 +240,7 @@ export function ReprogramarClient({
 
   if (!detail || !detail.canRescheduleIndividual || !isHorarioIndividualId(detail.horario)) {
     return (
-      <main className="min-h-screen bg-gradient-to-b from-[#faf6f3] to-[#f0e8e2] px-4 pb-24 pt-8">
+      <main className={pageShell}>
         <div className="mx-auto max-w-md">
           <p className="text-sm text-zinc-700">{loadError ?? "Cargando…"}</p>
         </div>
@@ -241,16 +249,18 @@ export function ReprogramarClient({
   }
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-[#faf6f3] to-[#f0e8e2] px-4 pb-24 pt-8">
+    <main className={pageShell}>
       <div className="mx-auto w-full max-w-md">
-        <Link href={backHref} className="text-sm font-medium text-[#963417] underline-offset-2 hover:underline">
+        <Link href={backHref} className={backLinkClass}>
           ← {variant === "panel" ? "Panel de turnos" : "Mis turnos"}
         </Link>
         <h1 className="mt-4 text-2xl font-bold text-zinc-900">Cambiar horario</h1>
         <div className="mt-4 rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
           <p className="text-[11px] font-bold uppercase tracking-wide text-zinc-400">Turno actual</p>
           <p className="mt-2 text-xl font-bold leading-snug text-zinc-900">{detail.displayFechaLine}</p>
-          <p className="mt-1 text-3xl font-bold tabular-nums tracking-tight text-[#963417]">{detail.displayHoraLine}</p>
+          <p className={`mt-1 text-3xl font-bold tabular-nums tracking-tight ${accentTextClass}`}>
+            {detail.displayHoraLine}
+          </p>
         </div>
         <p className="mt-3 text-xs text-zinc-500">
           Solo fechas libres para el mismo tipo de consulta ({variant === "panel" ? "sincronizado con la agenda" : "el que reservaste"}).

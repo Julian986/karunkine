@@ -37,7 +37,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#963417",
+  themeColor: "#B88E2F",
 };
 
 export default function PanelTurnosLayout({

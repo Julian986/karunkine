@@ -6,7 +6,7 @@
   "scope": "/panel-turnos/",
   "display": "standalone",
   "background_color": "#ffffff",
-  "theme_color": "#a56a42",
+  "theme_color": "#B88E2F",
   "icons": [
     {
       "src": "/panel-turnos/app-icon/192?app=panel-v3",
