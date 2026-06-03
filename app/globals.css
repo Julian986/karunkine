@@ -49,6 +49,8 @@
   --color-primary: var(--primary);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  /* Menú header: desktop desde 1031px; hamburguesa en 1030px o menos */
+  --breakpoint-nav: 1031px;
 }
 
 

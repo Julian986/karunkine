@@ -5,16 +5,27 @@ import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { usePathname } from "next/navigation";
 import { event as gaEvent } from "../../lib/gtag";
+import { TALLER_BAHIA_JUNIO_2026 } from "../../lib/taller/evento-config";
+
+const TALLER_INSCRIPCION_HREF = `/${TALLER_BAHIA_JUNIO_2026.slug}`;
 
 const NAV_LINKS = [
   { href: "#inicio", label: "Inicio" },
   { href: "#formulario-reserva", label: "Agendar" },
+  { href: TALLER_INSCRIPCION_HREF, label: "Inscribirme" },
   { href: "#sobre-nosotros", label: "Nosotros" },
   { href: "#tratamiento", label: "Tratamiento" },
   { href: "#consulta-inicial", label: "Evaluación" },
   { href: "#preguntas-frecuentes", label: "Preguntas" },
   { href: "#contacto", label: "Contacto" },
 ];
+
+/** En subpáginas, las anclas de la home van como /#sección. */
+function resolveNavHref(href: string, pathname: string | null): string {
+  if (!href.startsWith("#")) return href;
+  if (pathname === "/") return href;
+  return `/${href}`;
+}
 
 function useScrollLock(locked: boolean, scrollYRef: React.MutableRefObject<number>) {
   useEffect(() => {
@@ -58,6 +69,16 @@ export default function Header() {
   const openRafRef = useRef<number | null>(null);
 
   useEffect(() => setMounted(true), []);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 1031px)");
+    const onChange = () => {
+      if (mq.matches) closeMenu();
+    };
+    mq.addEventListener("change", onChange);
+    return () => mq.removeEventListener("change", onChange);
+  }, []);
+
   useScrollLock(menuVisible, scrollYRef);
 
   useEffect(() => {
@@ -117,6 +138,7 @@ export default function Header() {
 
   const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
     if (!href.startsWith("#")) return;
+    if (pathname !== "/") return;
     e.preventDefault();
     closeMenu();
     window.setTimeout(() => {
@@ -128,19 +150,21 @@ export default function Header() {
     }, 320);
   };
 
+  const isHome = pathname === "/";
+
   if (pathname?.startsWith("/panel-turnos") || pathname?.startsWith("/mis-turnos")) {
     return null;
   }
 
   return (
     <header className="fixed left-0 right-0 top-0 z-40 border-b border-white/15 bg-[#963417]/95 backdrop-blur-sm">
-      <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4 sm:px-6 md:px-8">
-        <a href="#inicio" className="text-lg font-semibold text-white">
+      <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4 sm:px-6 nav:px-8">
+        <Link href="/" className="text-lg font-semibold text-white">
           Karunkine
-        </a>
+        </Link>
 
         {/* Desktop nav — Mis turnos primero y destacado */}
-        <nav className="hidden md:flex md:items-center md:gap-5">
+        <nav className="hidden nav:flex nav:items-center nav:gap-5">
           <Link
             href="/mis-turnos"
             prefetch
@@ -149,15 +173,26 @@ export default function Header() {
           >
             Mis turnos
           </Link>
-          {NAV_LINKS.map(({ href, label }) => (
-            <a
-              key={href + label}
-              href={href}
-              className="text-base font-medium text-white/90 transition hover:text-white"
-            >
-              {label}
-            </a>
-          ))}
+          {NAV_LINKS.map(({ href, label }) =>
+            href.startsWith("#") ? (
+              <a
+                key={href + label}
+                href={resolveNavHref(href, pathname)}
+                className="text-base font-medium text-white/90 transition hover:text-white"
+              >
+                {label}
+              </a>
+            ) : (
+              <Link
+                key={href + label}
+                href={href}
+                prefetch
+                className="text-base font-medium text-white/90 transition hover:text-white"
+              >
+                {label}
+              </Link>
+            ),
+          )}
         </nav>
 
         {/* Mobile: hamburger */}
@@ -166,7 +201,7 @@ export default function Header() {
           aria-label={menuOpen ? "Cerrar menú" : "Abrir menú"}
           aria-expanded={menuOpen}
           onClick={() => (menuOpen ? closeMenu() : openMenu())}
-          className="flex h-10 w-10 items-center justify-center rounded-lg text-white hover:bg-white/10 md:hidden"
+          className="flex h-10 w-10 items-center justify-center rounded-lg text-white hover:bg-white/10 nav:hidden"
         >
           {menuOpen ? (
             <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -185,7 +220,7 @@ export default function Header() {
         menuVisible &&
         createPortal(
           <div
-            className="fixed inset-0 z-[9999] md:hidden"
+            className="fixed inset-0 z-[9999] nav:hidden"
             aria-hidden={!menuOpen}
             style={{ pointerEvents: menuOpen ? "auto" : "none" }}
           >
@@ -230,16 +265,34 @@ export default function Header() {
                   </svg>
                   Mis turnos
                 </Link>
-                {NAV_LINKS.map(({ href, label }) => (
-                  <a
-                    key={href + label}
-                    href={href}
-                    onClick={(e) => handleNavClick(e, href)}
-                    className="border-b border-zinc-100 px-6 py-4 text-base font-medium text-zinc-800 transition hover:bg-zinc-50 hover:text-[#d4602c]"
-                  >
-                    {label}
-                  </a>
-                ))}
+                {NAV_LINKS.map(({ href, label }) =>
+                  href.startsWith("#") ? (
+                    <a
+                      key={href + label}
+                      href={resolveNavHref(href, pathname)}
+                      onClick={(e) => {
+                        if (isHome) {
+                          handleNavClick(e, href);
+                        } else {
+                          closeMenu();
+                        }
+                      }}
+                      className="border-b border-zinc-100 px-6 py-4 text-base font-medium text-zinc-800 transition hover:bg-zinc-50 hover:text-[#d4602c]"
+                    >
+                      {label}
+                    </a>
+                  ) : (
+                    <Link
+                      key={href + label}
+                      href={href}
+                      prefetch
+                      onClick={closeMenu}
+                      className="border-b border-zinc-100 px-6 py-4 text-base font-medium text-zinc-800 transition hover:bg-zinc-50 hover:text-[#d4602c]"
+                    >
+                      {label}
+                    </Link>
+                  ),
+                )}
               </div>
             </div>
           </div>,
