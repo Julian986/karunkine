@@ -179,7 +179,7 @@ export function HeaderMobileMenu({
         aria-hidden
       />
       <aside
-        className="absolute right-0 top-0 flex h-full w-full max-w-[400px] flex-col bg-white shadow-[-12px_0_40px_rgba(0,0,0,0.12)] transition-transform duration-300 ease-out"
+        className="absolute inset-y-0 right-0 flex h-full w-full flex-col bg-white transition-transform duration-300 ease-out"
         style={{ transform: open ? "translateX(0)" : "translateX(100%)" }}
         aria-label="Menú de navegación"
       >
