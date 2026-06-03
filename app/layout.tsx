@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import GoogleAnalytics from "./components/GoogleAnalytics";
 import Header from "./components/Header";
+import RouteScrollReset from "./components/RouteScrollReset";
 import { getSiteUrl } from "../lib/site-url";
 import "./globals.css";
 
@@ -97,6 +98,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+        <RouteScrollReset />
         <Header />
         {children}
         <GoogleAnalytics />
