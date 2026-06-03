@@ -4,7 +4,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 
 import { SITE_CONTACT } from "../../lib/site-contact";
-  //El cambio de la milanga
+  //una vez mas
 const NAV_ICON_CLASS = "h-[22px] w-[22px] shrink-0 stroke-[1.65]";
 const NAV_TEXT_CLASS = "text-[17px] font-medium text-[#3d4a5c]";
 
