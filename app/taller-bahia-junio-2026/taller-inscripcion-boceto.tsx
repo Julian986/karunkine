@@ -90,7 +90,7 @@ export function TallerInscripcionBoceto({ evento = TALLER_BAHIA_JUNIO_2026 }: { 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setBocetoMsg(
-      "Boceto de inscripción: el pago con Mercado Pago se conectará en la próxima etapa. Tus datos no se guardaron aún.",
+      "La inscripción online con pago se habilitará próximamente. Si querés reservar tu lugar antes, escribinos por WhatsApp.",
     );
     scrollToInscripcion();
   }
@@ -130,7 +130,9 @@ export function TallerInscripcionBoceto({ evento = TALLER_BAHIA_JUNIO_2026 }: { 
           <div className="overflow-hidden rounded-3xl bg-white shadow-[0_8px_30px_rgba(0,0,0,0.12)]">
             <div className="p-6 sm:p-8">
               <h2 className="text-xl font-semibold text-zinc-800 sm:text-2xl">Inscribite al taller</h2>
-              <p className="mt-1 text-zinc-500">Completá tus datos para reservar tu lugar.</p>
+              <p className="mt-1 text-zinc-500">
+                La inscripción y el pago online estarán disponibles muy pronto.
+              </p>
 
               <form
                 className="mt-6 flex flex-col gap-5"
@@ -195,16 +197,16 @@ export function TallerInscripcionBoceto({ evento = TALLER_BAHIA_JUNIO_2026 }: { 
                 <div className="rounded-xl border border-zinc-200 bg-white px-4 py-4">
                   <p className="text-sm font-semibold text-zinc-800">Pago con Mercado Pago</p>
                   <p className="mt-1 text-sm text-zinc-600">
-                    La inscripción se confirmará cuando Mercado Pago apruebe el pago.
-                  </p>
-                  <p className="mt-2 text-xs text-zinc-500">
-                    Por ahora es un boceto: el checkout se conectará en la próxima etapa.
+                    Próximamente vas a poder completar tu inscripción y pagar con tarjeta, Mercado Pago y más.
                   </p>
                   <div className="mt-3 flex flex-wrap items-center gap-3">
                     <MercadoPagoButton type="submit" label="Pagar e Inscribirme" />
                   </div>
                   {bocetoMsg ? (
-                    <p className="mt-2 text-sm font-medium text-red-600" role="alert">
+                    <p
+                      role="status"
+                      className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 text-sm leading-snug text-amber-950"
+                    >
                       {bocetoMsg}
                     </p>
                   ) : null}
