@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { MercadoPagoButton } from "../components/MercadoPagoButton";
 import { ACCENT_LOGO_V1, hexToRgba } from "../components/LogoAccentContext";
@@ -87,12 +87,23 @@ export function TallerInscripcionBoceto({ evento = TALLER_BAHIA_JUNIO_2026 }: { 
     document.getElementById("inscripcion")?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
+  useEffect(() => {
+    if (!bocetoMsg) return;
+    const t = window.setTimeout(() => {
+      const el = document.getElementById("taller-proximamente-msg");
+      if (!el) return;
+      const y = el.getBoundingClientRect().top + window.scrollY;
+      const topMargin = window.innerHeight * 0.32 + 48;
+      window.scrollTo({ top: Math.max(0, y - topMargin), behavior: "smooth" });
+    }, 80);
+    return () => window.clearTimeout(t);
+  }, [bocetoMsg]);
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setBocetoMsg(
       "La inscripción online con pago se habilitará próximamente. Si querés reservar tu lugar antes, escribinos por WhatsApp.",
     );
-    scrollToInscripcion();
   }
 
   const waUrl = `https://wa.me/${evento.whatsappConsultas}?text=${encodeURIComponent(
@@ -204,8 +215,9 @@ export function TallerInscripcionBoceto({ evento = TALLER_BAHIA_JUNIO_2026 }: { 
                   </div>
                   {bocetoMsg ? (
                     <p
+                      id="taller-proximamente-msg"
                       role="status"
-                      className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 text-sm leading-snug text-amber-950"
+                      className="mt-3 scroll-mt-28 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 text-sm leading-snug text-amber-950"
                     >
                       {bocetoMsg}
                     </p>
