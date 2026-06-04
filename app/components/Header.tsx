@@ -6,21 +6,22 @@ import { createPortal } from "react-dom";
 import { usePathname } from "next/navigation";
 import { event as gaEvent } from "../../lib/gtag";
 import { TALLER_BAHIA_JUNIO_2026 } from "../../lib/taller/evento-config";
+import { HeaderMobileMenu, type MobileNavItem } from "./HeaderMobileMenu";
 
 const TALLER_INSCRIPCION_HREF = `/${TALLER_BAHIA_JUNIO_2026.slug}`;
 
-const NAV_LINKS = [
-  { href: "#inicio", label: "Inicio" },
-  { href: "#formulario-reserva", label: "Agendar" },
-  { href: TALLER_INSCRIPCION_HREF, label: "Inscribirme" },
-  { href: "#sobre-nosotros", label: "Nosotros" },
-  { href: "#tratamiento", label: "Tratamiento" },
-  { href: "#consulta-inicial", label: "Evaluación" },
-  { href: "#preguntas-frecuentes", label: "Preguntas" },
-  { href: "#contacto", label: "Contacto" },
+const NAV_LINKS: readonly MobileNavItem[] = [
+  { href: "#inicio", label: "Inicio", icon: "home" },
+  { href: "#formulario-reserva", label: "Agendar", icon: "calendar" },
+  { href: TALLER_INSCRIPCION_HREF, label: "Inscribirme", icon: "user-plus" },
+  { href: "#sobre-nosotros", label: "Nosotros", icon: "users" },
+  { href: "#tratamiento", label: "Tratamiento", icon: "heart" },
+  { href: "#consulta-inicial", label: "Evaluación", icon: "clipboard" },
+  { href: "#preguntas-frecuentes", label: "Preguntas", icon: "help-circle" },
+  { href: "#contacto", label: "Contacto", icon: "mail" },
 ];
 
-/** En subpáginas, las anclas de la home van como /#sección. */
+/** En subpáginas, las anclas de la home van como /#sección para que el navegador redirija bien. */
 function resolveNavHref(href: string, pathname: string | null): string {
   if (!href.startsWith("#")) return href;
   if (pathname === "/") return href;
@@ -224,77 +225,16 @@ export default function Header() {
             aria-hidden={!menuOpen}
             style={{ pointerEvents: menuOpen ? "auto" : "none" }}
           >
-            <div
-              className="absolute inset-0 bg-black/60 transition-opacity duration-300"
-              style={{ opacity: menuOpen ? 1 : 0 }}
-              onClick={closeMenu}
-              aria-hidden
+            <HeaderMobileMenu
+              open={menuOpen}
+              onClose={closeMenu}
+              pathname={pathname}
+              isHome={isHome}
+              navLinks={NAV_LINKS}
+              resolveNavHref={resolveNavHref}
+              onHashNavClick={handleNavClick}
+              onMisTurnosClick={() => trackMisTurnosClick("header_mobile")}
             />
-            <div
-              className="absolute inset-0 bg-white shadow-xl transition-transform duration-300 ease-out"
-              style={{ transform: menuOpen ? "translateX(0)" : "translateX(100%)" }}
-            >
-              <div className="flex items-center justify-end border-b border-zinc-100 px-4 py-3">
-                <button
-                  type="button"
-                  onClick={closeMenu}
-                  aria-label="Cerrar menú"
-                  className="flex h-10 w-10 items-center justify-center rounded-lg text-zinc-600 transition hover:bg-zinc-100 hover:text-zinc-900"
-                >
-                  <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-              <div className="flex flex-col pb-8 pt-4">
-                <Link
-                  href="/mis-turnos"
-                  prefetch
-                  onClick={() => {
-                    trackMisTurnosClick("header_mobile");
-                    closeMenu();
-                  }}
-                  className="mx-4 mb-3 flex items-center justify-center gap-2 rounded-2xl bg-[#963417] px-5 py-4 text-center text-base font-bold text-white shadow-[0_8px_24px_rgba(150,52,23,0.45)] ring-2 ring-[#963417]/30 transition hover:bg-[#a8431c] hover:shadow-lg active:scale-[0.99]"
-                >
-                  <svg className="h-5 w-5 shrink-0 opacity-95" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5a2.25 2.25 0 002.25-2.25m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5a2.25 2.25 0 012.25 2.25v7.5"
-                    />
-                  </svg>
-                  Mis turnos
-                </Link>
-                {NAV_LINKS.map(({ href, label }) =>
-                  href.startsWith("#") ? (
-                    <a
-                      key={href + label}
-                      href={resolveNavHref(href, pathname)}
-                      onClick={(e) => {
-                        if (isHome) {
-                          handleNavClick(e, href);
-                        } else {
-                          closeMenu();
-                        }
-                      }}
-                      className="border-b border-zinc-100 px-6 py-4 text-base font-medium text-zinc-800 transition hover:bg-zinc-50 hover:text-[#d4602c]"
-                    >
-                      {label}
-                    </a>
-                  ) : (
-                    <Link
-                      key={href + label}
-                      href={href}
-                      prefetch
-                      onClick={closeMenu}
-                      className="border-b border-zinc-100 px-6 py-4 text-base font-medium text-zinc-800 transition hover:bg-zinc-50 hover:text-[#d4602c]"
-                    >
-                      {label}
-                    </Link>
-                  ),
-                )}
-              </div>
-            </div>
           </div>,
           document.body
         )}
