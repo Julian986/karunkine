@@ -43,6 +43,18 @@
   --panel-input: #ffffff;
 }
 
+/* Panel v2 — tema claro estilo Marcelo (dorado #B88E2F). */
+.panel-v2-theme {
+  --brand-cream: #111827;
+  --brand-ui-primary: #b88e2f;
+  --color-primary-contrast: #ffffff;
+  --panel-page-bg: #f0f1f3;
+  --panel-surface: #ffffff;
+  --panel-surface-hover: #f9fafb;
+  --panel-input: #ffffff;
+  color: #111827;
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);

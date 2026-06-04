@@ -7,6 +7,7 @@ import {
   PanelTurnoFechaHoraPicker,
   type PanelFechaHoraSeleccion,
 } from "../../components/PanelTurnoFechaHoraPicker";
+import { panelCard, panelPrimaryBtn } from "../../../components/panel/panel-ui";
 import { matchGrupalTemplate } from "../../../lib/turnos/wanda-schedule";
 import {
   expandRecurringDateKeys,
@@ -300,9 +301,9 @@ export function PanelNuevoTurnoClient() {
   }
 
   return (
-    <section className="panel-light-theme rounded-[28px] border border-black/10 bg-[var(--panel-surface)] p-5 shadow-[0_14px_32px_rgba(17,24,39,0.14)]">
-      <h1 className="text-lg font-semibold text-[var(--brand-cream)]/95">Nuevo turno manual</h1>
-      <p className="mt-1 text-xs text-[var(--brand-cream)]/60">Alta directa sin pago (confirmado en el momento).</p>
+    <section className={`${panelCard} p-5`}>
+      <h1 className="text-lg font-semibold text-gray-900">Nuevo turno manual</h1>
+      <p className="mt-1 text-xs text-gray-500">Alta directa sin pago (confirmado en el momento).</p>
 
       <form className="mt-4 space-y-3" onSubmit={onSubmit}>
         <input value={nombre} onChange={(e) => setNombre(e.target.value)} placeholder="Nombre y apellido" className="w-full rounded-xl border border-black/15 bg-[var(--panel-input)] px-3 py-2 text-sm text-[var(--brand-cream)] outline-none" />
@@ -373,7 +374,7 @@ export function PanelNuevoTurnoClient() {
             {fieldErrors.formatoConsulta ? <p className="text-xs text-red-700">{fieldErrors.formatoConsulta}</p> : null}
             {(formatoConsulta === "presencial" || formatoConsulta === "virtual") && (
               <PanelTurnoFechaHoraPicker
-                accentColor="#4F7CAC"
+                accentColor="#B88E2F"
                 titulo="Elegí día y horario"
                 onSeleccion={(h) => setSlotIndividual(h)}
               />
@@ -460,7 +461,7 @@ export function PanelNuevoTurnoClient() {
                 {(formatoEvaluacion === "presencial" || formatoEvaluacion === "virtual") && (
                   <div ref={evalCalendarWrapRef}>
                     <PanelTurnoFechaHoraPicker
-                      accentColor="#4F7CAC"
+                      accentColor="#B88E2F"
                       titulo="Elegí evaluación (día y hora libres)"
                       onSeleccion={(h) => setSlotEvalGrupal(h)}
                     />
@@ -549,11 +550,7 @@ export function PanelNuevoTurnoClient() {
 
         {msg && <p className="text-sm text-red-700">{msg}</p>}
 
-        <button
-          type="submit"
-          disabled={busy}
-          className="w-full rounded-2xl bg-[var(--brand-ui-primary)] py-3 text-sm font-semibold text-[var(--color-primary-contrast)] disabled:opacity-50"
-        >
+        <button type="submit" disabled={busy} className={panelPrimaryBtn}>
           {busy ? "Guardando..." : "Crear turno confirmado"}
         </button>
       </form>

@@ -6,6 +6,7 @@ import {
   buildPanelMonthGrid,
   panelMonthTitle,
 } from "../../../lib/booking/panel-month-grid";
+import { panelCard, panelPrimaryBtn } from "../../../components/panel/panel-ui";
 
 const HORARIOS_GRUPAL = [
   { value: "grupal_930", label: "Martes y Jueves - 9:30H" },
@@ -341,13 +342,13 @@ export function PanelBloqueoClient() {
   }
 
   return (
-    <div className="panel-light-theme space-y-5">
+    <div className="space-y-5">
       <section
         ref={consultaIndividualSectionRef}
-        className="rounded-[28px] border border-black/10 bg-[var(--panel-surface)] p-5 shadow-[0_14px_32px_rgba(17,24,39,0.14)]"
+        className={`${panelCard} p-5`}
       >
-        <h1 className="text-lg font-semibold text-[var(--brand-cream)]/95">Gestionar cupo grupal</h1>
-        <p className="mt-1 text-xs text-[var(--brand-cream)]/55">
+        <h1 className="text-lg font-semibold text-gray-900">Gestionar cupo grupal</h1>
+        <p className="mt-1 text-xs text-gray-500">
           Cerrá una franja cuando ya no quieras tomar más reservas web.
         </p>
         <form className="mt-4 flex flex-col gap-3" onSubmit={bloquearFranjaGrupal}>
@@ -402,8 +403,8 @@ export function PanelBloqueoClient() {
         </form>
       </section>
 
-      <section className="rounded-[28px] border border-black/10 bg-[var(--panel-surface)] p-5 shadow-[0_14px_32px_rgba(17,24,39,0.14)]">
-        <h2 className="text-base font-semibold text-[var(--brand-cream)]/95">
+      <section className={`${panelCard} p-5`}>
+        <h2 className="text-base font-semibold text-gray-900">
           Bloqueos activos ({bloqueosActivosTotal})
         </h2>
         <p className="mt-2 text-xs text-[var(--brand-cream)]/60">
@@ -491,13 +492,13 @@ export function PanelBloqueoClient() {
         </div>
       </section>
 
-      <section className="rounded-[28px] border border-black/10 bg-[var(--panel-surface)] p-5 shadow-[0_14px_32px_rgba(17,24,39,0.14)]">
+      <section className={`${panelCard} p-5`}>
         <button
           type="button"
           onClick={() => setMostrarAgendaAvanzada((v) => !v)}
           className="flex w-full items-center justify-between text-left"
         >
-          <span className="text-base font-semibold text-[var(--brand-cream)]/95">Consulta individual</span>
+          <span className="text-base font-semibold text-gray-900">Consulta individual</span>
           <span className="text-xs text-[var(--brand-cream)]/65">
             {mostrarAgendaAvanzada ? "Ocultar" : "Bloquear horario puntual"}
           </span>
