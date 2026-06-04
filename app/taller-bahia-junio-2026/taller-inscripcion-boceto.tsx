@@ -2,7 +2,9 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useState } from "react";
+
+import { scrollWindowToTop } from "../../lib/scroll-route";
 
 import { MercadoPagoButton } from "../components/MercadoPagoButton";
 import { ACCENT_LOGO_V1, hexToRgba } from "../components/LogoAccentContext";
@@ -82,6 +84,11 @@ export function TallerInscripcionBoceto({ evento = TALLER_BAHIA_JUNIO_2026 }: { 
     comentario: "",
   });
   const [bocetoMsg, setBocetoMsg] = useState<string | null>(null);
+
+  useLayoutEffect(() => {
+    if (window.location.hash) return;
+    scrollWindowToTop();
+  }, []);
 
   function scrollToInscripcion() {
     document.getElementById("inscripcion")?.scrollIntoView({ behavior: "smooth", block: "start" });

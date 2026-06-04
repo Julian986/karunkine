@@ -5,6 +5,7 @@ import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { usePathname } from "next/navigation";
 import { event as gaEvent } from "../../lib/gtag";
+import { clearBodyScrollLock, scrollWindowToTop } from "../../lib/scroll-route";
 import { TALLER_BAHIA_JUNIO_2026 } from "../../lib/taller/evento-config";
 import { HeaderMobileMenu, type MobileNavItem } from "./HeaderMobileMenu";
 
@@ -28,7 +29,11 @@ function resolveNavHref(href: string, pathname: string | null): string {
   return `/${href}`;
 }
 
-function useScrollLock(locked: boolean, scrollYRef: React.MutableRefObject<number>) {
+function useScrollLock(
+  locked: boolean,
+  scrollYRef: React.MutableRefObject<number>,
+  restoreScrollOnUnlockRef: React.MutableRefObject<boolean>,
+) {
   useEffect(() => {
     if (!locked) return;
     const scrollY = window.scrollY;
@@ -42,22 +47,22 @@ function useScrollLock(locked: boolean, scrollYRef: React.MutableRefObject<numbe
     style.top = `-${scrollY}px`;
     style.left = "0";
     style.right = "0";
+    style.width = "100%";
     htmlStyle.overflow = "hidden";
     return () => {
-      style.overflow = "";
-      style.position = "";
-      style.top = "";
-      style.left = "";
-      style.right = "";
-      htmlStyle.overflow = "";
-      // Evita animación involuntaria por `scroll-behavior: smooth` global.
+      clearBodyScrollLock();
       htmlStyle.scrollBehavior = "auto";
-      window.scrollTo(0, scrollYRef.current);
+      if (restoreScrollOnUnlockRef.current) {
+        window.scrollTo(0, scrollYRef.current);
+      } else {
+        window.scrollTo(0, 0);
+      }
+      restoreScrollOnUnlockRef.current = true;
       window.requestAnimationFrame(() => {
         htmlStyle.scrollBehavior = prevScrollBehavior;
       });
     };
-  }, [locked, scrollYRef]);
+  }, [locked, scrollYRef, restoreScrollOnUnlockRef]);
 }
 
 export default function Header() {
@@ -66,10 +71,32 @@ export default function Header() {
   const [menuVisible, setMenuVisible] = useState(false);
   const [mounted, setMounted] = useState(false);
   const scrollYRef = useRef(0);
+  const restoreScrollOnUnlockRef = useRef(true);
+  const prevPathnameRef = useRef<string | null>(null);
   const closeTimeoutRef = useRef<number | null>(null);
   const openRafRef = useRef<number | null>(null);
 
   useEffect(() => setMounted(true), []);
+
+  useEffect(() => {
+    if (prevPathnameRef.current === null) {
+      prevPathnameRef.current = pathname;
+      return;
+    }
+    if (prevPathnameRef.current === pathname) return;
+    prevPathnameRef.current = pathname;
+
+    restoreScrollOnUnlockRef.current = false;
+    setMenuOpen(false);
+    setMenuVisible(false);
+    if (closeTimeoutRef.current) {
+      window.clearTimeout(closeTimeoutRef.current);
+      closeTimeoutRef.current = null;
+    }
+    if (!window.location.hash) {
+      scrollWindowToTop();
+    }
+  }, [pathname]);
 
   useEffect(() => {
     const mq = window.matchMedia("(min-width: 1031px)");
@@ -80,7 +107,7 @@ export default function Header() {
     return () => mq.removeEventListener("change", onChange);
   }, []);
 
-  useScrollLock(menuVisible, scrollYRef);
+  useScrollLock(menuVisible, scrollYRef, restoreScrollOnUnlockRef);
 
   useEffect(() => {
     return () => {
@@ -129,6 +156,17 @@ export default function Header() {
 
   const closeMenu = () => {
     setMenuOpen(false);
+  };
+
+  const closeMenuForNavigation = () => {
+    restoreScrollOnUnlockRef.current = false;
+    setMenuOpen(false);
+    setMenuVisible(false);
+    if (closeTimeoutRef.current) {
+      window.clearTimeout(closeTimeoutRef.current);
+      closeTimeoutRef.current = null;
+    }
+    clearBodyScrollLock();
   };
 
   const trackMisTurnosClick = (location: "header_desktop" | "header_mobile") => {
@@ -228,6 +266,7 @@ export default function Header() {
             <HeaderMobileMenu
               open={menuOpen}
               onClose={closeMenu}
+              onNavigate={closeMenuForNavigation}
               pathname={pathname}
               isHome={isHome}
               navLinks={NAV_LINKS}

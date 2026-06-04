@@ -147,6 +147,8 @@ export type MobileNavItem = {
 type HeaderMobileMenuProps = {
   open: boolean;
   onClose: () => void;
+  /** Al ir a otra ruta: libera scroll lock y no restaura posición de la página anterior. */
+  onNavigate: () => void;
   pathname: string | null;
   isHome: boolean;
   navLinks: readonly MobileNavItem[];
@@ -158,6 +160,7 @@ type HeaderMobileMenuProps = {
 export function HeaderMobileMenu({
   open,
   onClose,
+  onNavigate,
   pathname,
   isHome,
   navLinks,
@@ -202,7 +205,7 @@ export function HeaderMobileMenu({
             prefetch
             onClick={() => {
               onMisTurnosClick();
-              onClose();
+              onNavigate();
             }}
             className="flex w-full items-center justify-center gap-2.5 rounded-2xl bg-[#963417] px-5 py-4 text-[17px] font-bold text-white shadow-[0_10px_28px_rgba(150,52,23,0.38)] transition hover:bg-[#a8431c] active:scale-[0.99]"
           >
@@ -222,7 +225,7 @@ export function HeaderMobileMenu({
                       if (isHome) {
                         onHashNavClick(e, href);
                       } else {
-                        onClose();
+                        onNavigate();
                       }
                     }}
                     className={navRowClass}
@@ -231,7 +234,7 @@ export function HeaderMobileMenu({
                     <span className={NAV_TEXT_CLASS}>{label}</span>
                   </a>
                 ) : (
-                  <Link href={href} prefetch onClick={onClose} className={navRowClass}>
+                  <Link href={href} prefetch onClick={onNavigate} className={navRowClass}>
                     <NavIcon name={icon} />
                     <span className={NAV_TEXT_CLASS}>{label}</span>
                   </Link>
