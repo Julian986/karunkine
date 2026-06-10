@@ -16,6 +16,7 @@ import {
   ReservaFormInput,
 } from "../components/ReservaFormInput";
 import {
+  formatPrecioArs,
   TALLER_BAHIA_JUNIO_2026,
   TALLER_FORM_FIELDS,
   type TallerEventoConfig,
@@ -50,12 +51,13 @@ function FlyerHero({
   if (evento.imagenFlyerSrc) {
     return (
       <div>
-        <div className="relative aspect-[4/5] w-full overflow-hidden rounded-3xl shadow-[0_20px_50px_rgba(61,32,16,0.18)] sm:aspect-[3/4]">
+        <div className="overflow-hidden rounded-3xl shadow-[0_20px_50px_rgba(61,32,16,0.18)]">
           <Image
             src={evento.imagenFlyerSrc}
             alt={`Flyer — ${evento.titulo}`}
-            fill
-            className="object-cover"
+            width={1080}
+            height={1350}
+            className="h-auto w-full"
             priority
             sizes="(max-width: 768px) 100vw, 480px"
           />
@@ -70,6 +72,68 @@ function FlyerHero({
       <p className="text-[13px] font-bold uppercase tracking-[0.14em] text-[#8a5a24]">Flyer</p>
       {inscribirseBtn}
     </div>
+  );
+}
+
+function TallerInfoSection({ evento }: { evento: TallerEventoConfig }) {
+  const detalles = [
+    { icon: "🗓️", text: evento.fecha },
+    { icon: "⏰", text: evento.horario },
+    { icon: "📍", text: evento.lugar, mapsUrl: evento.mapsUrl },
+    { icon: "🌎", text: evento.modalidad },
+    { icon: "🫂", text: evento.publico },
+    { icon: "📝", text: evento.inscripcion },
+  ] as const;
+
+  return (
+    <section className="mt-10 rounded-3xl bg-white p-6 shadow-[0_8px_30px_rgba(0,0,0,0.08)] sm:p-8">
+      <p className="text-center text-[12px] font-bold uppercase tracking-[0.12em] text-[#8a5a24]">
+        {evento.subtitulo}
+      </p>
+      <h1 className="mt-2 text-center text-[26px] font-bold capitalize leading-snug text-[#3d2010] sm:text-[28px]">
+        {evento.titulo}
+      </h1>
+      {/* <p className="mt-2 text-center text-[15px] italic leading-snug text-[#963417]/90">{evento.tagline}</p> */}
+
+      <p className="mt-6 text-[15px] leading-relaxed text-zinc-700">{evento.descripcion}</p>
+
+      <div className="mt-7">
+        <p className="text-[15px] font-semibold text-[#3d2010]">🙌🏽 Este taller es para vos si estás buscando:</p>
+        <ul className="mt-3 list-disc space-y-2.5 pl-5 text-[15px] leading-relaxed text-zinc-700">
+          {evento.beneficios.map((item) => (
+            <li key={item}>{item}</li>
+          ))}
+        </ul>
+      </div>
+
+      <ul className="mt-7 space-y-3 text-[15px] text-zinc-800">
+        {detalles.map(({ icon, text, ...rest }) => (
+          <li key={text} className="flex gap-2.5">
+            <span aria-hidden className="shrink-0">
+              {icon}
+            </span>
+            <div>
+              <span>{text}</span>
+              {"mapsUrl" in rest && rest.mapsUrl ? (
+                <a
+                  href={rest.mapsUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-2 inline-flex items-center gap-1.5 rounded-lg border border-[#963417]/20 bg-[#faf6f3] px-3 py-1.5 text-[13px] font-semibold text-[#963417] transition hover:bg-[#f5ebe3]"
+                >
+                  Ver en Maps
+                  <span aria-hidden>↗</span>
+                </a>
+              ) : null}
+            </div>
+          </li>
+        ))}
+      </ul>
+
+      <p className="mt-8 rounded-2xl bg-[#faf6f3] px-4 py-3 text-center text-lg font-bold text-[#963417]">
+        {formatPrecioArs(evento.precioArs)}
+      </p>
+    </section>
   );
 }
 
@@ -114,7 +178,7 @@ export function TallerInscripcionBoceto({ evento = TALLER_BAHIA_JUNIO_2026 }: { 
   }
 
   const waUrl = `https://wa.me/${evento.whatsappConsultas}?text=${encodeURIComponent(
-    "Hola Wanda, tengo una consulta sobre el taller del 27 de junio en Bahía.",
+    "Hola Wanda, tengo una consulta sobre el taller Liberá tu pelvis del 27 de junio en Bahía.",
   )}`;
 
   return (
@@ -130,13 +194,15 @@ export function TallerInscripcionBoceto({ evento = TALLER_BAHIA_JUNIO_2026 }: { 
         <p className="mt-6 text-[12px] font-bold uppercase tracking-[0.12em] text-[#8a5a24]">
           Inscripción online
         </p>
-        <h1 className="mt-2 text-balance text-[28px] font-bold leading-tight text-[#3d2010] sm:text-[32px]">
-          {evento.titulo}
-        </h1>
+        <p className="mt-2 text-[15px] text-zinc-600">
+          {evento.fecha} · Bahía Blanca
+        </p>
 
-        <div className="mt-8 max-w-lg">
+        <div className="mt-6 max-w-lg">
           <FlyerHero evento={evento} onScrollToInscripcion={scrollToInscripcion} />
         </div>
+
+        <TallerInfoSection evento={evento} />
       </div>
 
       <section
@@ -147,9 +213,12 @@ export function TallerInscripcionBoceto({ evento = TALLER_BAHIA_JUNIO_2026 }: { 
         <div className="mx-auto max-w-2xl">
           <div className="overflow-hidden rounded-3xl bg-white shadow-[0_8px_30px_rgba(0,0,0,0.12)]">
             <div className="p-6 sm:p-8">
-              <h2 className="text-xl font-semibold text-zinc-800 sm:text-2xl">Inscribite al taller</h2>
+              <h2 className="text-xl font-semibold text-zinc-800 sm:text-2xl">Reservá tu lugar</h2>
+              <p className="mt-1 text-zinc-600">
+                {evento.fecha} · {formatPrecioArs(evento.precioArs)}
+              </p>
               <p className="mt-1 text-zinc-500">
-                La inscripción y el pago online estarán disponibles muy pronto.
+                Completá tus datos. El pago online se habilitará muy pronto.
               </p>
 
               <form
@@ -218,7 +287,7 @@ export function TallerInscripcionBoceto({ evento = TALLER_BAHIA_JUNIO_2026 }: { 
                     Próximamente vas a poder completar tu inscripción y pagar con tarjeta, Mercado Pago y más.
                   </p>
                   <div className="mt-3 flex flex-wrap items-center gap-3">
-                    <MercadoPagoButton type="submit" label="Pagar e Inscribirme" />
+                    <MercadoPagoButton type="submit" label="Reservar mi lugar" />
                   </div>
                   {bocetoMsg ? (
                     <p
