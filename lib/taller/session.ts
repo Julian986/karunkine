@@ -1,0 +1,1 @@
+export const PENDING_TALLER_INSCRIPCION_ID_KEY = "karunkine_pending_taller_inscripcion_id";

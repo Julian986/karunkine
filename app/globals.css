@@ -43,7 +43,7 @@
   --panel-input: #ffffff;
 }
 
-/* Panel v2 — tema claro estilo Marcelo (dorado #B88E2F). */
+/* Panel v2 — tema claro (referencia Marcelo main). */
 .panel-v2-theme {
   --brand-cream: #111827;
   --brand-ui-primary: #b88e2f;
@@ -53,6 +53,15 @@
   --panel-surface-hover: #f9fafb;
   --panel-input: #ffffff;
   color: #111827;
+  font-family: var(--font-montserrat), ui-sans-serif, sans-serif;
+}
+
+.panel-v2-theme .font-montserrat {
+  font-family: var(--font-montserrat), ui-sans-serif, sans-serif;
+}
+
+.panel-v2-theme .font-heading {
+  font-family: var(--font-playfair), ui-serif, serif;
 }
 
 @theme inline {

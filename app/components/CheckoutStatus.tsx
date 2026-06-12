@@ -2,10 +2,13 @@
 
 import { useEffect, useRef, useState } from "react";
 import { mensajeConfirmacionReserva } from "../../lib/reserva/mensaje-confirmacion";
+import { PENDING_TALLER_INSCRIPCION_ID_KEY } from "../../lib/taller/session";
 
 type Status = "success" | "pending" | "failure";
 
 const PENDING_KEY = "karunkine_pending_reserva_id";
+
+const TALLER_SLUG = "/taller-bahia-junio-2026";
 
 function SuccessIcon() {
   return (
@@ -124,6 +127,28 @@ const CONFIG = {
   },
 } as const;
 
+const TALLER_CONFIG = {
+  success: {
+    ...CONFIG.success,
+    body: "Tu pago fue recibido. Si Mercado Pago lo aprobó, tu inscripción al taller quedará confirmada en breve — te escribiremos por WhatsApp.",
+    bodyConfirmed:
+      "¡Tu inscripción al taller está confirmada! Te escribiremos por WhatsApp con los detalles del encuentro.",
+    ctaHref: TALLER_SLUG,
+    note: "La confirmación definitiva la realiza nuestro sistema al recibir la notificación de Mercado Pago.",
+  },
+  pending: {
+    ...CONFIG.pending,
+    body: "Algunos medios de pago pueden tardar en confirmarse. En cuanto tengamos novedades sobre tu inscripción al taller, te avisamos por WhatsApp.",
+    ctaHref: TALLER_SLUG,
+  },
+  failure: {
+    ...CONFIG.failure,
+    ctaLabel: "Volver a inscribirme",
+    ctaHref: `${TALLER_SLUG}#reserva`,
+    note: "Podés intentar de nuevo o escribirnos por WhatsApp si necesitás ayuda.",
+  },
+} as const;
+
 function isStatus(s: string | undefined): s is Status {
   return s === "success" || s === "pending" || s === "failure";
 }
@@ -171,9 +196,17 @@ type EstadoPollJson = {
   estado?: string;
   modalidad?: string;
   turnoDetalle?: string;
+  eventoTitulo?: string;
+  eventoFecha?: string;
 };
 
-export default function CheckoutStatus({ estado }: { estado?: string }) {
+export default function CheckoutStatus({
+  estado,
+  origen,
+}: {
+  estado?: string;
+  origen?: string;
+}) {
   const cardRef = useRef<HTMLDivElement>(null);
   const [pollEstado, setPollEstado] = useState<string | null>(null);
   const [pollError, setPollError] = useState<string | null>(null);
@@ -181,7 +214,12 @@ export default function CheckoutStatus({ estado }: { estado?: string }) {
     modalidad: string;
     turnoDetalle: string;
   } | null>(null);
+  const [pollTallerMeta, setPollTallerMeta] = useState<{
+    eventoTitulo: string;
+    eventoFecha: string;
+  } | null>(null);
 
+  const esTaller = origen === "taller";
   const status: Status | null = isStatus(estado) ? estado : null;
 
   useEffect(() => {
@@ -190,7 +228,8 @@ export default function CheckoutStatus({ estado }: { estado?: string }) {
 
   useEffect(() => {
     if (typeof window === "undefined" || status !== "success") return;
-    const id = window.sessionStorage.getItem(PENDING_KEY);
+    const storageKey = esTaller ? PENDING_TALLER_INSCRIPCION_ID_KEY : PENDING_KEY;
+    const id = window.sessionStorage.getItem(storageKey);
     if (!id) return;
 
     let cancelled = false;
@@ -207,28 +246,40 @@ export default function CheckoutStatus({ estado }: { estado?: string }) {
       if (cancelled) return;
       if (attempts >= maxAttempts) {
         setPollError(
-          "Seguimos procesando tu pago. Si ya pagaste, en breve verás la reserva confirmada."
+          esTaller
+            ? "Seguimos procesando tu pago. Si ya pagaste, en breve verás la inscripción confirmada."
+            : "Seguimos procesando tu pago. Si ya pagaste, en breve verás la reserva confirmada.",
         );
         return;
       }
       attempts += 1;
       try {
-        const r = await fetch(`/api/reservas/${id}/estado`, { cache: "no-store" });
+        const endpoint = esTaller
+          ? `/api/taller/inscripciones/${id}/estado`
+          : `/api/reservas/${id}/estado`;
+        const r = await fetch(endpoint, { cache: "no-store" });
         const j = (await r.json()) as EstadoPollJson;
         if (cancelled) return;
         if (j.estado === "confirmado") {
           setPollEstado("confirmado");
-          setPollConfirmMeta({
-            modalidad:
-              j.modalidad === "consulta_individual" ? "consulta_individual" : "grupal",
-            turnoDetalle: String(j.turnoDetalle ?? ""),
-          });
-          window.sessionStorage.removeItem(PENDING_KEY);
+          if (esTaller) {
+            setPollTallerMeta({
+              eventoTitulo: String(j.eventoTitulo ?? ""),
+              eventoFecha: String(j.eventoFecha ?? ""),
+            });
+          } else {
+            setPollConfirmMeta({
+              modalidad:
+                j.modalidad === "consulta_individual" ? "consulta_individual" : "grupal",
+              turnoDetalle: String(j.turnoDetalle ?? ""),
+            });
+          }
+          window.sessionStorage.removeItem(storageKey);
           return;
         }
         if (j.estado === "expirado" || j.estado === "cancelado") {
           setPollEstado(j.estado);
-          window.sessionStorage.removeItem(PENDING_KEY);
+          window.sessionStorage.removeItem(storageKey);
           return;
         }
       } catch {
@@ -242,7 +293,7 @@ export default function CheckoutStatus({ estado }: { estado?: string }) {
     return () => {
       cancelled = true;
     };
-  }, [status]);
+  }, [status, esTaller]);
 
   if (!status) {
     return (
@@ -271,18 +322,20 @@ export default function CheckoutStatus({ estado }: { estado?: string }) {
     );
   }
 
-  const cfg = CONFIG[status];
+  const cfg = esTaller ? TALLER_CONFIG[status] : CONFIG[status];
   const Icon = cfg.Icon;
   const showConfirmed = status === "success" && pollEstado === "confirmado";
   const bodyText =
-    showConfirmed && pollConfirmMeta
-      ? mensajeConfirmacionReserva({
-          modalidad: pollConfirmMeta.modalidad,
-          turnoDetalle: pollConfirmMeta.turnoDetalle,
-        })
-      : showConfirmed && cfg.bodyConfirmed
-        ? cfg.bodyConfirmed
-        : cfg.body;
+    showConfirmed && esTaller && pollTallerMeta
+      ? `Tu inscripción a ${pollTallerMeta.eventoTitulo} (${pollTallerMeta.eventoFecha}) está confirmada. Te escribiremos por WhatsApp con los detalles.`
+      : showConfirmed && pollConfirmMeta
+        ? mensajeConfirmacionReserva({
+            modalidad: pollConfirmMeta.modalidad,
+            turnoDetalle: pollConfirmMeta.turnoDetalle,
+          })
+        : showConfirmed && cfg.bodyConfirmed
+          ? cfg.bodyConfirmed
+          : cfg.body;
 
   return (
     <PageShell>
@@ -327,7 +380,7 @@ export default function CheckoutStatus({ estado }: { estado?: string }) {
         >
           {cfg.ctaLabel}
         </a>
-        {(status === "success" || status === "pending") && (
+        {!esTaller && (status === "success" || status === "pending") && (
           <a
             href="/mis-turnos"
             className="animate-fade-up animate-delay-300 text-center text-sm font-medium text-[#963417] underline-offset-2 hover:underline"

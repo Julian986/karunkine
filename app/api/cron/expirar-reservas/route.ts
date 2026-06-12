@@ -31,17 +31,34 @@ export async function GET(request: Request) {
         updatedAt: now,
       },
       $unset: { blockingSlotKeys: "" },
-    }
+    },
+  );
+
+  const tallerResult = await db.collection("taller_inscripciones").updateMany(
+    {
+      estado: "pending_payment",
+      paymentExpiresAt: { $lt: now },
+    },
+    {
+      $set: {
+        estado: "expirado",
+        updatedAt: now,
+      },
+    },
   );
 
   console.info("[cron/expirar-reservas]", {
-    matched: result.matchedCount,
-    modified: result.modifiedCount,
+    turnosMatched: result.matchedCount,
+    turnosModified: result.modifiedCount,
+    tallerMatched: tallerResult.matchedCount,
+    tallerModified: tallerResult.modifiedCount,
   });
 
   return NextResponse.json({
     ok: true,
     matched: result.matchedCount,
     modified: result.modifiedCount,
+    tallerMatched: tallerResult.matchedCount,
+    tallerModified: tallerResult.modifiedCount,
   });
 }

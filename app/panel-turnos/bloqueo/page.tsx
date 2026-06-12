@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { panelBackLink, panelContainer, panelPage } from "../../../components/panel/panel-ui";
+import { panelBackLink, panelContainer, panelPage, panelPageBg } from "../../../components/panel/panel-ui";
 import { isPanelAuthenticated } from "../../../lib/panel-auth";
 import { PanelBloqueoClient } from "./panel-bloqueo-client";
 
@@ -15,7 +15,7 @@ export default async function PanelBloqueoPage() {
   }
 
   return (
-    <main className={`panel-v2-theme ${panelPage}`}>
+    <main className={`${panelPage} ${panelPageBg}`}>
       <div className={`${panelContainer} pt-6`}>
         <Link href="/panel-turnos" className={panelBackLink}>
           ← Volver al panel

@@ -32,6 +32,9 @@ export type TallerEventoConfig = {
 
   fecha: string;
 
+  /** Etiqueta corta para el panel (ej. "27/06"). */
+  panelFechaCorta: string;
+
   horario: string;
 
   lugar: string;
@@ -52,7 +55,7 @@ export const TALLER_BAHIA_JUNIO_2026: TallerEventoConfig = {
 
   slug: "taller-bahia-junio-2026",
 
-  titulo: "Liberá tu pelvis",
+  titulo: "Liberá Tu Pelvis",
 
   subtitulo: "Taller teórico-práctico",
 
@@ -84,7 +87,9 @@ export const TALLER_BAHIA_JUNIO_2026: TallerEventoConfig = {
 
   ],
 
-  fecha: "Sábado 27 de junio de 2026",
+  fecha: "Sábado 27 de Junio",
+
+  panelFechaCorta: "27/06",
 
   horario: "De 14:00 a 18:00 h",
 
@@ -96,7 +101,8 @@ export const TALLER_BAHIA_JUNIO_2026: TallerEventoConfig = {
 
   inscripcion: "Con inscripción previa",
 
-  precioArs: 60_000,
+  precioArs:30 
+  //60_000,
 
 };
 
@@ -108,7 +114,7 @@ export const TALLER_FORM_FIELDS = {
 
   nombre: { label: "Nombre y apellido", placeholder: "Nombre y apellido", required: true },
 
-  mail: { label: "Mail", placeholder: "Mail", required: true },
+  mail: { label: "Mail (opcional)", placeholder: "Mail (opcional)", required: false },
 
   celular: { label: "Celular", placeholder: "Celular", required: true },
 

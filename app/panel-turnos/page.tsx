@@ -10,7 +10,7 @@ export default async function PanelTurnosPage() {
   }
 
   return (
-    <Suspense fallback={<div className="min-h-screen bg-[var(--panel-bg)] pb-24 pt-8 text-center text-sm text-[var(--brand-cream)]/70">Cargando agenda…</div>}>
+    <Suspense fallback={<div className="min-h-screen bg-[#F0F1F3] pb-24 pt-8 text-center text-sm text-gray-500">Cargando agenda…</div>}>
       <PanelTurnosDashboard />
     </Suspense>
   );

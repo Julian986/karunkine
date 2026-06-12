@@ -7,7 +7,7 @@ const path = "/taller-bahia-junio-2026";
 export const metadata: Metadata = {
   title: "Taller Liberá tu pelvis — Bahía Blanca, 27 de junio 2026",
   description:
-    "Taller teórico-práctico Liberá tu pelvis con Wanda Perrin en Karün, Bahía Blanca. Sábado 27 de junio, 14 a 18 h. Inscripción previa — $60.000.",
+    "Taller teórico-práctico Liberá tu pelvis con Wanda Perrin en Karün, Bahía Blanca. Sábado 27 de junio, 14 a 18 h. Inscripción online con Mercado Pago — $60.000.",
   alternates: {
     canonical: path,
   },

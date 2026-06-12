@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import CheckoutStatus from "../../components/CheckoutStatus";
 
 type PageProps = {
-  searchParams?: Promise<{ estado?: string }>;
+  searchParams?: Promise<{ estado?: string; origen?: string }>;
 };
 
 export const metadata: Metadata = {
@@ -16,5 +16,5 @@ export const metadata: Metadata = {
 
 export default async function ReservaResultadoPage({ searchParams }: PageProps) {
   const params = searchParams ? await searchParams : {};
-  return <CheckoutStatus estado={params.estado} />;
+  return <CheckoutStatus estado={params.estado} origen={params.origen} />;
 }

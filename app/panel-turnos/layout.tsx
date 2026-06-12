@@ -1,6 +1,19 @@
 import type { Metadata, Viewport } from "next";
+import { Montserrat, Playfair_Display } from "next/font/google";
 
 const PANEL_PWA_VERSION = "panel-v3";
+
+const montserrat = Montserrat({
+  subsets: ["latin"],
+  variable: "--font-montserrat",
+  weight: ["400", "500", "600", "700"],
+});
+
+const playfair = Playfair_Display({
+  subsets: ["latin"],
+  variable: "--font-playfair",
+  weight: ["400", "500", "600", "700"],
+});
 
 export const metadata: Metadata = {
   robots: {
@@ -43,5 +56,11 @@ export const viewport: Viewport = {
 export default function PanelTurnosLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  return children;
+  return (
+    <div
+      className={`panel-v2-theme ${montserrat.variable} ${playfair.variable} min-h-screen bg-white text-gray-900 antialiased`}
+    >
+      {children}
+    </div>
+  );
 }

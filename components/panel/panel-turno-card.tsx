@@ -107,35 +107,33 @@ export const PanelTurnoCard = forwardRef<HTMLElement, PanelTurnoCardProps>(funct
 
         <h3
           className={[
-            "mt-3 text-[22px] font-bold leading-tight break-words",
+            "mt-3 font-montserrat text-[22px] font-bold leading-tight break-words",
             focused ? "text-gray-900" : "text-gray-800",
           ].join(" ")}
         >
           {customerName}
         </h3>
 
-        <div className="mt-2 space-y-1">
+        <p
+          className={[
+            "mt-2 flex items-start gap-2 text-[14px] leading-snug",
+            focused ? "text-[#8B6914]" : "text-gray-600",
+          ].join(" ")}
+        >
+          <TipoIcon tipoCita={ev.tipoCita} muted={!focused} />
+          <span className="min-w-0">{ev.titulo}</span>
+        </p>
+
+        {resumen ? (
           <p
             className={[
-              "flex items-start gap-2 text-[15px] font-semibold leading-snug",
-              focused ? "text-gray-900" : "text-gray-800",
+              "mt-1 pl-6 text-[14px] leading-snug",
+              focused ? "text-[#8B6914]/90" : "text-gray-600",
             ].join(" ")}
           >
-            <TipoIcon tipoCita={ev.tipoCita} muted={!focused} />
-            <span className="min-w-0">{ev.titulo}</span>
+            {resumen}
           </p>
-
-          {resumen ? (
-            <p
-              className={[
-                "pl-6 text-[14px] font-medium leading-snug",
-                focused ? "text-[#6B5420]" : "text-gray-700",
-              ].join(" ")}
-            >
-              {resumen}
-            </p>
-          ) : null}
-        </div>
+        ) : null}
 
         {origenLabel ? (
           <p

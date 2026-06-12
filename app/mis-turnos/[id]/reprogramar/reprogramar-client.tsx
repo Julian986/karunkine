@@ -69,12 +69,55 @@ export function ReprogramarClient({
 }) {
   const isPanel = variant === "panel";
   const pageShell = isPanel
-    ? "panel-v2-theme min-h-screen bg-[#F0F1F3] px-4 pb-24 pt-8"
+    ? "min-h-screen bg-[#F0F1F3] px-4 pb-24 pt-8 text-gray-900"
     : "min-h-screen bg-gradient-to-b from-[#faf6f3] to-[#f0e8e2] px-4 pb-24 pt-8";
   const backLinkClass = isPanel
     ? "text-sm font-medium text-[#B88E2F] underline-offset-2 hover:underline"
     : "text-sm font-medium text-[#963417] underline-offset-2 hover:underline";
   const accentTextClass = isPanel ? "text-[#B88E2F]" : "text-[#963417]";
+  const titleClass = isPanel
+    ? "font-montserrat text-[22px] font-bold leading-tight text-gray-900"
+    : "text-2xl font-bold text-zinc-900";
+  const cardClass = isPanel
+    ? "rounded-2xl border border-gray-100 bg-white p-4 shadow-[0_4px_20px_rgba(0,0,0,0.05)]"
+    : "rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm";
+  const calCardClass = isPanel
+    ? "rounded-2xl border border-gray-100 bg-white p-3 shadow-[0_4px_20px_rgba(0,0,0,0.05)]"
+    : "rounded-2xl border border-zinc-200 bg-white p-3 shadow-sm";
+  const navBtnClass = isPanel
+    ? "rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-800 hover:bg-gray-50"
+    : "rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm font-medium text-zinc-800 hover:bg-zinc-50";
+  const monthTitleClass = isPanel
+    ? "text-center text-sm font-semibold text-gray-900"
+    : "text-center text-sm font-semibold text-zinc-900";
+  const weekdayHeaderClass = isPanel
+    ? "grid grid-cols-7 gap-1 text-center text-[10px] font-semibold uppercase text-gray-400"
+    : "grid grid-cols-7 gap-1 text-center text-[10px] font-semibold uppercase text-zinc-500";
+  const hintClass = isPanel ? "mt-3 text-xs text-gray-500" : "mt-3 text-xs text-zinc-500";
+  const errorClass = isPanel
+    ? "mt-4 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800"
+    : "mt-4 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800";
+  const slotBtnClass = (selected: boolean, free: boolean) => {
+    if (isPanel) {
+      if (selected) return "bg-[#B88E2F] text-white shadow-md";
+      if (free) return "bg-emerald-50 text-emerald-900 hover:bg-emerald-100";
+      return "cursor-not-allowed bg-gray-50 text-gray-300";
+    }
+    if (selected) return "bg-[#963417] text-white";
+    if (free) return "bg-emerald-50 text-emerald-900 hover:bg-emerald-100";
+    return "cursor-not-allowed bg-zinc-50 text-zinc-300";
+  };
+  const slotListBtnClass = isPanel
+    ? "flex w-full items-center justify-between rounded-xl border border-gray-200 px-3 py-3 text-left text-sm font-medium text-gray-900 hover:border-[#B88E2F]/50 hover:bg-[#B88E2F]/5 disabled:opacity-50"
+    : "flex w-full items-center justify-between rounded-xl border border-zinc-200 px-3 py-3 text-left text-sm font-medium text-zinc-900 hover:border-[#963417]/50 hover:bg-[#963417]/5 disabled:opacity-50";
+  const slotListAccentClass = isPanel ? "text-xs text-[#B88E2F]" : "text-xs text-[#963417]";
+  const sectionTitleClass = isPanel ? "text-sm font-semibold text-gray-900" : "text-sm font-semibold text-zinc-900";
+  const loadingTextClass = isPanel ? "text-sm text-gray-500" : "text-sm text-zinc-500";
+  const turnoActualLabelClass = isPanel ? "text-[11px] font-bold uppercase tracking-wide text-gray-400" : "text-[11px] font-bold uppercase tracking-wide text-zinc-400";
+  const turnoActualFechaClass = isPanel ? "mt-2 text-xl font-bold leading-snug text-gray-900" : "mt-2 text-xl font-bold leading-snug text-zinc-900";
+  const slotsSectionClass = isPanel
+    ? "mt-6 rounded-2xl border border-gray-100 bg-white p-4 shadow-[0_4px_20px_rgba(0,0,0,0.05)]"
+    : "mt-6 rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm";
   const router = useRouter();
   const apiTurnoBase =
     variant === "panel" ? "/api/panel-turnos/turnos/" : "/api/mis-turnos/turnos/";
@@ -242,7 +285,7 @@ export function ReprogramarClient({
     return (
       <main className={pageShell}>
         <div className="mx-auto max-w-md">
-          <p className="text-sm text-zinc-700">{loadError ?? "Cargando…"}</p>
+          <p className={loadingTextClass}>{loadError ?? "Cargando…"}</p>
         </div>
       </main>
     );
@@ -254,20 +297,20 @@ export function ReprogramarClient({
         <Link href={backHref} className={backLinkClass}>
           ← {variant === "panel" ? "Panel de turnos" : "Mis turnos"}
         </Link>
-        <h1 className="mt-4 text-2xl font-bold text-zinc-900">Cambiar horario</h1>
-        <div className="mt-4 rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
-          <p className="text-[11px] font-bold uppercase tracking-wide text-zinc-400">Turno actual</p>
-          <p className="mt-2 text-xl font-bold leading-snug text-zinc-900">{detail.displayFechaLine}</p>
+        <h1 className={`mt-4 ${titleClass}`}>Cambiar horario</h1>
+        <div className={`mt-4 ${cardClass}`}>
+          <p className={turnoActualLabelClass}>Turno actual</p>
+          <p className={turnoActualFechaClass}>{detail.displayFechaLine}</p>
           <p className={`mt-1 text-3xl font-bold tabular-nums tracking-tight ${accentTextClass}`}>
             {detail.displayHoraLine}
           </p>
         </div>
-        <p className="mt-3 text-xs text-zinc-500">
+        <p className={hintClass}>
           Solo fechas libres para el mismo tipo de consulta ({variant === "panel" ? "sincronizado con la agenda" : "el que reservaste"}).
         </p>
 
         {actionError ? (
-          <p role="alert" className="mt-4 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
+          <p role="alert" className={errorClass}>
             {actionError}
           </p>
         ) : null}
@@ -284,11 +327,11 @@ export function ReprogramarClient({
               }
               setSelectedDateKey(null);
             }}
-            className="rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm font-medium text-zinc-800 hover:bg-zinc-50"
+            className={navBtnClass}
           >
             ← Mes
           </button>
-          <p className="text-center text-sm font-semibold text-zinc-900">
+          <p className={monthTitleClass}>
             {MONTH_NAMES[monthIndex]} {year}
           </p>
           <button
@@ -302,18 +345,18 @@ export function ReprogramarClient({
               }
               setSelectedDateKey(null);
             }}
-            className="rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm font-medium text-zinc-800 hover:bg-zinc-50"
+            className={navBtnClass}
           >
             Mes →
           </button>
         </div>
 
-        <div className="mt-4 rounded-2xl border border-zinc-200 bg-white p-3 shadow-sm">
+        <div className={`mt-4 ${calCardClass}`}>
           {calLoading ? (
-            <p className="py-6 text-center text-sm text-zinc-500">Cargando calendario…</p>
+            <p className={`py-6 text-center ${loadingTextClass}`}>Cargando calendario…</p>
           ) : (
             <>
-              <div className="grid grid-cols-7 gap-1 text-center text-[10px] font-semibold uppercase text-zinc-500">
+              <div className={weekdayHeaderClass}>
                 {WEEKDAY_LABELS.map((w) => (
                   <div key={w} className="py-1">
                     {w}
@@ -336,13 +379,7 @@ export function ReprogramarClient({
                         type="button"
                         disabled={!free}
                         onClick={() => setSelectedDateKey(dk)}
-                        className={`aspect-square rounded-lg text-sm font-medium transition ${
-                          selected
-                            ? "bg-[#963417] text-white"
-                            : free
-                              ? "bg-emerald-50 text-emerald-900 hover:bg-emerald-100"
-                              : "cursor-not-allowed bg-zinc-50 text-zinc-300"
-                        }`}
+                        className={`aspect-square rounded-lg text-sm font-medium transition ${slotBtnClass(selected, free)}`}
                       >
                         {Number(dk.slice(8, 10))}
                       </button>
@@ -355,12 +392,12 @@ export function ReprogramarClient({
         </div>
 
         {selectedDateKey ? (
-          <section className="mt-6 rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
-            <h2 className="text-sm font-semibold text-zinc-900">Horarios para el {selectedDateKey}</h2>
+          <section className={slotsSectionClass}>
+            <h2 className={sectionTitleClass}>Horarios para el {selectedDateKey}</h2>
             {slotsLoading ? (
-              <p className="mt-3 text-sm text-zinc-500">Cargando…</p>
+              <p className={`mt-3 ${loadingTextClass}`}>Cargando…</p>
             ) : !slots || slots.length === 0 ? (
-              <p className="mt-3 text-sm text-zinc-500">No quedó ningún horario libre ese día.</p>
+              <p className={`mt-3 ${loadingTextClass}`}>No quedó ningún horario libre ese día.</p>
             ) : (
               <ul className="mt-3 flex flex-col gap-2">
                 {slots.map((s) => (
@@ -369,10 +406,10 @@ export function ReprogramarClient({
                       type="button"
                       disabled={actionBusy}
                       onClick={() => void confirmSlot(s.value)}
-                      className="flex w-full items-center justify-between rounded-xl border border-zinc-200 px-3 py-3 text-left text-sm font-medium text-zinc-900 hover:border-[#963417]/50 hover:bg-[#963417]/5 disabled:opacity-50"
+                      className={slotListBtnClass}
                     >
                       {s.label}
-                      <span className="text-xs text-[#963417]">Elegir</span>
+                      <span className={slotListAccentClass}>Elegir</span>
                     </button>
                   </li>
                 ))}

@@ -13,11 +13,11 @@ export default async function PanelTurnosLoginPage({ searchParams }: LoginPagePr
   const hasInvalidError = params.error === "invalid";
 
   return (
-    <main className="panel-v2-theme min-h-screen bg-[#F0F1F3] px-4 pb-12 pt-16">
+    <main className="min-h-screen bg-[#F0F1F3] px-4 pb-12 pt-16">
       <div className="mx-auto w-full max-w-md">
         <section className="rounded-[24px] border border-gray-100 bg-white p-6 shadow-[0_4px_20px_rgba(0,0,0,0.05)] sm:p-8">
           <p className="text-[12px] font-medium uppercase tracking-[0.12em] text-gray-500">Panel</p>
-          <h1 className="mt-1 text-[24px] font-bold text-gray-900">Karün · Wanda</h1>
+          <h1 className="mt-1 font-montserrat text-[24px] font-bold text-[#B88E2F]">Karün · Wanda</h1>
           <p className="mt-2 text-sm text-gray-500">Ingresá tu clave para ver y gestionar los turnos.</p>
 
           <form action="/api/panel-auth/login" method="post" className="mt-6 space-y-4">

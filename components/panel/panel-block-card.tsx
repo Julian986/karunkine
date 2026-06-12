@@ -38,7 +38,7 @@ export function PanelBlockCard({ block: b, selectedDateKey, onDelete }: PanelBlo
 
         <div className="mt-3 flex items-center gap-2">
           <Lock className="h-5 w-5 shrink-0 text-amber-700" strokeWidth={2} />
-          <h3 className="text-[18px] font-bold text-gray-900">Bloqueo de agenda</h3>
+          <h3 className="font-heading text-[18px] font-bold text-gray-900">Bloqueo de agenda</h3>
         </div>
 
         <p className="mt-1 text-[14px] text-gray-600">

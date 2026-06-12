@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { Cormorant_Garamond } from "next/font/google";
 import { useEffect, useLayoutEffect, useState } from "react";
 
 import { scrollWindowToTop } from "../../lib/scroll-route";
@@ -15,13 +16,21 @@ import {
   iconPhone,
   ReservaFormInput,
 } from "../components/ReservaFormInput";
+import { event as gaEvent } from "../../lib/gtag";
 import {
   formatPrecioArs,
   TALLER_BAHIA_JUNIO_2026,
   TALLER_FORM_FIELDS,
   type TallerEventoConfig,
 } from "../../lib/taller/evento-config";
+import { PENDING_TALLER_INSCRIPCION_ID_KEY } from "../../lib/taller/session";
+import { crearTallerInscripcionSchema } from "../../lib/validators/taller-inscripcion";
 import { altBandBg, BRAND_BG_LIGHT } from "../lib/brand-colors";
+
+const tallerTituloFont = Cormorant_Garamond({
+  subsets: ["latin"],
+  weight: ["600"],
+});
 
 type FormState = {
   nombre: string;
@@ -30,6 +39,39 @@ type FormState = {
   comentario: string;
 };
 
+function CheckIcon() {
+  return (
+    <svg className="mt-1 h-5 w-5 shrink-0 text-[#963417]" fill="currentColor" viewBox="0 0 20 20" aria-hidden>
+      <path
+        fillRule="evenodd"
+        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+        clipRule="evenodd"
+      />
+    </svg>
+  );
+}
+
+function InscribirmeArrowIcon() {
+  return (
+    <svg className="h-5 w-5 animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+    </svg>
+  );
+}
+
+function InscribirmeButton({ onClick, className = "" }: { onClick: () => void; className?: string }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`group inline-flex items-center justify-center gap-2 rounded-full bg-[#963417] px-8 py-4 font-bold text-white shadow-lg transition-all hover:bg-[#7a2a12] active:scale-95 ${className}`}
+    >
+      <span>Inscribirme</span>
+      <InscribirmeArrowIcon />
+    </button>
+  );
+}
+
 function FlyerHero({
   evento,
   onScrollToInscripcion,
@@ -37,102 +79,126 @@ function FlyerHero({
   evento: TallerEventoConfig;
   onScrollToInscripcion: () => void;
 }) {
-  const inscribirseBtn = (
-    <button
-      type="button"
-      onClick={onScrollToInscripcion}
-      className="mt-5 inline-flex items-center gap-2 rounded-xl bg-[#963417] px-6 py-3 text-[15px] font-semibold text-white shadow-[0_6px_20px_rgba(150,52,23,0.35)] transition hover:bg-[#a8431c] hover:shadow-lg active:scale-[0.99]"
-    >
-      Inscribirme
-      <span aria-hidden>↓</span>
-    </button>
-  );
-
   if (evento.imagenFlyerSrc) {
     return (
-      <div>
-        <div className="overflow-hidden rounded-3xl shadow-[0_20px_50px_rgba(61,32,16,0.18)]">
-          <Image
-            src={evento.imagenFlyerSrc}
-            alt={`Flyer — ${evento.titulo}`}
-            width={1080}
-            height={1350}
-            className="h-auto w-full"
-            priority
-            sizes="(max-width: 768px) 100vw, 480px"
-          />
+      <div className="relative w-full overflow-hidden rounded-3xl shadow-[0_20px_50px_rgba(61,32,16,0.18)]">
+        <Image
+          src={evento.imagenFlyerSrc}
+          alt={`Flyer — ${evento.titulo}`}
+          width={1080}
+          height={1350}
+          className="block h-auto w-full"
+          priority
+          sizes="(max-width: 768px) 100vw, 480px"
+        />
+        <div className="pointer-events-none absolute inset-x-0 bottom-[17%] flex justify-center px-4 sm:bottom-[28%]">
+          <div className="pointer-events-auto rounded-full bg-gradient-to-t from-[#2a1812]/40 to-transparent p-1 pt-8">
+            <InscribirmeButton onClick={onScrollToInscripcion} />
+          </div>
         </div>
-        <div className="mt-4 flex justify-center">{inscribirseBtn}</div>
       </div>
     );
   }
 
   return (
-    <div className="flex aspect-[4/5] w-full flex-col items-center justify-center rounded-3xl border-2 border-dashed border-[#c4933f]/45 bg-gradient-to-br from-[#f5ebe0] to-[#e8dcc8] px-6 text-center shadow-inner sm:aspect-[3/4]">
+    <div className="relative flex aspect-[4/5] w-full flex-col items-center justify-center rounded-3xl border-2 border-dashed border-[#c4933f]/45 bg-gradient-to-br from-[#f5ebe0] to-[#e8dcc8] px-6 text-center shadow-inner sm:aspect-[3/4]">
       <p className="text-[13px] font-bold uppercase tracking-[0.14em] text-[#8a5a24]">Flyer</p>
-      {inscribirseBtn}
+      <div className="mt-6">
+        <InscribirmeButton onClick={onScrollToInscripcion} />
+      </div>
     </div>
   );
 }
 
 function TallerInfoSection({ evento }: { evento: TallerEventoConfig }) {
-  const detalles = [
-    { icon: "🗓️", text: evento.fecha },
-    { icon: "⏰", text: evento.horario },
-    { icon: "📍", text: evento.lugar, mapsUrl: evento.mapsUrl },
-    { icon: "🌎", text: evento.modalidad },
-    { icon: "🫂", text: evento.publico },
-    { icon: "📝", text: evento.inscripcion },
-  ] as const;
+  const horarioDisplay = evento.horario.replace(/^De /, "");
 
   return (
-    <section className="mt-10 rounded-3xl bg-white p-6 shadow-[0_8px_30px_rgba(0,0,0,0.08)] sm:p-8">
-      <p className="text-center text-[12px] font-bold uppercase tracking-[0.12em] text-[#8a5a24]">
-        {evento.subtitulo}
-      </p>
-      <h1 className="mt-2 text-center text-[26px] font-bold capitalize leading-snug text-[#3d2010] sm:text-[28px]">
-        {evento.titulo}
-      </h1>
-      {/* <p className="mt-2 text-center text-[15px] italic leading-snug text-[#963417]/90">{evento.tagline}</p> */}
+    <section className="bg-[#fff8f6] px-6 py-12">
+      <div className="mx-auto max-w-2xl">
+        <h1 className="sr-only">
+          {evento.titulo} — {evento.subtitulo}
+        </h1>
+        <div className="mb-8 text-center">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#a0634a] sm:text-xs">
+            {evento.subtitulo}
+          </p>
+          <h2
+            className={`${tallerTituloFont.className} mt-3 text-[2.35rem] font-semibold leading-[1.08] tracking-[-0.015em] text-[#2a1812] sm:text-[2.65rem]`}
+          >
+            {evento.titulo}
+          </h2>
+        </div>
+        <p className="mb-8 leading-relaxed text-[#5d4037]">{evento.descripcion}</p>
 
-      <p className="mt-6 text-[15px] leading-relaxed text-zinc-700">{evento.descripcion}</p>
+        <div className="mb-12 rounded-2xl border border-[#ffd0ba] bg-[#fff1eb] p-6">
+          <h3 className="mb-6 flex items-center gap-2 text-xl font-bold text-[#963417]">
+            <span aria-hidden>🙌🏽</span>
+            Este taller es para vos si estás buscando:
+          </h3>
+          <ul className="space-y-4">
+            {evento.beneficios.map((item) => (
+              <li key={item} className="flex items-start gap-3 text-[#5d4037]">
+                <CheckIcon />
+                <span>{item}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
 
-      <div className="mt-7">
-        <p className="text-[15px] font-semibold text-[#3d2010]">🙌🏽 Este taller es para vos si estás buscando:</p>
-        <ul className="mt-3 list-disc space-y-2.5 pl-5 text-[15px] leading-relaxed text-zinc-700">
-          {evento.beneficios.map((item) => (
-            <li key={item}>{item}</li>
-          ))}
-        </ul>
-      </div>
-
-      <ul className="mt-7 space-y-3 text-[15px] text-zinc-800">
-        {detalles.map(({ icon, text, ...rest }) => (
-          <li key={text} className="flex gap-2.5">
-            <span aria-hidden className="shrink-0">
-              {icon}
-            </span>
-            <div>
-              <span>{text}</span>
-              {"mapsUrl" in rest && rest.mapsUrl ? (
-                <a
-                  href={rest.mapsUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="mt-2 inline-flex items-center gap-1.5 rounded-lg border border-[#963417]/20 bg-[#faf6f3] px-3 py-1.5 text-[13px] font-semibold text-[#963417] transition hover:bg-[#f5ebe3]"
-                >
-                  Ver en Maps
-                  <span aria-hidden>↗</span>
-                </a>
-              ) : null}
+        <div className="space-y-6">
+          <div className="flex items-center gap-4">
+            <div className="rounded-xl bg-white p-3 shadow-sm">
+              <span className="text-2xl" aria-hidden>
+                🗓️
+              </span>
             </div>
-          </li>
-        ))}
-      </ul>
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wider text-[#963417]">Fecha</p>
+              <p className="text-lg font-bold text-[#4a2c21]">{evento.fecha}</p>
+            </div>
+          </div>
 
-      <p className="mt-8 rounded-2xl bg-[#faf6f3] px-4 py-3 text-center text-lg font-bold text-[#963417]">
-        {formatPrecioArs(evento.precioArs)}
-      </p>
+          <div className="flex items-center gap-4">
+            <div className="rounded-xl bg-white p-3 shadow-sm">
+              <span className="text-2xl" aria-hidden>
+                ⏰
+              </span>
+            </div>
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wider text-[#963417]">Horario</p>
+              <p className="text-lg font-bold text-[#4a2c21]">{horarioDisplay}</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-4">
+            <div className="rounded-xl bg-white p-3 shadow-sm">
+              <span className="text-2xl" aria-hidden>
+                📍
+              </span>
+            </div>
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wider text-[#963417]">Ubicación</p>
+              <p className="text-lg font-bold text-[#4a2c21]">KARÜN — Viamonte 1233</p>
+              <a
+                href={evento.mapsUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm text-[#963417] underline underline-offset-2"
+              >
+                Ver en Maps
+              </a>
+            </div>
+          </div>
+
+          <div className="mt-8 rounded-xl bg-[#963417] px-5 py-4 text-center shadow-lg">
+            <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.18em] text-[#ffd0ba]">
+              Valor del taller
+            </p>
+            <p className="text-2xl font-bold text-white">{formatPrecioArs(evento.precioArs)}</p>
+          </div>
+        </div>
+      </div>
     </section>
   );
 }
@@ -147,7 +213,9 @@ export function TallerInscripcionBoceto({ evento = TALLER_BAHIA_JUNIO_2026 }: { 
     celular: "",
     comentario: "",
   });
-  const [bocetoMsg, setBocetoMsg] = useState<string | null>(null);
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const [pagoError, setPagoError] = useState<string | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
 
   useLayoutEffect(() => {
     if (window.location.hash) return;
@@ -155,26 +223,97 @@ export function TallerInscripcionBoceto({ evento = TALLER_BAHIA_JUNIO_2026 }: { 
   }, []);
 
   function scrollToInscripcion() {
-    document.getElementById("inscripcion")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    const el = document.getElementById("reserva");
+    if (!el) return;
+    const y = el.getBoundingClientRect().top + window.scrollY;
+    const topMargin = 56;
+    const extraDown = -10;
+    window.scrollTo({ top: Math.max(0, y - topMargin + extraDown), behavior: "smooth" });
   }
 
   useEffect(() => {
-    if (!bocetoMsg) return;
+    if (!pagoError) return;
     const t = window.setTimeout(() => {
-      const el = document.getElementById("taller-proximamente-msg");
+      const el = document.getElementById("taller-pago-error");
       if (!el) return;
       const y = el.getBoundingClientRect().top + window.scrollY;
       const topMargin = window.innerHeight * 0.32 + 48;
       window.scrollTo({ top: Math.max(0, y - topMargin), behavior: "smooth" });
     }, 80);
     return () => window.clearTimeout(t);
-  }, [bocetoMsg]);
+  }, [pagoError]);
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setBocetoMsg(
-      "La inscripción online con pago se habilitará próximamente. Si querés reservar tu lugar antes, escribinos por WhatsApp.",
-    );
+    setPagoError(null);
+    setFormError(null);
+
+    const parsed = crearTallerInscripcionSchema.safeParse({
+      eventoSlug: evento.slug,
+      nombre: form.nombre,
+      mail: form.mail,
+      celular: form.celular,
+      comentario: form.comentario,
+    });
+
+    if (!parsed.success) {
+      const first = parsed.error.issues[0]?.message ?? "Revisá los datos del formulario.";
+      setFormError(first);
+      return;
+    }
+
+    setCheckoutLoading(true);
+    try {
+      const resPendiente = await fetch("/api/taller/inscripciones/pendiente", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(parsed.data),
+      });
+      const jsonP = (await resPendiente.json().catch(() => ({}))) as {
+        error?: string;
+        id?: string;
+      };
+      if (!resPendiente.ok) {
+        setPagoError(jsonP.error ?? "No se pudo iniciar la inscripción.");
+        return;
+      }
+      const id = jsonP.id;
+      if (!id) {
+        setPagoError("Respuesta inválida del servidor.");
+        return;
+      }
+
+      const resPref = await fetch(`/api/taller/inscripciones/${id}/preferencia`, {
+        method: "POST",
+      });
+      const jsonPref = (await resPref.json().catch(() => ({}))) as {
+        error?: string;
+        initPoint?: string;
+      };
+      if (!resPref.ok) {
+        setPagoError(jsonPref.error ?? "No se pudo crear el checkout de Mercado Pago.");
+        return;
+      }
+      const initPoint = jsonPref.initPoint;
+      if (!initPoint || typeof window === "undefined") {
+        setPagoError("No se obtuvo el enlace de pago.");
+        return;
+      }
+
+      gaEvent("taller_checkout_mercadopago", {
+        evento_slug: evento.slug,
+        value: evento.precioArs,
+        currency: "ARS",
+        inscripcion_id: id,
+      });
+
+      window.sessionStorage.setItem(PENDING_TALLER_INSCRIPCION_ID_KEY, id);
+      window.location.assign(initPoint);
+    } catch {
+      setPagoError("Error de conexión. Intentá de nuevo.");
+    } finally {
+      setCheckoutLoading(false);
+    }
   }
 
   const waUrl = `https://wa.me/${evento.whatsappConsultas}?text=${encodeURIComponent(
@@ -183,7 +322,7 @@ export function TallerInscripcionBoceto({ evento = TALLER_BAHIA_JUNIO_2026 }: { 
 
   return (
     <div style={{ backgroundColor: BRAND_BG_LIGHT }} className="min-h-screen">
-      <div className="mx-auto max-w-2xl px-4 pt-8 sm:px-6">
+      <div className="mx-auto max-w-2xl px-4 pt-6 sm:px-6 sm:pt-8">
         <Link
           href="/"
           className="inline-flex text-sm font-medium text-[#963417] underline-offset-2 hover:underline"
@@ -191,19 +330,16 @@ export function TallerInscripcionBoceto({ evento = TALLER_BAHIA_JUNIO_2026 }: { 
           ← Volver al inicio
         </Link>
 
-        <p className="mt-6 text-[12px] font-bold uppercase tracking-[0.12em] text-[#8a5a24]">
-          Inscripción online
-        </p>
-        <p className="mt-2 text-[15px] text-zinc-600">
+       {/*  <p className="mt-5 text-[16px] font-semibold text-[#963417] sm:mt-6">
           {evento.fecha} · Bahía Blanca
-        </p>
+        </p> */}
 
-        <div className="mt-6 max-w-lg">
+        <div className="mt-4 max-w-lg sm:mt-5">
           <FlyerHero evento={evento} onScrollToInscripcion={scrollToInscripcion} />
         </div>
-
-        <TallerInfoSection evento={evento} />
       </div>
+
+      <TallerInfoSection evento={evento} />
 
       <section
         id="inscripcion"
@@ -211,14 +347,14 @@ export function TallerInscripcionBoceto({ evento = TALLER_BAHIA_JUNIO_2026 }: { 
         style={{ backgroundColor: sectionBg }}
       >
         <div className="mx-auto max-w-2xl">
-          <div className="overflow-hidden rounded-3xl bg-white shadow-[0_8px_30px_rgba(0,0,0,0.12)]">
+          <div id="reserva" className="overflow-hidden rounded-3xl bg-white shadow-[0_8px_30px_rgba(0,0,0,0.12)]">
             <div className="p-6 sm:p-8">
               <h2 className="text-xl font-semibold text-zinc-800 sm:text-2xl">Reservá tu lugar</h2>
               <p className="mt-1 text-zinc-600">
                 {evento.fecha} · {formatPrecioArs(evento.precioArs)}
               </p>
               <p className="mt-1 text-zinc-500">
-                Completá tus datos. El pago online se habilitará muy pronto.
+                Completá tus datos y pagá con Mercado Pago para confirmar tu lugar.
               </p>
 
               <form
@@ -284,18 +420,27 @@ export function TallerInscripcionBoceto({ evento = TALLER_BAHIA_JUNIO_2026 }: { 
                 <div className="rounded-xl border border-zinc-200 bg-white px-4 py-4">
                   <p className="text-sm font-semibold text-zinc-800">Pago con Mercado Pago</p>
                   <p className="mt-1 text-sm text-zinc-600">
-                    Próximamente vas a poder completar tu inscripción y pagar con tarjeta, Mercado Pago y más.
+                    La inscripción se confirmará cuando Mercado Pago apruebe el pago.
                   </p>
+                  {formError ? (
+                    <p className="mt-3 text-sm font-medium text-red-600" role="alert">
+                      {formError}
+                    </p>
+                  ) : null}
                   <div className="mt-3 flex flex-wrap items-center gap-3">
-                    <MercadoPagoButton type="submit" label="Reservar mi lugar" />
+                    <MercadoPagoButton
+                      type="submit"
+                      label={checkoutLoading ? "Redirigiendo…" : "Pagar e inscribirme"}
+                      disabled={checkoutLoading}
+                    />
                   </div>
-                  {bocetoMsg ? (
+                  {pagoError ? (
                     <p
-                      id="taller-proximamente-msg"
-                      role="status"
-                      className="mt-3 scroll-mt-28 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 text-sm leading-snug text-amber-950"
+                      id="taller-pago-error"
+                      role="alert"
+                      className="mt-3 scroll-mt-28 rounded-lg border border-red-200 bg-red-50 px-3 py-2.5 text-sm leading-snug text-red-900"
                     >
-                      {bocetoMsg}
+                      {pagoError}
                     </p>
                   ) : null}
                 </div>

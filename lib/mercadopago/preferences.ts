@@ -12,6 +12,12 @@ export type CrearPreferenciaInput = {
   precioArs: number;
   nombrePagador: string;
   emailPagador: string;
+  backUrls?: {
+    success: string;
+    failure: string;
+    pending: string;
+  };
+  statementDescriptor?: string;
 };
 
 /**
@@ -23,7 +29,7 @@ export async function crearPreferenciaCheckoutPro(
 ): Promise<{ preferenceId: string; initPoint: string }> {
   const base = getAppPublicBaseUrl();
   const notificationUrl = `${base}/api/webhooks/mercadopago`;
-  const backUrls = {
+  const backUrls = input.backUrls ?? {
     success: `${base}/reserva/resultado?estado=success`,
     failure: `${base}/reserva/resultado?estado=failure`,
     pending: `${base}/reserva/resultado?estado=pending`,
@@ -48,7 +54,7 @@ export async function crearPreferenciaCheckoutPro(
       surname: input.nombrePagador.split(/\s+/).slice(1).join(" ").slice(0, 255) || "-",
       email: input.emailPagador,
     },
-    statement_descriptor: "KARUN RESERVA".slice(0, 22),
+    statement_descriptor: (input.statementDescriptor ?? "KARUN RESERVA").slice(0, 22),
     binary_mode: false,
   };
 

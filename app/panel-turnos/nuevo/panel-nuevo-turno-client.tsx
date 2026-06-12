@@ -7,7 +7,14 @@ import {
   PanelTurnoFechaHoraPicker,
   type PanelFechaHoraSeleccion,
 } from "../../components/PanelTurnoFechaHoraPicker";
-import { panelCard, panelPrimaryBtn } from "../../../components/panel/panel-ui";
+import {
+  panelCard,
+  panelInput,
+  panelLabel,
+  panelPrimaryBtn,
+  panelSelect,
+  panelSelectPlaceholder,
+} from "../../../components/panel/panel-ui";
 import { matchGrupalTemplate } from "../../../lib/turnos/wanda-schedule";
 import {
   expandRecurringDateKeys,
@@ -302,30 +309,28 @@ export function PanelNuevoTurnoClient() {
 
   return (
     <section className={`${panelCard} p-5`}>
-      <h1 className="text-lg font-semibold text-gray-900">Nuevo turno manual</h1>
+      <h1 className="font-montserrat text-lg font-semibold text-gray-900">Nuevo turno manual</h1>
       <p className="mt-1 text-xs text-gray-500">Alta directa sin pago (confirmado en el momento).</p>
 
       <form className="mt-4 space-y-3" onSubmit={onSubmit}>
-        <input value={nombre} onChange={(e) => setNombre(e.target.value)} placeholder="Nombre y apellido" className="w-full rounded-xl border border-black/15 bg-[var(--panel-input)] px-3 py-2 text-sm text-[var(--brand-cream)] outline-none" />
+        <input value={nombre} onChange={(e) => setNombre(e.target.value)} placeholder="Nombre y apellido" className={panelInput} />
         {fieldErrors.nombre ? <p className="text-xs text-red-700">{fieldErrors.nombre}</p> : null}
-        <input value={mail} onChange={(e) => setMail(e.target.value)} placeholder="Mail (opcional)" type="email" className="w-full rounded-xl border border-black/15 bg-[var(--panel-input)] px-3 py-2 text-sm text-[var(--brand-cream)] outline-none" />
+        <input value={mail} onChange={(e) => setMail(e.target.value)} placeholder="Mail (opcional)" type="email" className={panelInput} />
         {fieldErrors.mail ? <p className="text-xs text-red-700">{fieldErrors.mail}</p> : null}
-        <input value={celular} onChange={(e) => setCelular(e.target.value)} placeholder="Celular (opcional)" className="w-full rounded-xl border border-black/15 bg-[var(--panel-input)] px-3 py-2 text-sm text-[var(--brand-cream)] outline-none" />
+        <input value={celular} onChange={(e) => setCelular(e.target.value)} placeholder="Celular (opcional)" className={panelInput} />
         {fieldErrors.celular ? <p className="text-xs text-red-700">{fieldErrors.celular}</p> : null}
         <div className="relative">
           <select
             value={motivo}
             onChange={(e) => setMotivo(e.target.value)}
-            className={`w-full appearance-none rounded-xl border border-black/15 bg-[var(--panel-input)] px-3 py-2 pr-10 text-sm outline-none ${
-              motivo ? "text-[var(--brand-cream)]" : "text-[var(--brand-cream)]/55"
-            }`}
+            className={`${panelSelect} ${motivo ? "" : panelSelectPlaceholder}`}
           >
             <option value="" disabled hidden>Elegir motivo</option>
             {MOTIVOS.map((m) => (
               <option key={m.value} value={m.value}>{m.label}</option>
             ))}
           </select>
-          <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[var(--brand-cream)]/65">
+          <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
             {iconChevronDown}
           </span>
         </div>
@@ -345,15 +350,15 @@ export function PanelNuevoTurnoClient() {
               setRepetirModo("");
               setRepetirHasta("");
             }}
-            className={`w-full appearance-none rounded-xl border border-black/15 bg-[var(--panel-input)] px-3 py-2 pr-10 text-sm outline-none ${
-              modalidad ? "text-[var(--brand-cream)]" : "text-[var(--brand-cream)]/55"
+            className={`${panelSelect} ${
+              modalidad ? "text-gray-900" : "text-gray-400"
             }`}
           >
             <option value="" disabled hidden>Elegir modalidad</option>
             <option value="consulta_individual">Consulta individual</option>
             <option value="grupal">Clases grupales</option>
           </select>
-          <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[var(--brand-cream)]/65">
+          <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
             {iconChevronDown}
           </span>
         </div>
@@ -362,12 +367,12 @@ export function PanelNuevoTurnoClient() {
         {esIndividual && (
           <>
             <div className="relative">
-              <select value={formatoConsulta} onChange={(e) => setFormatoConsulta(e.target.value as "presencial" | "virtual" | "")} className={`w-full appearance-none rounded-xl border border-black/15 bg-[var(--panel-input)] px-3 py-2 pr-10 text-sm outline-none ${formatoConsulta ? "text-[var(--brand-cream)]" : "text-[var(--brand-cream)]/55"}`}>
+              <select value={formatoConsulta} onChange={(e) => setFormatoConsulta(e.target.value as "presencial" | "virtual" | "")} className={`${panelSelect} ${formatoConsulta ? "text-gray-900" : "text-gray-400"}`}>
                 <option value="" disabled hidden>Formato de consulta</option>
                 <option value="presencial">Presencial</option>
                 <option value="virtual">Virtual</option>
               </select>
-              <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[var(--brand-cream)]/65">
+              <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
                 {iconChevronDown}
               </span>
             </div>
@@ -385,7 +390,7 @@ export function PanelNuevoTurnoClient() {
 
         {esGrupal && (
           <>
-            <label className="flex items-start gap-3 rounded-xl border border-black/10 bg-black/[0.03] px-3 py-2.5">
+            <label className="flex items-start gap-3 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2.5">
               <input
                 type="checkbox"
                 checked={soloClaseGrupal}
@@ -401,9 +406,9 @@ export function PanelNuevoTurnoClient() {
                     setHorarioGrupal("");
                   }
                 }}
-                className="mt-0.5 h-4 w-4 rounded border-black/20 accent-[var(--brand-ui-primary)]"
+                className="mt-0.5 h-4 w-4 rounded border-gray-300 accent-[#B88E2F]"
               />
-              <span className="text-sm text-[var(--brand-cream)]/85">
+              <span className="text-sm text-gray-700">
                 Solo ciclo de clases mar/jue (sin evaluación con horario libre)
               </span>
             </label>
@@ -415,7 +420,7 @@ export function PanelNuevoTurnoClient() {
                     value={horarioGrupal}
                     onChange={(e) => setHorarioGrupal(e.target.value)}
                     disabled={horariosGrupalLoading || opcionesGrupalDisponibles.length === 0}
-                    className={`w-full appearance-none rounded-xl border border-black/15 bg-[var(--panel-input)] px-3 py-2 pr-10 text-sm outline-none disabled:opacity-60 ${horarioGrupal ? "text-[var(--brand-cream)]" : "text-[var(--brand-cream)]/55"}`}
+                    className={`${panelSelect} disabled:opacity-60 ${horarioGrupal ? "text-gray-900" : "text-gray-400"}`}
                   >
                     <option value="" disabled hidden>
                       {horariosGrupalLoading ? "Cargando franjas..." : "Elegir franja de clases"}
@@ -426,13 +431,13 @@ export function PanelNuevoTurnoClient() {
                       </option>
                     ))}
                   </select>
-                  <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[var(--brand-cream)]/65">
+                  <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
                     {iconChevronDown}
                   </span>
                 </div>
                 {fieldErrors.horario ? <p className="text-xs text-red-700">{fieldErrors.horario}</p> : null}
                 {!horariosGrupalLoading && opcionesGrupalDisponibles.length === 0 && (
-                  <p className="text-xs text-[var(--brand-cream)]/60">
+                  <p className="text-xs text-gray-500">
                     No hay franjas grupales disponibles en este momento.
                   </p>
                 )}
@@ -443,7 +448,7 @@ export function PanelNuevoTurnoClient() {
                   <select
                     value={formatoEvaluacion}
                     onChange={(e) => setFormatoEvaluacion(e.target.value as "presencial" | "virtual" | "")}
-                    className={`w-full appearance-none rounded-xl border border-black/15 bg-[var(--panel-input)] px-3 py-2 pr-10 text-sm outline-none ${formatoEvaluacion ? "text-[var(--brand-cream)]" : "text-[var(--brand-cream)]/55"}`}
+                    className={`${panelSelect} ${formatoEvaluacion ? "text-gray-900" : "text-gray-400"}`}
                   >
                     <option value="" disabled hidden>
                       Formato de evaluación
@@ -451,7 +456,7 @@ export function PanelNuevoTurnoClient() {
                     <option value="presencial">Presencial</option>
                     <option value="virtual">Virtual</option>
                   </select>
-                  <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[var(--brand-cream)]/65">
+                  <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
                     {iconChevronDown}
                   </span>
                 </div>
@@ -465,7 +470,7 @@ export function PanelNuevoTurnoClient() {
                       titulo="Elegí evaluación (día y hora libres)"
                       onSeleccion={(h) => setSlotEvalGrupal(h)}
                     />
-                    <p className="mt-2 text-xs leading-snug text-[var(--brand-cream)]/60">
+                    <p className="mt-2 text-xs leading-snug text-gray-500">
                       Evaluación libre (cualquier día y hora). En el calendario solo verás esas evaluaciones.
                       El ciclo de clases mar/jue se carga solo con la opción &quot;Solo ciclo de clases&quot; abajo.
                     </p>
@@ -478,7 +483,7 @@ export function PanelNuevoTurnoClient() {
         )}
 
         {puedeRepetir && (slotIndividual || slotEvalGrupal) ? (
-          <div className="space-y-2 rounded-xl border border-black/10 bg-black/[0.03] px-3 py-3">
+          <div className="space-y-2 rounded-xl border border-gray-200 bg-gray-50 px-3 py-3">
             <div className="relative">
               <select
                 value={repetirModo}
@@ -487,22 +492,22 @@ export function PanelNuevoTurnoClient() {
                   setRepetirModo(v);
                   if (!v) setRepetirHasta("");
                 }}
-                className={`w-full appearance-none rounded-xl border border-black/15 bg-[var(--panel-input)] px-3 py-2 pr-10 text-sm outline-none ${
-                  repetirModo ? "text-[var(--brand-cream)]" : "text-[var(--brand-cream)]/55"
+                className={`${panelSelect} ${
+                  repetirModo ? "text-gray-900" : "text-gray-400"
                 }`}
               >
                 <option value="">No repetir (un solo turno)</option>
                 <option value="weekly">Cada semana (mismo día de la semana)</option>
                 <option value="monthly">Cada mes (mismo día de la semana, ej. cada miércoles)</option>
               </select>
-              <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[var(--brand-cream)]/65">
+              <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
                 {iconChevronDown}
               </span>
             </div>
             {repetirModo ? (
               <>
                 <div>
-                  <label className="block text-xs font-medium text-[var(--brand-cream)]/60" htmlFor="repetir-hasta">
+                  <label className="block text-xs font-medium text-gray-500" htmlFor="repetir-hasta">
                     Fecha de fin (opcional)
                   </label>
                   <input
@@ -510,12 +515,12 @@ export function PanelNuevoTurnoClient() {
                     type="date"
                     value={repetirHasta}
                     onChange={(e) => setRepetirHasta(e.target.value)}
-                    className="mt-1 w-full rounded-xl border border-black/15 bg-[var(--panel-input)] px-3 py-2 text-sm text-[var(--brand-cream)] outline-none"
+                    className={`${panelInput} mt-1 py-2 text-sm`}
                   />
                   {fieldErrors.repeatUntilDateKey ? (
                     <p className="mt-1 text-xs text-red-700">{fieldErrors.repeatUntilDateKey}</p>
                   ) : null}
-                  <p className="mt-1 text-xs text-[var(--brand-cream)]/55">
+                  <p className="mt-1 text-xs text-gray-400">
                     Sin fecha de fin: hasta{" "}
                     {repetirModo === "monthly"
                       ? `${PANEL_REPEAT_MAX_MONTHLY} meses`
@@ -523,7 +528,7 @@ export function PanelNuevoTurnoClient() {
                     hacia adelante.
                   </p>
                 </div>
-                <p className="text-xs font-medium text-[var(--brand-cream)]/75">
+                <p className="text-xs font-medium text-gray-700">
                   {previewRepeticion.sinFin
                     ? `Vista previa: ${previewRepeticion.count} citas (máx. ${
                         previewRepeticion.modo === "monthly"
@@ -545,7 +550,7 @@ export function PanelNuevoTurnoClient() {
           rows={2}
           maxLength={2000}
           placeholder="Nota interna (opcional)"
-          className="max-h-32 w-full resize-y overflow-y-auto rounded-xl border border-black/15 bg-[var(--panel-input)] px-3 py-2 text-sm text-[var(--brand-cream)] outline-none"
+          className={`${panelInput} max-h-32 resize-y overflow-y-auto py-2 text-sm`}
         />
 
         {msg && <p className="text-sm text-red-700">{msg}</p>}

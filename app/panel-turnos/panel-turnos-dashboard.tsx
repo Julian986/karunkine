@@ -13,8 +13,11 @@ import {
   panelContainer,
   panelDayDefault,
   panelDayOutside,
+  panelActionBtn,
   panelDaySelected,
   panelPage,
+  panelPageBg,
+  panelSecondaryBtn,
 } from "../../components/panel/panel-ui";
 import {
   agendaBlockAppliesToDateKey,
@@ -29,6 +32,10 @@ import { pickScrollToTurnoId } from "../../lib/booking/panel-now-focus";
 import type { PanelAgendaBlockRow, TurnoEstado } from "../../lib/panel/panel-turno-helpers";
 import { buildWhatsAppLink } from "../../lib/panel/panel-turno-helpers";
 import type { PanelCalendarioEvento } from "../../lib/turnos/panel-events";
+import type {
+  PanelTallerEventoResumen,
+  PanelTallerInscripcionesResumen,
+} from "../../lib/taller/panel-taller-inscripciones";
 
 type DayRow =
   | { kind: "reservation"; item: PanelCalendarioEvento }
@@ -75,6 +82,10 @@ export function PanelTurnosDashboard() {
   const [clockTick, setClockTick] = useState(0);
   const [cancelConfirmTurnoId, setCancelConfirmTurnoId] = useState<string | null>(null);
   const [cancellingTurnoId, setCancellingTurnoId] = useState<string | null>(null);
+  const [tallerResumen, setTallerResumen] = useState<{
+    evento: PanelTallerEventoResumen;
+    resumen: PanelTallerInscripcionesResumen;
+  } | null>(null);
   const cardRefs = useRef<Record<string, HTMLElement | null>>({});
 
   const grid = useMemo(() => buildPanelMonthGrid(year, month), [year, month]);
@@ -148,6 +159,31 @@ export function PanelTurnosDashboard() {
       alive = false;
     };
   }, [year, month, router, refreshTick]);
+
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      try {
+        const res = await fetch("/api/panel-turnos/taller-inscripciones?countsOnly=1", {
+          credentials: "same-origin",
+          cache: "no-store",
+        });
+        const data = (await res.json()) as {
+          evento?: PanelTallerEventoResumen;
+          resumen?: PanelTallerInscripcionesResumen;
+        };
+        if (!res.ok || !alive) return;
+        if (data.evento && data.resumen) {
+          setTallerResumen({ evento: data.evento, resumen: data.resumen });
+        }
+      } catch {
+        /* resumen opcional en dashboard */
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [refreshTick]);
 
   const visibleEventos = useMemo(() => {
     if (showCancelled) return eventos;
@@ -301,7 +337,7 @@ export function PanelTurnosDashboard() {
   }
 
   return (
-    <div className={panelPage}>
+    <div className={`${panelPage} ${panelPageBg}`}>
       {toastMsg ? (
         <div className="pointer-events-none fixed inset-x-0 top-6 z-50 flex justify-center px-4">
           <div
@@ -317,27 +353,40 @@ export function PanelTurnosDashboard() {
         <header className="pb-2">
           <div>
             <p className="text-[12px] font-medium uppercase tracking-[0.12em] text-gray-500">Panel</p>
-            <h1 className="text-[22px] font-bold leading-tight text-gray-900">Agenda de turnos</h1>
+            <h1 className="font-montserrat text-[22px] font-bold leading-tight text-gray-900">Agenda de turnos</h1>
             <p className="mt-1 text-[14px] text-gray-500">Karün · Wanda Perrin</p>
           </div>
 
           <div className="mt-4 grid grid-cols-2 gap-3">
-            <Link
-              href="/panel-turnos/nuevo"
-              className="flex h-12 cursor-pointer items-center justify-center gap-2 rounded-2xl bg-[#B88E2F] text-[14px] font-semibold text-white shadow-md transition active:scale-[0.98]"
-            >
+            <Link href="/panel-turnos/nuevo" className={panelActionBtn}>
               <Plus className="h-5 w-5" strokeWidth={2.2} />
               Agregar turno
             </Link>
-            <Link
-              href="/panel-turnos/bloqueo"
-              className="flex h-12 cursor-pointer items-center justify-center gap-2 rounded-2xl border border-amber-200 bg-amber-50 text-[14px] font-semibold text-amber-900 transition hover:bg-amber-100"
-            >
+            <Link href="/panel-turnos/bloqueo" className={panelSecondaryBtn}>
               <Lock className="h-5 w-5" strokeWidth={2.2} />
               Bloquear horario
             </Link>
           </div>
         </header>
+
+        {tallerResumen ? (
+          <section className={`mt-4 ${panelCard} p-4`}>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <p className="font-montserrat text-[15px] font-semibold leading-snug text-gray-900">
+                Taller {tallerResumen.evento.fechaCorta} — {tallerResumen.resumen.confirmados} confirmados ·{" "}
+                {tallerResumen.resumen.pendientes}{" "}
+                {tallerResumen.resumen.pendientes === 1 ? "pendiente" : "pendientes"}
+              </p>
+              <Link
+                href="/panel-turnos/taller"
+                className={`${panelSecondaryBtn} h-10 shrink-0 px-4 sm:w-auto`}
+              >
+                Ver inscriptos
+                <ChevronRight className="h-4 w-4" strokeWidth={2.4} />
+              </Link>
+            </div>
+          </section>
+        ) : null}
 
         <section className={`mt-5 ${panelCard} p-4`}>
           <div className="relative mb-3 flex items-center justify-center px-10">
@@ -407,30 +456,29 @@ export function PanelTurnosDashboard() {
 
         <div className="mt-5 flex items-start justify-between gap-4">
           <div>
-            <p className="text-[30px] font-bold leading-tight tracking-tight text-gray-900">
+            <p className="font-montserrat text-[22px] font-bold leading-tight tracking-tight text-gray-900">
               {weekdayLongFromKey(selectedKey)}
             </p>
-            <p className="mt-1 text-[18px] font-semibold text-gray-600">{dayLongFromKey(selectedKey)}</p>
+            <p className="mt-0.5 text-[14px] text-gray-500">{dayLongFromKey(selectedKey)}</p>
           </div>
           <div className="flex shrink-0 flex-col items-end gap-2 sm:flex-row sm:items-center">
-            {cancelledCountSelectedDay > 0 ? (
-              <button
-                type="button"
-                onClick={() => setShowCancelled((v) => !v)}
-                className={[
-                  "flex items-center gap-1.5 rounded-2xl border px-3 py-2 text-[13px] transition",
-                  showCancelled
-                    ? "border-red-200 bg-red-50 text-red-700"
-                    : "border-gray-200 bg-white text-gray-600 hover:bg-gray-50",
-                ].join(" ")}
-                aria-pressed={showCancelled}
-              >
-                <span className="font-semibold">{cancelledCountSelectedDay}</span>
-                <span className="font-semibold">
-                  {cancelledCountSelectedDay === 1 ? "Cancelada" : "Canceladas"}
-                </span>
-              </button>
-            ) : null}
+            <button
+              type="button"
+              onClick={() => setShowCancelled((v) => !v)}
+              className={[
+                "flex items-center gap-1.5 rounded-2xl border px-3 py-2 text-[13px] transition",
+                showCancelled
+                  ? "border-red-200 bg-red-50 text-red-700"
+                  : "border-gray-200 bg-white text-gray-600 hover:bg-gray-50",
+              ].join(" ")}
+              aria-pressed={showCancelled}
+              aria-label={showCancelled ? "Ocultar canceladas" : "Mostrar canceladas"}
+            >
+              <span className="font-semibold">{cancelledCountSelectedDay}</span>
+              <span className="font-semibold">
+                {cancelledCountSelectedDay === 1 ? "Cancelada" : "Canceladas"}
+              </span>
+            </button>
             <div className={panelChip}>
               <CalendarDays className="h-4 w-4 text-[#B88E2F]" strokeWidth={1.75} />
               <span className="font-semibold">
@@ -509,7 +557,7 @@ export function PanelTurnosDashboard() {
             className="w-full max-w-sm rounded-2xl border border-gray-200 bg-white p-5 shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <h3 className="text-[20px] font-bold text-gray-900">Cancelar turno</h3>
+            <h3 className="font-montserrat text-[20px] font-bold text-gray-900">Cancelar turno</h3>
             <p className="mt-2 text-[14px] leading-relaxed text-gray-600">
               ¿Estás seguro que deseás cancelar este turno? Se cancelará el turno completo (todas sus
               citas).
