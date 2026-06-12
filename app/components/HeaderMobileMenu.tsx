@@ -210,7 +210,7 @@ export function HeaderMobileMenu({
             className="flex w-full items-center justify-center gap-2.5 rounded-2xl bg-[#963417] px-5 py-4 text-[17px] font-bold text-white shadow-[0_10px_28px_rgba(150,52,23,0.38)] transition hover:bg-[#a8431c] active:scale-[0.99]"
           >
             <MisTurnosCalendarIcon />
-            Mis turnos
+            Mi perfil
           </Link>
         </div>
 

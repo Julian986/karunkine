@@ -47,6 +47,9 @@ export type TallerEventoConfig = {
 
   precioArs: number;
 
+  /** Si false, no se promociona en home ni en el menú. */
+  activo: boolean;
+
 };
 
 
@@ -55,13 +58,13 @@ export const TALLER_BAHIA_JUNIO_2026: TallerEventoConfig = {
 
   slug: "taller-bahia-junio-2026",
 
-  titulo: "Liberá Tu Pelvis",
+  titulo: "✨ Liberá Tu Pelvis ✨ ",
 
   subtitulo: "Taller teórico-práctico",
 
   tagline: "Reconexión y liberación del suelo pélvico",
 
-  imagenFlyerSrc: "/taller.jpeg",
+  imagenFlyerSrc: "/taller.webp",
 
   whatsappConsultas: "5492914296636",
 
@@ -93,7 +96,7 @@ export const TALLER_BAHIA_JUNIO_2026: TallerEventoConfig = {
 
   horario: "De 14:00 a 18:00 h",
 
-  lugar: "KARÜN — Viamonte 1233, Bahía Blanca",
+  lugar: "KARÜN ~ Viamonte 1233",
 
   modalidad: "Presencial en Bahía Blanca",
 
@@ -101,8 +104,9 @@ export const TALLER_BAHIA_JUNIO_2026: TallerEventoConfig = {
 
   inscripcion: "Con inscripción previa",
 
-  precioArs:30 
-  //60_000,
+  precioArs: 60_000,
+
+  activo: true,
 
 };
 

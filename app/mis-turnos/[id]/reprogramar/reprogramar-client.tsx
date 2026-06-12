@@ -295,7 +295,7 @@ export function ReprogramarClient({
     <main className={pageShell}>
       <div className="mx-auto w-full max-w-md">
         <Link href={backHref} className={backLinkClass}>
-          ← {variant === "panel" ? "Panel de turnos" : "Mis turnos"}
+          ← {variant === "panel" ? "Panel de turnos" : "Mi perfil"}
         </Link>
         <h1 className={`mt-4 ${titleClass}`}>Cambiar horario</h1>
         <div className={`mt-4 ${cardClass}`}>

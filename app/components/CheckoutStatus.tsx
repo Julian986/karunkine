@@ -133,13 +133,11 @@ const TALLER_CONFIG = {
     body: "Tu pago fue recibido. Si Mercado Pago lo aprobó, tu inscripción al taller quedará confirmada en breve — te escribiremos por WhatsApp.",
     bodyConfirmed:
       "¡Tu inscripción al taller está confirmada! Te escribiremos por WhatsApp con los detalles del encuentro.",
-    ctaHref: TALLER_SLUG,
     note: "La confirmación definitiva la realiza nuestro sistema al recibir la notificación de Mercado Pago.",
   },
   pending: {
     ...CONFIG.pending,
     body: "Algunos medios de pago pueden tardar en confirmarse. En cuanto tengamos novedades sobre tu inscripción al taller, te avisamos por WhatsApp.",
-    ctaHref: TALLER_SLUG,
   },
   failure: {
     ...CONFIG.failure,
@@ -374,20 +372,26 @@ export default function CheckoutStatus({
             {pollError}
           </p>
         )}
-        <a
-          href={cfg.ctaHref}
-          className="animate-fade-up animate-delay-300 mt-2 inline-flex min-h-[48px] w-full items-center justify-center rounded-xl bg-[#963417] px-8 py-3.5 text-[15px] font-semibold tracking-wide text-[#fdf6f0] shadow-sm transition-colors duration-200 hover:bg-[#7e2c13] active:bg-[#6b2410] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#963417] sm:w-auto"
-        >
-          {cfg.ctaLabel}
-        </a>
-        {!esTaller && (status === "success" || status === "pending") && (
+        <div className="animate-fade-up animate-delay-300 flex w-full flex-col items-stretch gap-3 sm:items-center">
+          {(status === "success" || status === "pending") && (
+            <a
+              href="/mis-turnos"
+              className="inline-flex min-h-[48px] w-full items-center justify-center rounded-xl bg-[#963417] px-8 py-3.5 text-[15px] font-semibold tracking-wide text-[#fdf6f0] shadow-sm transition-colors duration-200 hover:bg-[#7e2c13] active:bg-[#6b2410] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#963417] sm:w-auto"
+            >
+              Ir a mi perfil
+            </a>
+          )}
           <a
-            href="/mis-turnos"
-            className="animate-fade-up animate-delay-300 text-center text-sm font-medium text-[#963417] underline-offset-2 hover:underline"
+            href={status === "success" || status === "pending" ? "/" : cfg.ctaHref}
+            className={`inline-flex min-h-[48px] w-full items-center justify-center rounded-xl px-8 py-3.5 text-[15px] font-semibold tracking-wide shadow-sm transition-colors duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#963417] sm:w-auto ${
+              status === "success" || status === "pending"
+                ? "border border-[#963417]/25 bg-white text-[#963417] hover:bg-[#963417]/[0.06]"
+                : "bg-[#963417] text-[#fdf6f0] hover:bg-[#7e2c13] active:bg-[#6b2410]"
+            }`}
           >
-            Ver o cancelar mis turnos (WhatsApp de la reserva)
+            {status === "success" || status === "pending" ? "Volver al inicio" : cfg.ctaLabel}
           </a>
-        )}
+        </div>
         <p className="animate-fade-up animate-delay-400 mt-1 max-w-xs text-center text-xs leading-relaxed text-stone-400">
           {cfg.note}
         </p>

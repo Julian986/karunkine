@@ -111,7 +111,7 @@ function FlyerHero({
 }
 
 function TallerInfoSection({ evento }: { evento: TallerEventoConfig }) {
-  const horarioDisplay = evento.horario.replace(/^De /, "");
+  const horarioDisplay = evento.horario.replace(/\s*h$/i, "H");
 
   return (
     <section className="bg-[#fff8f6] px-6 py-12">
@@ -179,7 +179,7 @@ function TallerInfoSection({ evento }: { evento: TallerEventoConfig }) {
             </div>
             <div>
               <p className="text-xs font-bold uppercase tracking-wider text-[#963417]">Ubicación</p>
-              <p className="text-lg font-bold text-[#4a2c21]">KARÜN — Viamonte 1233</p>
+              <p className="text-lg font-bold text-[#4a2c21]">{evento.lugar}</p>
               <a
                 href={evento.mapsUrl}
                 target="_blank"
@@ -188,6 +188,35 @@ function TallerInfoSection({ evento }: { evento: TallerEventoConfig }) {
               >
                 Ver en Maps
               </a>
+            </div>
+          </div>
+
+          <div className="space-y-4 border-t border-[#ffd0ba]/60 pt-6">
+            <div className="flex items-center gap-3">
+              <div className="rounded-lg bg-white p-2 shadow-sm">
+                <span className="text-xl" aria-hidden>
+                  🌎
+                </span>
+              </div>
+              <p className="text-[15px] font-semibold leading-snug text-[#5d4037]">{evento.modalidad}</p>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <div className="rounded-lg bg-white p-2 shadow-sm">
+                <span className="text-xl" aria-hidden>
+                  🫂
+                </span>
+              </div>
+              <p className="text-[15px] font-semibold leading-snug text-[#5d4037]">{evento.publico}</p>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <div className="rounded-lg bg-white p-2 shadow-sm">
+                <span className="text-xl" aria-hidden>
+                  📝
+                </span>
+              </div>
+              <p className="text-[15px] font-semibold leading-snug text-[#5d4037]">{evento.inscripcion}</p>
             </div>
           </div>
 

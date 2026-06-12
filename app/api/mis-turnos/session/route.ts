@@ -8,8 +8,6 @@ import {
   readCustomerSessionPhoneDigits,
   WANDA_CUSTOMER_SESSION_COOKIE,
 } from "../../../../lib/customer/customer-session";
-import { getDb } from "../../../../lib/mongodb";
-import { buildTurnoListFilter } from "../../../../lib/turnos/customer-turnos";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -56,19 +54,6 @@ export async function POST(request: Request) {
   const digits = canonicalPhoneDigitsAR(phone);
   if (!digits) {
     return NextResponse.json({ error: "Número inválido." }, { status: 400 });
-  }
-
-  try {
-    const db = await getDb();
-    const found = await db.collection("turnos").findOne(buildTurnoListFilter(digits), { projection: { _id: 1 } });
-    if (!found) {
-      return NextResponse.json(
-        { error: "No encontramos turnos con ese número. Usá el mismo WhatsApp que al reservar." },
-        { status: 404 },
-      );
-    }
-  } catch (e) {
-    console.error("[mis-turnos/session] db", e);
   }
 
   const token = mintCustomerSessionToken(digits);

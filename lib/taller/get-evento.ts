@@ -4,3 +4,8 @@ export function getTallerEventoBySlug(slug: string): TallerEventoConfig | null {
   if (slug === TALLER_BAHIA_JUNIO_2026.slug) return TALLER_BAHIA_JUNIO_2026;
   return null;
 }
+
+export function getActiveTallerEvento(): TallerEventoConfig | null {
+  if (TALLER_BAHIA_JUNIO_2026.activo) return TALLER_BAHIA_JUNIO_2026;
+  return null;
+}

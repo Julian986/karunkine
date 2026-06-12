@@ -6,21 +6,33 @@ import { createPortal } from "react-dom";
 import { usePathname } from "next/navigation";
 import { event as gaEvent } from "../../lib/gtag";
 import { clearBodyScrollLock, scrollWindowToTop } from "../../lib/scroll-route";
-import { TALLER_BAHIA_JUNIO_2026 } from "../../lib/taller/evento-config";
+import { getActiveTallerEvento } from "../../lib/taller/get-evento";
 import { HeaderMobileMenu, type MobileNavItem } from "./HeaderMobileMenu";
 
-const TALLER_INSCRIPCION_HREF = `/${TALLER_BAHIA_JUNIO_2026.slug}`;
-
-const NAV_LINKS: readonly MobileNavItem[] = [
+const BASE_NAV_LINKS: readonly MobileNavItem[] = [
   { href: "#inicio", label: "Inicio", icon: "home" },
   { href: "#formulario-reserva", label: "Agendar", icon: "calendar" },
-  { href: TALLER_INSCRIPCION_HREF, label: "Inscribirme", icon: "user-plus" },
   { href: "#sobre-nosotros", label: "Nosotros", icon: "users" },
   { href: "#tratamiento", label: "Tratamiento", icon: "heart" },
   { href: "#consulta-inicial", label: "Evaluación", icon: "clipboard" },
   { href: "#preguntas-frecuentes", label: "Preguntas", icon: "help-circle" },
   { href: "#contacto", label: "Contacto", icon: "mail" },
 ];
+
+function buildNavLinks(): MobileNavItem[] {
+  const taller = getActiveTallerEvento();
+  if (!taller) return [...BASE_NAV_LINKS];
+  return [
+    BASE_NAV_LINKS[0],
+    BASE_NAV_LINKS[1],
+    {
+      href: `/${taller.slug}`,
+      label: "Inscribirse al taller",
+      icon: "user-plus",
+    },
+    ...BASE_NAV_LINKS.slice(2),
+  ];
+}
 
 /** En subpáginas, las anclas de la home van como /#sección para que el navegador redirija bien. */
 function resolveNavHref(href: string, pathname: string | null): string {
@@ -190,6 +202,7 @@ export default function Header() {
   };
 
   const isHome = pathname === "/";
+  const navLinks = buildNavLinks();
 
   if (pathname?.startsWith("/panel-turnos") || pathname?.startsWith("/mis-turnos")) {
     return null;
@@ -202,7 +215,7 @@ export default function Header() {
           Karunkine
         </Link>
 
-        {/* Desktop nav — Mis turnos primero y destacado */}
+        {/* Desktop nav — Mi perfil primero y destacado */}
         <nav className="hidden nav:flex nav:items-center nav:gap-5">
           <Link
             href="/mis-turnos"
@@ -210,9 +223,9 @@ export default function Header() {
             onClick={() => trackMisTurnosClick("header_desktop")}
             className="shrink-0 rounded-full bg-white px-4 py-2 text-sm font-bold text-[#963417] shadow-[0_4px_16px_rgba(0,0,0,0.18)] ring-2 ring-white/90 transition hover:bg-amber-50 hover:brightness-[1.02] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
           >
-            Mis turnos
+            Mi perfil
           </Link>
-          {NAV_LINKS.map(({ href, label }) =>
+          {navLinks.map(({ href, label }) =>
             href.startsWith("#") ? (
               <a
                 key={href + label}
@@ -269,7 +282,7 @@ export default function Header() {
               onNavigate={closeMenuForNavigation}
               pathname={pathname}
               isHome={isHome}
-              navLinks={NAV_LINKS}
+              navLinks={navLinks}
               resolveNavHref={resolveNavHref}
               onHashNavClick={handleNavClick}
               onMisTurnosClick={() => trackMisTurnosClick("header_mobile")}

@@ -3,8 +3,8 @@ import { Suspense } from "react";
 import { MisTurnosClient } from "./mis-turnos-client";
 
 export const metadata: Metadata = {
-  title: "Mis turnos",
-  description: "Consultá, cancelá o reprogramá tus turnos con Karunkine.",
+  title: "Mi perfil",
+  description: "Consultá tus turnos e inscripciones al taller con Karunkine.",
   robots: {
     index: false,
     follow: false,
