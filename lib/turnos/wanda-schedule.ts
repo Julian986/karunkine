@@ -10,10 +10,13 @@ export type CitaDoc = {
   templateId?: string;
 };
 
+export const ACTIVE_HORARIOS_GRUPAL_IDS = ["grupal_15", "grupal_1730"] as const;
+
 export const HORARIOS_GRUPAL_IDS = [
+  "grupal_15",
+  "grupal_1730",
   "grupal_930",
   "grupal_1030",
-  "grupal_15",
   "grupal_16",
   "grupal_17",
 ] as const;
@@ -21,25 +24,49 @@ export const HORARIOS_GRUPAL_IDS = [
 /** Cupo máximo de personas simultáneas por franja grupal (mismo código `horario` mar/jue). */
 export const GRUPAL_CUPO_MAX_POR_BANDA = 4;
 
-export const HORARIOS_INDIVIDUAL_IDS = [
+export const ACTIVE_HORARIOS_INDIVIDUAL_IDS = [
   "lun_1400",
-  "lun_1500",
-  "mar_930",
+  "lun_1600",
+  "mar_1400",
+  "mar_1730",
   "mie_1400",
   "mie_1500",
   "mie_1600",
+  "jue_1400",
+  "jue_1730",
+  "vie_1500",
+  "vie_1600",
+  "vie_1700",
+] as const;
+
+export const HORARIOS_INDIVIDUAL_IDS = [
+  "lun_1400",
+  "lun_1600",
+  "mar_1400",
+  "mar_1730",
+  "mie_1400",
+  "mie_1500",
+  "mie_1600",
+  "jue_1400",
+  "jue_1730",
+  "vie_1500",
+  "vie_1600",
+  "vie_1700",
+  "lun_1500",
+  "mar_930",
   "jue_930",
 ] as const;
 
 export type HorarioGrupalId = (typeof HORARIOS_GRUPAL_IDS)[number];
 export type HorarioIndividualId = (typeof HORARIOS_INDIVIDUAL_IDS)[number];
 
-const GRUPAL_TIME: Record<HorarioGrupalId, string> = {
-  grupal_930: "09:30",
-  grupal_1030: "10:30",
-  grupal_15: "15:00",
-  grupal_16: "16:00",
-  grupal_17: "17:00",
+const GRUPAL_RULES: Record<HorarioGrupalId, { timeLocal: string; weekdays: readonly number[] }> = {
+  grupal_15: { timeLocal: "15:00", weekdays: [2, 4] },
+  grupal_1730: { timeLocal: "17:30", weekdays: [1, 3] },
+  grupal_930: { timeLocal: "09:30", weekdays: [2, 4] },
+  grupal_1030: { timeLocal: "10:30", weekdays: [2, 4] },
+  grupal_16: { timeLocal: "16:00", weekdays: [2, 4] },
+  grupal_17: { timeLocal: "17:00", weekdays: [2, 4] },
 };
 
 /** JS weekday: 0=dom … 6=sab */
@@ -48,11 +75,19 @@ const INDIVIDUAL_RULES: Record<
   { weekday: number; timeLocal: string }
 > = {
   lun_1400: { weekday: 1, timeLocal: "14:00" },
-  lun_1500: { weekday: 1, timeLocal: "15:00" },
-  mar_930: { weekday: 2, timeLocal: "09:30" },
+  lun_1600: { weekday: 1, timeLocal: "16:00" },
+  mar_1400: { weekday: 2, timeLocal: "14:00" },
+  mar_1730: { weekday: 2, timeLocal: "17:30" },
   mie_1400: { weekday: 3, timeLocal: "14:00" },
   mie_1500: { weekday: 3, timeLocal: "15:00" },
   mie_1600: { weekday: 3, timeLocal: "16:00" },
+  jue_1400: { weekday: 4, timeLocal: "14:00" },
+  jue_1730: { weekday: 4, timeLocal: "17:30" },
+  vie_1500: { weekday: 5, timeLocal: "15:00" },
+  vie_1600: { weekday: 5, timeLocal: "16:00" },
+  vie_1700: { weekday: 5, timeLocal: "17:00" },
+  lun_1500: { weekday: 1, timeLocal: "15:00" },
+  mar_930: { weekday: 2, timeLocal: "09:30" },
   jue_930: { weekday: 4, timeLocal: "09:30" },
 };
 
@@ -152,7 +187,7 @@ export function formatDisplaySoloHora(timeLocal: string): string {
 }
 
 export function individualTemplatesForWeekday(weekday: number): HorarioIndividualId[] {
-  return (Object.keys(INDIVIDUAL_RULES) as HorarioIndividualId[]).filter(
+  return (ACTIVE_HORARIOS_INDIVIDUAL_IDS as readonly HorarioIndividualId[]).filter(
     (id) => INDIVIDUAL_RULES[id].weekday === weekday,
   );
 }
@@ -186,7 +221,15 @@ export function eachIndividualOccurrenceFrom(
 }
 
 export function timeForGrupalTemplate(id: HorarioGrupalId): string {
-  return GRUPAL_TIME[id];
+  return GRUPAL_RULES[id].timeLocal;
+}
+
+export function weekdaysForGrupalTemplate(id: HorarioGrupalId): readonly number[] {
+  return GRUPAL_RULES[id].weekdays;
+}
+
+export function weekdayMatchesGrupalTemplate(id: HorarioGrupalId, weekday: number): boolean {
+  return GRUPAL_RULES[id].weekdays.includes(weekday);
 }
 
 function parseDateKeyDays(dateKey: string): number | null {
@@ -239,18 +282,21 @@ export function listMarJueDateKeysInRange(fromDateKey: string, toDateKey: string
  */
 export function expandGrupalCitas(params: {
   horarioId: HorarioGrupalId;
-  /** Cualquier mar o jue de la semana de inicio (o el primer mar/jue >= hoy que elija el usuario). */
+  /** Cualquier día válido de la semana de inicio para la franja elegida. */
   anchorMarOrJueDateKey: string;
   weeks: number;
 }): CitaDoc[] {
-  const timeLocal = normalizeTimeLocal(GRUPAL_TIME[params.horarioId]);
+  const timeLocal = normalizeTimeLocal(GRUPAL_RULES[params.horarioId].timeLocal);
   const w0 = isoDateWeekday(params.anchorMarOrJueDateKey);
-  if (w0 !== 2 && w0 !== 4) return [];
+  if (w0 === null || !weekdayMatchesGrupalTemplate(params.horarioId, w0)) return [];
 
   const mondayOfAnchorWeek = mondayOfWeekContainingDateKey(params.anchorMarOrJueDateKey);
   if (!mondayOfAnchorWeek) return [];
   const end = addDaysDateKey(mondayOfAnchorWeek, params.weeks * 7 - 1);
-  const keys = listMarJueDateKeysInRange(mondayOfAnchorWeek, end);
+  const keys = dateKeysBetweenInclusive(mondayOfAnchorWeek, end).filter((dk) => {
+    const wd = isoDateWeekday(dk);
+    return wd !== null && weekdayMatchesGrupalTemplate(params.horarioId, wd);
+  });
   return keys.map((dateKey) => ({
     dateKey,
     timeLocal,
@@ -272,10 +318,10 @@ export function matchIndividualTemplate(dateKey: string, timeLocal: string): Hor
 
 export function matchGrupalTemplate(dateKey: string, timeLocal: string): HorarioGrupalId | null {
   const wd = isoDateWeekday(dateKey);
-  if (wd !== 2 && wd !== 4) return null;
+  if (wd === null) return null;
   const t = normalizeTimeLocal(timeLocal);
-  for (const id of HORARIOS_GRUPAL_IDS) {
-    if (GRUPAL_TIME[id] === t) return id;
+  for (const id of ACTIVE_HORARIOS_GRUPAL_IDS) {
+    if (GRUPAL_RULES[id].timeLocal === t && weekdayMatchesGrupalTemplate(id, wd)) return id;
   }
   return null;
 }

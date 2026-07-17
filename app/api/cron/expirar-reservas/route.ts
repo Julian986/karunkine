@@ -47,11 +47,26 @@ export async function GET(request: Request) {
     },
   );
 
+  const capsulasResult = await db.collection("capsulas_inscripciones").updateMany(
+    {
+      estado: "pending_payment",
+      paymentExpiresAt: { $lt: now },
+    },
+    {
+      $set: {
+        estado: "expirado",
+        updatedAt: now,
+      },
+    },
+  );
+
   console.info("[cron/expirar-reservas]", {
     turnosMatched: result.matchedCount,
     turnosModified: result.modifiedCount,
     tallerMatched: tallerResult.matchedCount,
     tallerModified: tallerResult.modifiedCount,
+    capsulasMatched: capsulasResult.matchedCount,
+    capsulasModified: capsulasResult.modifiedCount,
   });
 
   return NextResponse.json({
@@ -60,5 +75,7 @@ export async function GET(request: Request) {
     modified: result.modifiedCount,
     tallerMatched: tallerResult.matchedCount,
     tallerModified: tallerResult.modifiedCount,
+    capsulasMatched: capsulasResult.matchedCount,
+    capsulasModified: capsulasResult.modifiedCount,
   });
 }

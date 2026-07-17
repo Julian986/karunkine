@@ -4,6 +4,7 @@ import { MercadoPagoApiError } from "../mercadopago/http";
 import { getDb } from "../mongodb";
 import type { WebhookAuditOutcome } from "./mercadopago-audit";
 import { registrarEventoWebhook } from "./mercadopago-audit";
+import { procesarNotificacionPagoCapsulasInscripcion } from "./procesar-notificacion-pago-capsulas";
 import { procesarNotificacionPagoTallerInscripcion } from "./procesar-notificacion-pago-taller";
 
 export type ProcesarPagoResult = {
@@ -83,6 +84,14 @@ export async function procesarNotificacionPagoId(
   );
   if (esInscripcionTaller) {
     return procesarNotificacionPagoTallerInscripcion(pago, turnoOid, extRef, pid, audit);
+  }
+
+  const esInscripcionCapsulas = await db.collection("capsulas_inscripciones").findOne(
+    { _id: turnoOid },
+    { projection: { _id: 1 } },
+  );
+  if (esInscripcionCapsulas) {
+    return procesarNotificacionPagoCapsulasInscripcion(pago, turnoOid, extRef, pid, audit);
   }
 
   const status = (pago.status ?? "").toLowerCase();

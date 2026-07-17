@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { PENDING_CAPSULAS_INSCRIPCION_ID_KEY } from "../../lib/capsulas/session";
 import { mensajeConfirmacionReserva } from "../../lib/reserva/mensaje-confirmacion";
 import { PENDING_TALLER_INSCRIPCION_ID_KEY } from "../../lib/taller/session";
 
@@ -147,6 +148,25 @@ const TALLER_CONFIG = {
   },
 } as const;
 
+const CAPSULAS_CONFIG = {
+  success: {
+    ...CONFIG.success,
+    body: "Tu pago fue recibido. Si Mercado Pago lo aprobó, tu inscripción a las cápsulas quedará confirmada en breve.",
+    bodyConfirmed: "¡Tu inscripción a las cápsulas está confirmada!",
+    note: "La confirmación definitiva la realiza nuestro sistema al recibir la notificación de Mercado Pago.",
+  },
+  pending: {
+    ...CONFIG.pending,
+    body: "Algunos medios de pago pueden tardar en confirmarse. En cuanto tengamos novedades sobre tus cápsulas, te lo mostraremos en tu perfil.",
+  },
+  failure: {
+    ...CONFIG.failure,
+    ctaLabel: "Volver a elegir cápsulas",
+    ctaHref: "/#formulario-reserva",
+    note: "Podés intentar de nuevo o escribirnos si necesitás ayuda.",
+  },
+} as const;
+
 function isStatus(s: string | undefined): s is Status {
   return s === "success" || s === "pending" || s === "failure";
 }
@@ -196,6 +216,9 @@ type EstadoPollJson = {
   turnoDetalle?: string;
   eventoTitulo?: string;
   eventoFecha?: string;
+  cicloTitulo?: string;
+  cicloMesLabel?: string;
+  capsulasCount?: number;
 };
 
 export default function CheckoutStatus({
@@ -216,8 +239,14 @@ export default function CheckoutStatus({
     eventoTitulo: string;
     eventoFecha: string;
   } | null>(null);
+  const [pollCapsulasMeta, setPollCapsulasMeta] = useState<{
+    cicloTitulo: string;
+    cicloMesLabel: string;
+    capsulasCount: number;
+  } | null>(null);
 
   const esTaller = origen === "taller";
+  const esCapsulas = origen === "capsulas";
   const status: Status | null = isStatus(estado) ? estado : null;
 
   useEffect(() => {
@@ -226,7 +255,11 @@ export default function CheckoutStatus({
 
   useEffect(() => {
     if (typeof window === "undefined" || status !== "success") return;
-    const storageKey = esTaller ? PENDING_TALLER_INSCRIPCION_ID_KEY : PENDING_KEY;
+    const storageKey = esTaller
+      ? PENDING_TALLER_INSCRIPCION_ID_KEY
+      : esCapsulas
+        ? PENDING_CAPSULAS_INSCRIPCION_ID_KEY
+        : PENDING_KEY;
     const id = window.sessionStorage.getItem(storageKey);
     if (!id) return;
 
@@ -246,7 +279,9 @@ export default function CheckoutStatus({
         setPollError(
           esTaller
             ? "Seguimos procesando tu pago. Si ya pagaste, en breve verás la inscripción confirmada."
-            : "Seguimos procesando tu pago. Si ya pagaste, en breve verás la reserva confirmada.",
+            : esCapsulas
+              ? "Seguimos procesando tu pago. Si ya pagaste, en breve verás tus cápsulas confirmadas."
+              : "Seguimos procesando tu pago. Si ya pagaste, en breve verás la reserva confirmada.",
         );
         return;
       }
@@ -254,7 +289,9 @@ export default function CheckoutStatus({
       try {
         const endpoint = esTaller
           ? `/api/taller/inscripciones/${id}/estado`
-          : `/api/reservas/${id}/estado`;
+          : esCapsulas
+            ? `/api/capsulas/inscripciones/${id}/estado`
+            : `/api/reservas/${id}/estado`;
         const r = await fetch(endpoint, { cache: "no-store" });
         const j = (await r.json()) as EstadoPollJson;
         if (cancelled) return;
@@ -264,6 +301,12 @@ export default function CheckoutStatus({
             setPollTallerMeta({
               eventoTitulo: String(j.eventoTitulo ?? ""),
               eventoFecha: String(j.eventoFecha ?? ""),
+            });
+          } else if (esCapsulas) {
+            setPollCapsulasMeta({
+              cicloTitulo: String(j.cicloTitulo ?? ""),
+              cicloMesLabel: String(j.cicloMesLabel ?? ""),
+              capsulasCount: Number(j.capsulasCount ?? 0),
             });
           } else {
             setPollConfirmMeta({
@@ -291,7 +334,7 @@ export default function CheckoutStatus({
     return () => {
       cancelled = true;
     };
-  }, [status, esTaller]);
+  }, [status, esTaller, esCapsulas]);
 
   if (!status) {
     return (
@@ -320,12 +363,14 @@ export default function CheckoutStatus({
     );
   }
 
-  const cfg = esTaller ? TALLER_CONFIG[status] : CONFIG[status];
+  const cfg = esTaller ? TALLER_CONFIG[status] : esCapsulas ? CAPSULAS_CONFIG[status] : CONFIG[status];
   const Icon = cfg.Icon;
   const showConfirmed = status === "success" && pollEstado === "confirmado";
   const bodyText =
     showConfirmed && esTaller && pollTallerMeta
       ? `Tu inscripción a ${pollTallerMeta.eventoTitulo} (${pollTallerMeta.eventoFecha}) está confirmada. Te escribiremos por WhatsApp con los detalles.`
+      : showConfirmed && esCapsulas && pollCapsulasMeta
+        ? `Tu inscripción a ${pollCapsulasMeta.cicloTitulo} (${pollCapsulasMeta.cicloMesLabel}) está confirmada para ${pollCapsulasMeta.capsulasCount} ${pollCapsulasMeta.capsulasCount === 1 ? "cápsula" : "cápsulas"}.`
       : showConfirmed && pollConfirmMeta
         ? mensajeConfirmacionReserva({
             modalidad: pollConfirmMeta.modalidad,

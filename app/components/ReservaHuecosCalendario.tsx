@@ -273,7 +273,7 @@ export function ReservaHuecosCalendario({
           className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs leading-snug text-amber-950"
           role="status"
         >
-          Esta franja de clases grupales (martes y jueves a esa hora) ya alcanzó el cupo de{" "}
+          Esta franja de clases grupales ya alcanzó el cupo de{" "}
           {GRUPAL_CUPO_MAX_POR_BANDA} reservas activas. Por eso no podés elegir fecha de evaluación aquí.
           Probá otra franja horaria o escribinos si necesitás ayuda.
         </p>

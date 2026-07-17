@@ -4,6 +4,7 @@ import BrandBandSection from "./components/BrandBandSection";
 import ConsultaAgendarCta from "./components/ConsultaAgendarCta";
 import HeroFormularioSection from "./components/HeroFormularioSection";
 import HomeHero from "./components/HomeHero";
+import HomeEspacioGallery from "./components/HomeEspacioGallery";
 import { LogoAccentProvider } from "./components/LogoAccentContext";
 import { BRAND_BG_LIGHT } from "./lib/brand-colors";
 import { getSiteUrl } from "../lib/site-url";
@@ -147,6 +148,7 @@ export default function Home() {
         />
         <HomeHero />
         <HeroFormularioSection />
+        <HomeEspacioGallery />
 
         <BrandBandSection id="sobre-nosotros" band="hero">
           <h2>NOSOTROS</h2>
@@ -168,9 +170,9 @@ export default function Home() {
           <h2>TRATAMIENTO</h2>
           <div className="mt-6 space-y-4">
             <p>
-              Además de lograr el objetivo específico de cada persona y cada sesión, el tratamiento
-              busca generar la propia conciencia de movimiento normal y la capacidad de auto-regular
-              el cuerpo físico con base en una perspectiva integral de la salud.
+              Además de lograr el objetivo que motivó la consulta, el tratamiento busca generar la
+              propia conciencia de movimiento normal y la capacidad de auto-regular el cuerpo físico
+              con base en una perspectiva integral de la salud.
             </p>
             <p>
               Con esto en mente, el espacio invita a la auto-observación, a explorarnos y escucharnos

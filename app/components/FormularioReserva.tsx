@@ -10,6 +10,8 @@ import {
 } from "react";
 import { createPortal } from "react-dom";
 import { z } from "zod";
+import { formatCapsulaFecha } from "../../lib/capsulas/config";
+import { PENDING_CAPSULAS_INSCRIPCION_ID_KEY } from "../../lib/capsulas/session";
 import { event as gaEvent } from "../../lib/gtag";
 import { hexToRgba, useLogoAccent } from "./LogoAccentContext";
 import { MercadoPagoButton } from "./MercadoPagoButton";
@@ -39,24 +41,27 @@ const MOTIVOS_CONSULTA = [
 const MODALIDAD_OPCIONES = [
   { value: "grupal", label: "Clases grupales" },
   { value: "consulta_individual", label: "Consulta individual" },
+  { value: "capsulas_movimiento", label: "Cápsulas de movimiento" },
 ] as const;
 
 const HORARIOS_GRUPAL = [
-  { value: "grupal_930", label: "Martes y Jueves - 9:30H" },
-  { value: "grupal_1030", label: "Martes y Jueves - 10:30H" },
   { value: "grupal_15", label: "Martes y Jueves - 15:00H" },
-  { value: "grupal_16", label: "Martes y Jueves - 16H" },
-  { value: "grupal_17", label: "Martes y Jueves - 17H" },
+  { value: "grupal_1730", label: "Lunes y Miércoles - 17:30H" },
 ] as const;
 
 const HORARIOS_INDIVIDUAL = [
   { value: "lun_1400", label: "Lunes 14:00H" },
-  { value: "lun_1500", label: "Lunes 15:00H" },
-  { value: "mar_930", label: "Martes 9:30H" },
+  { value: "lun_1600", label: "Lunes 16:00H" },
+  { value: "mar_1400", label: "Martes 14:00H" },
+  { value: "mar_1730", label: "Martes 17:30H" },
   { value: "mie_1400", label: "Miércoles 14:00H" },
   { value: "mie_1500", label: "Miércoles 15:00H" },
   { value: "mie_1600", label: "Miércoles 16:00H" },
-  { value: "jue_930", label: "Jueves 9:30H" },
+  { value: "jue_1400", label: "Jueves 14:00H" },
+  { value: "jue_1730", label: "Jueves 17:30H" },
+  { value: "vie_1500", label: "Viernes 15:00H" },
+  { value: "vie_1600", label: "Viernes 16:00H" },
+  { value: "vie_1700", label: "Viernes 17:00H" },
 ] as const;
 
 const FORMATO_CONSULTA_OPCIONES = [
@@ -67,10 +72,11 @@ const FORMATO_CONSULTA_OPCIONES = [
 /** Precios finales que ve y paga el cliente en checkout; la comisión de Mercado Pago la absorbe la cuenta de la profesional. */
 const PRECIO_GRUPAL_MENSUAL = 160_000;
 const PRECIO_CONSULTA_INDIVIDUAL = 40_000;
+const PRECIO_CAPSULA_DEFAULT = 15_000;
 
 const PLACEHOLDER_MOTIVO = "Motivo de consulta";
-const PLACEHOLDER_MODALIDAD = "¿Clases grupales o consulta individual?";
-const PLACEHOLDER_HORARIO = "Horario de clases grupales (martes y jueves)";
+const PLACEHOLDER_MODALIDAD = "Elegí una modalidad";
+const PLACEHOLDER_HORARIO = "Horario de clases grupales";
 const PLACEHOLDER_FORMATO_CONSULTA = "Consulta presencial o virtual";
 const PLACEHOLDER_EVAL_FORMATO = "Evaluación: presencial o virtual";
 
@@ -207,6 +213,27 @@ const formularioSchema = z
   });
 
 type Option = { value: string; label: string };
+type ReservaModalidad = "" | "grupal" | "consulta_individual" | "capsulas_movimiento";
+type CapsulasCicloResumen = {
+  slug: string;
+  titulo: string;
+  mesLabel: string;
+  precioArs: number;
+  cupo: number;
+  horario: string;
+  lugar: string;
+};
+type CapsulaDisponible = {
+  id: string;
+  dateKey: string;
+  nombre: string;
+  subtitulo: string;
+  horario: string;
+  lugar: string;
+  cupoTotal: number;
+  cupoDisponible: number;
+  agotada: boolean;
+};
 type PickerKey =
   | "motivo"
   | "modalidad"
@@ -223,7 +250,8 @@ type FormField =
   | "formatoConsulta"
   | "horario"
   | "horarioEvaluacion"
-  | "formatoEvaluacion";
+  | "formatoEvaluacion"
+  | "capsulas";
 type FormErrors = Partial<Record<FormField, string>>;
 type TouchedFields = Partial<Record<FormField, boolean>>;
 type ReservaDraft = {
@@ -231,13 +259,15 @@ type ReservaDraft = {
   mail: string;
   celular: string;
   motivo: string;
-  modalidad: "" | "grupal" | "consulta_individual";
+  modalidad: ReservaModalidad;
   formatoConsulta: "" | "presencial" | "virtual";
   horario: string;
   horarioEvaluacion: string;
   formatoEvaluacion: "" | "presencial" | "virtual";
   principalSlotJson?: string;
   evalSlotJson?: string;
+  cicloCapsulasSlug?: string;
+  capsulaIds?: string[];
 };
 type DropdownRect = {
   top: number;
@@ -245,7 +275,7 @@ type DropdownRect = {
   width: number;
   maxHeight: number;
 };
-const DRAFT_STORAGE_KEY = "karunkine_reserva_draft_v3";
+const DRAFT_STORAGE_KEY = "karunkine_reserva_draft_v4";
 const PENDING_RESERVA_ID_KEY = "karunkine_pending_reserva_id";
 
 const DROPDOWN_MARGIN = 12;
@@ -387,7 +417,7 @@ export default function FormularioReserva() {
   const focusRingColor = hexToRgba(accentColor, 0.35);
 
   const [selectedMotivo, setSelectedMotivo] = useState("");
-  const [selectedModalidad, setSelectedModalidad] = useState<"" | "grupal" | "consulta_individual">("");
+  const [selectedModalidad, setSelectedModalidad] = useState<ReservaModalidad>("");
   const [selectedFormatoConsulta, setSelectedFormatoConsulta] = useState<
     "" | "presencial" | "virtual"
   >("");
@@ -398,6 +428,10 @@ export default function FormularioReserva() {
   >("");
   const [huecoIndividual, setHuecoIndividual] = useState<HuecoSeleccionado | null>(null);
   const [huecoEvalGrupal, setHuecoEvalGrupal] = useState<HuecoSeleccionado | null>(null);
+  const [capsulasCiclo, setCapsulasCiclo] = useState<CapsulasCicloResumen | null>(null);
+  const [capsulasDisponibles, setCapsulasDisponibles] = useState<CapsulaDisponible[]>([]);
+  const [capsulasLoading, setCapsulasLoading] = useState(false);
+  const [selectedCapsulaIds, setSelectedCapsulaIds] = useState<string[]>([]);
 
   const [openPicker, setOpenPicker] = useState<PickerKey>(null);
   const [dropdownRect, setDropdownRect] = useState<DropdownRect | null>(null);
@@ -468,6 +502,8 @@ export default function FormularioReserva() {
       horario: selectedHorario,
       horarioEvaluacion: selectedHorarioEvaluacion,
       formatoEvaluacion: selectedFormatoEvaluacion,
+      cicloCapsulasSlug: capsulasCiclo?.slug,
+      capsulaIds: selectedCapsulaIds,
       principalSlotJson: huecoIndividual
         ? JSON.stringify({
             dateKey: huecoIndividual.dateKey,
@@ -492,6 +528,8 @@ export default function FormularioReserva() {
     selectedHorario,
     selectedHorarioEvaluacion,
     selectedFormatoEvaluacion,
+    capsulasCiclo?.slug,
+    selectedCapsulaIds,
     huecoIndividual,
     huecoEvalGrupal,
   ]);
@@ -536,9 +574,14 @@ export default function FormularioReserva() {
     const enabled = new Set(horariosGrupalDisponibles);
     return HORARIOS_GRUPAL.filter((o) => enabled.has(o.value));
   }, [selectedModalidad, horariosGrupalDisponibles]);
+  const capsulasSeleccionadas = useMemo(
+    () => capsulasDisponibles.filter((item) => selectedCapsulaIds.includes(item.id)),
+    [capsulasDisponibles, selectedCapsulaIds],
+  );
 
   const esGrupal = selectedModalidad === "grupal";
   const esIndividual = selectedModalidad === "consulta_individual";
+  const esCapsulas = selectedModalidad === "capsulas_movimiento";
   const individualListo =
     esIndividual &&
     Boolean(huecoIndividual) &&
@@ -548,10 +591,21 @@ export default function FormularioReserva() {
     Boolean(selectedHorario) &&
     Boolean(huecoEvalGrupal) &&
     (selectedFormatoEvaluacion === "presencial" || selectedFormatoEvaluacion === "virtual");
-  const turnoCompleto = Boolean(individualListo || grupalListo);
+  const capsulasListo = esCapsulas && Boolean(capsulasCiclo?.slug) && selectedCapsulaIds.length > 0;
+  const turnoCompleto = Boolean(individualListo || grupalListo || capsulasListo);
 
   const resumenPrecio = useMemo(() => {
     if (!turnoCompleto) return null;
+    if (esCapsulas) {
+      const precioUnitario = capsulasCiclo?.precioArs ?? PRECIO_CAPSULA_DEFAULT;
+      return {
+        monto: precioUnitario * selectedCapsulaIds.length,
+        descripcion:
+          selectedCapsulaIds.length === 1
+            ? "1 cápsula seleccionada"
+            : `${selectedCapsulaIds.length} cápsulas seleccionadas`,
+      };
+    }
     if (esGrupal) {
       return {
         monto: PRECIO_GRUPAL_MENSUAL,
@@ -562,7 +616,7 @@ export default function FormularioReserva() {
       monto: PRECIO_CONSULTA_INDIVIDUAL,
       descripcion: "Consulta individual (referencia)",
     };
-  }, [turnoCompleto, esGrupal]);
+  }, [turnoCompleto, esCapsulas, esGrupal, capsulasCiclo?.precioArs, selectedCapsulaIds.length]);
 
   const modalidadHidden = useMemo(() => {
     if (!turnoCompleto) return "";
@@ -583,10 +637,24 @@ export default function FormularioReserva() {
         selectedFormatoEvaluacion === "virtual" ? "virtual" : "presencial";
       return `Clases grupales: ${grupalLabel} · Evaluación: ${huecoEvalGrupal.etiqueta} (${formatoTxt})`;
     }
+    if (esCapsulas) {
+      const seleccionadas = capsulasDisponibles.filter((item) => selectedCapsulaIds.includes(item.id));
+      if (seleccionadas.length === 0 || !capsulasCiclo) return "";
+      const prefijo = `${capsulasCiclo.titulo} · ${capsulasCiclo.mesLabel}`;
+      if (seleccionadas.length === 1) {
+        const item = seleccionadas[0];
+        return `${prefijo}: ${formatCapsulaFecha(item.dateKey)} · ${item.nombre}`;
+      }
+      return `${prefijo}: ${seleccionadas.length} cápsulas seleccionadas`;
+    }
     return "";
   }, [
     esIndividual,
     esGrupal,
+    esCapsulas,
+    capsulasCiclo,
+    capsulasDisponibles,
+    selectedCapsulaIds,
     huecoIndividual,
     huecoEvalGrupal,
     selectedHorario,
@@ -607,10 +675,15 @@ export default function FormularioReserva() {
     ) {
       return `grupal|${selectedHorario}|eval:${huecoEvalGrupal.templateId}|${huecoEvalGrupal.dateKey}|${huecoEvalGrupal.timeLocal}|${selectedFormatoEvaluacion}`;
     }
+    if (selectedModalidad === "capsulas_movimiento" && capsulasCiclo?.slug && selectedCapsulaIds.length > 0) {
+      return `capsulas|${capsulasCiclo.slug}|${selectedCapsulaIds.join(",")}`;
+    }
     return "";
   }, [
     selectedModalidad,
     selectedHorario,
+    capsulasCiclo?.slug,
+    selectedCapsulaIds,
     huecoIndividual,
     huecoEvalGrupal,
     selectedFormatoEvaluacion,
@@ -618,8 +691,11 @@ export default function FormularioReserva() {
 
   const precioReferenciaHidden = useMemo(() => {
     if (!turnoCompleto) return "";
+    if (esCapsulas) {
+      return String((capsulasCiclo?.precioArs ?? PRECIO_CAPSULA_DEFAULT) * selectedCapsulaIds.length);
+    }
     return esGrupal ? String(PRECIO_GRUPAL_MENSUAL) : String(PRECIO_CONSULTA_INDIVIDUAL);
-  }, [turnoCompleto, esGrupal]);
+  }, [turnoCompleto, esCapsulas, esGrupal, capsulasCiclo?.precioArs, selectedCapsulaIds.length]);
 
   const activeTrigger = useMemo(() => {
     if (openPicker === "motivo") return motivoTriggerRef.current;
@@ -740,7 +816,7 @@ export default function FormularioReserva() {
     });
 
     return () => window.cancelAnimationFrame(id);
-  }, [turnoCompleto, selectedHorario, huecoIndividual, huecoEvalGrupal]);
+  }, [turnoCompleto, selectedHorario, selectedCapsulaIds, huecoIndividual, huecoEvalGrupal]);
 
   useEffect(() => {
     if (selectedModalidad !== "grupal") {
@@ -778,13 +854,49 @@ export default function FormularioReserva() {
   }, [selectedModalidad]);
 
   useEffect(() => {
+    if (selectedModalidad !== "capsulas_movimiento") {
+      setCapsulasLoading(false);
+      return;
+    }
+    let alive = true;
+    (async () => {
+      setCapsulasLoading(true);
+      try {
+        const res = await fetch("/api/capsulas/disponibilidad", { cache: "no-store" });
+        const json = (await res.json().catch(() => ({}))) as {
+          ciclo?: CapsulasCicloResumen | null;
+          items?: CapsulaDisponible[];
+        };
+        if (!alive) return;
+        const ciclo = json.ciclo ?? null;
+        const items = Array.isArray(json.items) ? json.items : [];
+        setCapsulasCiclo(ciclo);
+        setCapsulasDisponibles(items);
+        setSelectedCapsulaIds((prev) => prev.filter((id) => items.some((item) => item.id === id && !item.agotada)));
+      } catch {
+        if (!alive) return;
+        setCapsulasCiclo(null);
+        setCapsulasDisponibles([]);
+      } finally {
+        if (alive) setCapsulasLoading(false);
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [selectedModalidad]);
+
+  useEffect(() => {
     if (typeof window === "undefined") return;
     const raw = window.sessionStorage.getItem(DRAFT_STORAGE_KEY);
     if (!raw) return;
     try {
       const draft = JSON.parse(raw) as ReservaDraft;
-      setSelectedMotivo(draft.motivo ?? "");
-      setSelectedModalidad(draft.modalidad ?? "");
+      const modalidadDraft = draft.modalidad ?? "";
+      setSelectedModalidad(modalidadDraft);
+      setSelectedMotivo(
+        modalidadDraft === "capsulas_movimiento" ? "" : (draft.motivo ?? "")
+      );
       setSelectedFormatoConsulta(draft.formatoConsulta ?? "");
       setSelectedHorario(draft.horario ?? "");
       setSelectedHorarioEvaluacion(draft.horarioEvaluacion ?? "");
@@ -793,6 +905,7 @@ export default function FormularioReserva() {
           ? draft.formatoEvaluacion
           : ""
       );
+      setSelectedCapsulaIds(Array.isArray(draft.capsulaIds) ? draft.capsulaIds.filter((id): id is string => typeof id === "string") : []);
       if (draft.principalSlotJson) {
         try {
           const p = JSON.parse(draft.principalSlotJson) as Partial<HuecoSeleccionado>;
@@ -842,6 +955,92 @@ export default function FormularioReserva() {
     setSubmitAttempted(true);
     setFieldErrors({});
 
+    const form = formRef.current;
+    if (!form) return;
+
+    const formData = new FormData(form);
+    const nombre = String(formData.get("nombre") ?? "");
+    const mail = String(formData.get("mail") ?? "");
+    const celular = String(formData.get("celular") ?? "");
+
+    if (esCapsulas) {
+      const nextErrors: FormErrors = {};
+      const nombreResult = nombreSchema.safeParse(nombre);
+      if (!nombreResult.success) nextErrors.nombre = nombreResult.error.issues[0]?.message ?? "Campo inválido.";
+      const mailResult = mailSchema.safeParse(mail);
+      if (!mailResult.success) nextErrors.mail = mailResult.error.issues[0]?.message ?? "Campo inválido.";
+      const celularResult = celularSchema.safeParse(celular);
+      if (!celularResult.success) nextErrors.celular = celularResult.error.issues[0]?.message ?? "Campo inválido.";
+      if (!capsulasCiclo || capsulasDisponibles.length === 0) {
+        nextErrors.capsulas = "No hay cápsulas disponibles en este momento.";
+      } else if (selectedCapsulaIds.length === 0) {
+        nextErrors.capsulas = "Elegí al menos una cápsula.";
+      }
+      if (Object.keys(nextErrors).length > 0) {
+        setFieldErrors(nextErrors);
+        setEnvioError("Revisá los campos marcados.");
+        return;
+      }
+
+      setCheckoutLoading(true);
+      try {
+        const resPendiente = await fetch("/api/capsulas/inscripciones/pendiente", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            nombre,
+            mail,
+            celular,
+            cicloSlug: capsulasCiclo!.slug,
+            capsulaIds: selectedCapsulaIds,
+          }),
+        });
+        const jsonP = (await resPendiente.json().catch(() => ({}))) as { error?: string; id?: string };
+        if (!resPendiente.ok) {
+          setPagoError(jsonP.error ?? "No se pudo iniciar la inscripción.");
+          return;
+        }
+        const id = jsonP.id;
+        if (!id) {
+          setPagoError("Respuesta inválida del servidor.");
+          return;
+        }
+
+        const resPref = await fetch(`/api/capsulas/inscripciones/${id}/preferencia`, {
+          method: "POST",
+        });
+        const jsonPref = (await resPref.json().catch(() => ({}))) as {
+          error?: string;
+          initPoint?: string;
+        };
+        if (!resPref.ok) {
+          setPagoError(jsonPref.error ?? "No se pudo crear el checkout de Mercado Pago.");
+          return;
+        }
+        const initPoint = jsonPref.initPoint;
+        if (!initPoint || typeof window === "undefined") {
+          setPagoError("No se obtuvo el enlace de pago.");
+          return;
+        }
+
+        gaEvent("capsulas_checkout_mercadopago", {
+          modalidad: "capsulas_movimiento",
+          value: resumenPrecio?.monto ?? 0,
+          currency: "ARS",
+          capsulas_count: selectedCapsulaIds.length,
+          inscripcion_id: id,
+        });
+
+        window.sessionStorage.setItem(PENDING_CAPSULAS_INSCRIPCION_ID_KEY, id);
+        window.location.assign(initPoint);
+      } catch {
+        setPagoError("Error de conexión. Intentá de nuevo.");
+      } finally {
+        setCheckoutLoading(false);
+      }
+      return;
+    }
+
     if (!turnoCompleto || !resumenPrecio) {
       setPagoError(
         esIndividual
@@ -850,15 +1049,10 @@ export default function FormularioReserva() {
       );
       return;
     }
-
-    const form = formRef.current;
-    if (!form) return;
-
-    const formData = new FormData(form);
     const result = formularioSchema.safeParse({
-      nombre: String(formData.get("nombre") ?? ""),
-      mail: String(formData.get("mail") ?? ""),
-      celular: String(formData.get("celular") ?? ""),
+      nombre,
+      mail,
+      celular,
       motivo: selectedMotivo,
       modalidad: selectedModalidad,
       formatoConsulta: selectedFormatoConsulta,
@@ -979,12 +1173,8 @@ export default function FormularioReserva() {
         <div className="mx-auto max-w-2xl">
           <div className="overflow-hidden rounded-3xl bg-white shadow-[0_8px_30px_rgba(0,0,0,0.12)]">
             <div className="p-6 sm:p-8">
-              <h2 className="text-xl font-semibold text-zinc-800 sm:text-2xl">
-                Agendar evaluación
-              </h2>
-              <p className="mt-1 text-zinc-500">
-                Completá tus datos y te contactamos.
-              </p>
+              <h2 className="text-xl font-semibold text-zinc-800 sm:text-2xl">Reservá tu lugar</h2>
+              <p className="mt-1 text-zinc-500">Elegí la modalidad, completá tus datos y seguí al pago.</p>
 
               <form
                 ref={formRef}
@@ -1070,37 +1260,10 @@ export default function FormularioReserva() {
                   )}
                 </div>
 
-                <input type="hidden" name="motivo" value={selectedMotivo} readOnly />
-                <CustomPickerField
-                  id="motivo"
-                  ariaLabel="Motivo de consulta"
-                  placeholder={PLACEHOLDER_MOTIVO}
-                  value={selectedMotivo}
-                  options={MOTIVOS_CONSULTA}
-                  isOpen={openPicker === "motivo"}
-                  triggerRef={motivoTriggerRef}
-                  dropdownRef={dropdownRef}
-                  rect={dropdownRect}
-                  onToggle={() => setOpenPicker((p) => (p === "motivo" ? null : "motivo"))}
-                  onSelect={(value) => {
-                    setSelectedMotivo(value);
-                    persistDraft({ ...getCurrentDraft(), motivo: value });
-                    clearFieldError("motivo");
-                    setOpenPicker(null);
-                  }}
-                  accentColor={accentColor}
-                  error={shouldShowError("motivo") ? fieldErrors.motivo : undefined}
-                />
-                {shouldShowError("motivo") && fieldErrors.motivo && (
-                  <p className="-mt-3 px-1 text-sm font-medium text-red-600" role="alert">
-                    {fieldErrors.motivo}
-                  </p>
-                )}
-
                 <input type="hidden" name="turno_codigo" value={turnoCodigoHidden} readOnly />
                 <CustomPickerField
                   id="modalidad_turno"
-                  ariaLabel="Clases grupales o consulta individual"
+                  ariaLabel="Elegir modalidad"
                   placeholder={PLACEHOLDER_MODALIDAD}
                   value={selectedModalidad}
                   options={MODALIDAD_OPCIONES}
@@ -1110,32 +1273,40 @@ export default function FormularioReserva() {
                   rect={dropdownRect}
                   onToggle={() => setOpenPicker((p) => (p === "modalidad" ? null : "modalidad"))}
                   onSelect={(value) => {
-                    const modalidad = value as "" | "grupal" | "consulta_individual";
+                    const modalidad = value as ReservaModalidad;
+                    const motivoNext = modalidad === "capsulas_movimiento" ? "" : selectedMotivo;
                     setSelectedModalidad(modalidad);
+                    setSelectedMotivo(motivoNext);
                     setSelectedHorario("");
                     setSelectedHorarioEvaluacion("");
                     setSelectedFormatoEvaluacion("");
                     setHuecoIndividual(null);
                     setHuecoEvalGrupal(null);
+                    setSelectedCapsulaIds([]);
                     if (modalidad !== "consulta_individual") {
                       setSelectedFormatoConsulta("");
                     }
                     persistDraft({
                       ...getCurrentDraft(),
                       modalidad,
+                      motivo: motivoNext,
                       formatoConsulta: modalidad === "consulta_individual" ? selectedFormatoConsulta : "",
                       horario: "",
                       horarioEvaluacion: "",
                       formatoEvaluacion: "",
+                      cicloCapsulasSlug: undefined,
+                      capsulaIds: [],
                       principalSlotJson: undefined,
                       evalSlotJson: undefined,
                     });
                     setPagoError(null);
                     clearFieldError("modalidad");
+                    clearFieldError("motivo");
                     clearFieldError("horario");
                     clearFieldError("formatoConsulta");
                     clearFieldError("horarioEvaluacion");
                     clearFieldError("formatoEvaluacion");
+                    clearFieldError("capsulas");
                     setOpenPicker(null);
                   }}
                   accentColor={accentColor}
@@ -1145,6 +1316,135 @@ export default function FormularioReserva() {
                   <p className="-mt-3 px-1 text-sm font-medium text-red-600" role="alert">
                     {fieldErrors.modalidad}
                   </p>
+                )}
+
+                {(esGrupal || esIndividual) && (
+                  <>
+                    <input type="hidden" name="motivo" value={selectedMotivo} readOnly />
+                    <CustomPickerField
+                      id="motivo"
+                      ariaLabel="Motivo de consulta"
+                      placeholder={PLACEHOLDER_MOTIVO}
+                      value={selectedMotivo}
+                      options={MOTIVOS_CONSULTA}
+                      isOpen={openPicker === "motivo"}
+                      triggerRef={motivoTriggerRef}
+                      dropdownRef={dropdownRef}
+                      rect={dropdownRect}
+                      onToggle={() => setOpenPicker((p) => (p === "motivo" ? null : "motivo"))}
+                      onSelect={(value) => {
+                        setSelectedMotivo(value);
+                        persistDraft({ ...getCurrentDraft(), motivo: value });
+                        clearFieldError("motivo");
+                        setOpenPicker(null);
+                      }}
+                      accentColor={accentColor}
+                      error={shouldShowError("motivo") ? fieldErrors.motivo : undefined}
+                    />
+                    {shouldShowError("motivo") && fieldErrors.motivo && (
+                      <p className="-mt-3 px-1 text-sm font-medium text-red-600" role="alert">
+                        {fieldErrors.motivo}
+                      </p>
+                    )}
+                  </>
+                )}
+
+                {esCapsulas && (
+                  <div className="space-y-3 rounded-2xl border border-zinc-200 bg-zinc-50/80 p-4">
+                    <div>
+                      <p className="text-sm font-semibold text-zinc-900">
+                        {capsulasCiclo?.titulo ?? "Cápsulas de movimiento"}
+                      </p>
+                      <p className="mt-1 text-sm text-zinc-600">
+                        {capsulasLoading
+                          ? "Cargando calendario..."
+                          : capsulasCiclo
+                            ? `${capsulasCiclo.mesLabel} · ${capsulasCiclo.horario} H · ${capsulasCiclo.lugar}`
+                            : "No hay cápsulas activas por el momento."}
+                      </p>
+                    </div>
+
+                    {!capsulasLoading && capsulasDisponibles.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const allIds = capsulasDisponibles.filter((item) => !item.agotada).map((item) => item.id);
+                          setSelectedCapsulaIds(allIds);
+                          persistDraft({ ...getCurrentDraft(), capsulaIds: allIds });
+                          clearFieldError("capsulas");
+                          setPagoError(null);
+                        }}
+                        className="inline-flex min-h-10 items-center rounded-xl border border-[#963417]/20 bg-white px-3 py-2 text-sm font-semibold text-[#963417] hover:bg-[#963417]/[0.06]"
+                      >
+                        Seleccionar todo el ciclo disponible
+                      </button>
+                    )}
+
+                    {!capsulasLoading && capsulasDisponibles.length === 0 && (
+                      <p className="text-sm text-zinc-600">No hay cápsulas disponibles para reservar.</p>
+                    )}
+
+                    <div className="space-y-2">
+                      {capsulasDisponibles.map((item) => {
+                        const checked = selectedCapsulaIds.includes(item.id);
+                        return (
+                          <label
+                            key={item.id}
+                            className={`flex cursor-pointer items-start gap-3 rounded-xl border bg-white px-3 py-3 transition ${
+                              checked ? "border-[#963417]/40 shadow-sm" : "border-zinc-200 hover:border-zinc-300"
+                            } ${item.agotada ? "cursor-not-allowed opacity-60" : ""}`}
+                          >
+                            <input
+                              type="checkbox"
+                              className="mt-1 h-4 w-4 accent-[#963417]"
+                              checked={checked}
+                              disabled={item.agotada}
+                              onChange={() => {
+                                const next = checked
+                                  ? selectedCapsulaIds.filter((id) => id !== item.id)
+                                  : [...selectedCapsulaIds, item.id];
+                                setSelectedCapsulaIds(next);
+                                persistDraft({ ...getCurrentDraft(), capsulaIds: next });
+                                clearFieldError("capsulas");
+                                setPagoError(null);
+                                scrollSuaveTrasElegirHorarioRef.current = next.length > 0;
+                              }}
+                            />
+                            <div className="min-w-0 flex-1">
+                              <p className="text-sm font-semibold text-zinc-900">
+                                {formatCapsulaFecha(item.dateKey)} · {item.nombre}
+                              </p>
+                              <p className="mt-1 text-sm leading-snug text-zinc-600">{item.subtitulo}</p>
+                              <p className="mt-1 text-xs text-zinc-500">
+                                {item.horario} H · {item.lugar}
+                              </p>
+                            </div>
+                            <div className="shrink-0 text-right">
+                              <p className="text-sm font-semibold text-zinc-800">
+                                ${((capsulasCiclo?.precioArs ?? PRECIO_CAPSULA_DEFAULT)).toLocaleString("es-AR")}
+                              </p>
+                              <p className="mt-1 text-xs text-zinc-500">
+                                {item.agotada ? "Sin cupo" : `${item.cupoDisponible}/${item.cupoTotal} lugares`}
+                              </p>
+                            </div>
+                          </label>
+                        );
+                      })}
+                    </div>
+
+                    {capsulasSeleccionadas.length > 0 && (
+                      <p className="text-sm text-zinc-700" role="status">
+                        Seleccionaste{" "}
+                        <strong className="font-semibold">{capsulasSeleccionadas.length}</strong>{" "}
+                        {capsulasSeleccionadas.length === 1 ? "cápsula" : "cápsulas"}.
+                      </p>
+                    )}
+                    {shouldShowError("capsulas") && fieldErrors.capsulas && (
+                      <p className="px-1 text-sm font-medium text-red-600" role="alert">
+                        {fieldErrors.capsulas}
+                      </p>
+                    )}
+                  </div>
                 )}
 
                 {selectedModalidad === "consulta_individual" && (
@@ -1196,11 +1496,11 @@ export default function FormularioReserva() {
                 {esGrupal && (
                   <CustomPickerField
                     id="horario"
-                    ariaLabel="Horario clases grupales martes y jueves"
+                    ariaLabel="Horario clases grupales"
                     placeholder={
                       horariosGrupalLoading
                         ? "Cargando franjas disponibles..."
-                        : "Horario de clases grupales (martes y jueves)"
+                        : "Horario de clases grupales"
                     }
                     value={selectedHorario}
                     options={opcionesHorarioPrincipal}
@@ -1400,8 +1700,8 @@ export default function FormularioReserva() {
                     <div className="rounded-xl border border-zinc-200 bg-white px-4 py-4">
                       <p className="text-sm font-semibold text-zinc-800">Pago con Mercado Pago</p>
                       <p className="mt-1 text-sm text-zinc-600">
-                        La reserva se registra al continuar y se{" "}
-                        <strong>confirma solo cuando Mercado Pago aprueba el pago</strong>                         del total:{" "}
+                        {esCapsulas ? "La inscripción" : "La reserva"} se registra al continuar y se{" "}
+                        <strong>confirma solo cuando Mercado Pago aprueba el pago</strong> del total:{" "}
                         <span className="font-semibold text-zinc-900">
                           ${(resumenPrecio?.monto ?? 0).toLocaleString("es-AR")}
                         </span>
@@ -1424,7 +1724,11 @@ export default function FormularioReserva() {
                             void iniciarCheckoutMercadoPago();
                           }}
                           label={
-                            checkoutLoading ? "Preparando checkout..." : "Pagar y reservar con Mercado Pago"
+                            checkoutLoading
+                              ? "Preparando checkout..."
+                              : esCapsulas
+                                ? "Pagar e inscribirme con Mercado Pago"
+                                : "Pagar y reservar con Mercado Pago"
                           }
                           disabled={checkoutLoading}
                         />

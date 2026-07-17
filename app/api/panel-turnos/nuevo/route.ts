@@ -80,7 +80,7 @@ const crearManualSchema = z
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           path: ["horario"],
-          message: "Elegí una franja de clases mar/jue.",
+          message: "Elegí una franja de clases grupales.",
         });
       }
     }

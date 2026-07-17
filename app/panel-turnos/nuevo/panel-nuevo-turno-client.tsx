@@ -34,11 +34,8 @@ const MOTIVOS = [
 ] as const;
 
 const HORARIOS_GRUPAL = [
-  { value: "grupal_930", label: "Martes y Jueves - 9:30H" },
-  { value: "grupal_1030", label: "Martes y Jueves - 10:30H" },
   { value: "grupal_15", label: "Martes y Jueves - 15:00H" },
-  { value: "grupal_16", label: "Martes y Jueves - 16H" },
-  { value: "grupal_17", label: "Martes y Jueves - 17H" },
+  { value: "grupal_1730", label: "Lunes y Miércoles - 17:30H" },
 ] as const;
 
 const iconChevronDown = (
@@ -192,7 +189,7 @@ export function PanelNuevoTurnoClient() {
       }
       if (modalidad === "grupal") {
         if (soloClaseGrupal) {
-          if (!horarioGrupal) nextErrors.horario = "Elegí una franja de clases mar/jue.";
+          if (!horarioGrupal) nextErrors.horario = "Elegí una franja de clases grupales.";
         } else {
           if (!formatoEvaluacion) nextErrors.formatoEvaluacion = "Elegí el formato de evaluación.";
           if (!slotEvalGrupal) nextErrors.evalSlot = "Elegí día y horario de evaluación.";
@@ -409,7 +406,7 @@ export function PanelNuevoTurnoClient() {
                 className="mt-0.5 h-4 w-4 rounded border-gray-300 accent-[#B88E2F]"
               />
               <span className="text-sm text-gray-700">
-                Solo ciclo de clases mar/jue (sin evaluación con horario libre)
+                Solo ciclo de clases grupales (sin evaluación con horario libre)
               </span>
             </label>
 
@@ -472,7 +469,7 @@ export function PanelNuevoTurnoClient() {
                     />
                     <p className="mt-2 text-xs leading-snug text-gray-500">
                       Evaluación libre (cualquier día y hora). En el calendario solo verás esas evaluaciones.
-                      El ciclo de clases mar/jue se carga solo con la opción &quot;Solo ciclo de clases&quot; abajo.
+                      El ciclo de clases se carga solo con la opción &quot;Solo ciclo de clases&quot; abajo.
                     </p>
                   </div>
                 )}

@@ -1,0 +1,1 @@
+export const PENDING_CAPSULAS_INSCRIPCION_ID_KEY = "karunkine_pending_capsulas_inscripcion_id";

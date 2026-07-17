@@ -11,11 +11,13 @@ export default function BrandBandSection({
   band,
   children,
   className = "",
+  contentClassName = "max-w-2xl",
 }: {
   id?: string;
   band: Band;
   children: ReactNode;
   className?: string;
+  contentClassName?: string;
 }) {
   const { isLogoV2 } = useLogoAccent();
   const bg = band === "hero" ? heroBandBg(isLogoV2) : altBandBg(isLogoV2);
@@ -31,7 +33,7 @@ export default function BrandBandSection({
       className={`cv-auto px-4 py-14 transition-colors duration-300 sm:px-6 md:px-10 ${typography} ${className}`}
       style={{ backgroundColor: bg }}
     >
-      <div className="mx-auto max-w-2xl leading-relaxed">{children}</div>
+      <div className={`mx-auto leading-relaxed ${contentClassName}`}>{children}</div>
     </section>
   );
 }

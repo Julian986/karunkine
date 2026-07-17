@@ -38,23 +38,6 @@ export default function HomeHero() {
         >
           SENTITE PLENO HABITANDO TU CUERPO
         </h1>
-        <p
-          className="mt-6 text-base leading-relaxed sm:text-lg"
-          style={{ color: secondaryTextColor }}
-        >
-          Existen herramientas simples y amorosas
-          <br />
-          que podés incorporar en tu día a día
-          <br />
-          para el manejo del dolor,
-          <br />
-          mientras implementas los cambios
-          <br />
-          que tu cuerpo necesita.
-        </p>
-        <p className="mt-3 font-medium" style={{ color: mainTextColor }}>
-          Estoy para acompañarte.
-        </p>
         <HeroAgendarCta />
       </div>
     </section>

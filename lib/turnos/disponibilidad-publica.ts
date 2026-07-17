@@ -2,9 +2,10 @@ import type { Db, ObjectId } from "mongodb";
 
 import { buildPanelMonthGrid } from "../booking/panel-month-grid";
 import {
+  ACTIVE_HORARIOS_GRUPAL_IDS,
+  ACTIVE_HORARIOS_INDIVIDUAL_IDS,
   eachIndividualOccurrenceFrom,
   formatDisplayFechaHora,
-  HORARIOS_GRUPAL_IDS,
   individualTemplatesForWeekday,
   isHorarioGrupalId,
   isHorarioIndividualId,
@@ -14,10 +15,10 @@ import {
   timeForGrupalTemplate,
   timeForIndividualTemplate,
   utcTodayDateKey,
+  weekdayMatchesGrupalTemplate,
   type HorarioGrupalId,
   type HorarioIndividualId,
 } from "./wanda-schedule";
-import { HORARIOS_INDIVIDUAL } from "../validators/reserva-turno";
 import { evalConcreteFeasibleForGrupal, hasGrupalEvalCombo } from "./resolve-reserva-citas";
 import {
   grupalBandFree,
@@ -131,7 +132,7 @@ export async function daySlotsIndividualHorario(
   });
 }
 
-/** Opciones de primera clase (ancla mar/jue) para una banda grupal, próximas `maxWeeks` semanas. */
+/** Opciones de primera clase para una banda grupal, próximas `maxWeeks` semanas. */
 export async function listGrupalAnclaOpciones(
   db: Db,
   horarioId: string,
@@ -150,12 +151,12 @@ export async function listGrupalAnclaOpciones(
   for (let i = 0; i < maxWeeks * 7; i++) {
     const dk = addDays(fromKey, i);
     const w = isoDateWeekday(dk);
-    if (w !== 2 && w !== 4) continue;
+    if (w === null || !weekdayMatchesGrupalTemplate(hid, w)) continue;
     if (grupalBandFree(occupied, hid, dk, 26)) {
       const tl = timeForGrupalTemplate(hid);
       out.push({
         value: dk,
-        label: `${formatDisplayFechaHora(dk, tl)} · inicio ciclo mar/jue`,
+        label: `${formatDisplayFechaHora(dk, tl)} · inicio del ciclo`,
       });
     }
   }
@@ -188,7 +189,7 @@ export async function listHorariosEvaluacionParaGrupal(
   const fromKey = utcTodayDateKey();
   const hid = horarioGrupalId as HorarioGrupalId;
   const out: string[] = [];
-  for (const hevId of HORARIOS_INDIVIDUAL) {
+  for (const hevId of ACTIVE_HORARIOS_INDIVIDUAL_IDS) {
     if (!isHorarioIndividualId(hevId)) continue;
     if (hasGrupalEvalCombo(occupied, hid, hevId as HorarioIndividualId, fromKey)) {
       out.push(hevId);
@@ -204,7 +205,7 @@ export async function listHorariosIndividualDisponibles(db: Db): Promise<string[
   const occupied = await loadOccupiedSlotKeysGlobal(db);
   const fromKey = utcTodayDateKey();
   const out: string[] = [];
-  for (const hid of HORARIOS_INDIVIDUAL) {
+  for (const hid of ACTIVE_HORARIOS_INDIVIDUAL_IDS) {
     if (!isHorarioIndividualId(hid)) continue;
     const id = hid as HorarioIndividualId;
     const occs = eachIndividualOccurrenceFrom(id, fromKey, INDIVIDUAL_SEARCH_WEEKS);
@@ -215,10 +216,10 @@ export async function listHorariosIndividualDisponibles(db: Db): Promise<string[
   return out;
 }
 
-/** Códigos grupales (grupal_930…) que aún admiten al menos una evaluación compatible. */
+/** Códigos grupales activos que aún admiten al menos una evaluación compatible. */
 export async function listHorariosGrupalDisponibles(db: Db): Promise<string[]> {
   const out: string[] = [];
-  for (const hid of HORARIOS_GRUPAL_IDS) {
+  for (const hid of ACTIVE_HORARIOS_GRUPAL_IDS) {
     const horariosEval = await listHorariosEvaluacionParaGrupal(db, hid);
     if (horariosEval.length > 0) {
       out.push(hid);

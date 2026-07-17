@@ -10,6 +10,7 @@ import {
   matchIndividualTemplate,
   normalizeTimeLocal,
   slotKey,
+  weekdayMatchesGrupalTemplate,
   type CitaDoc,
   type HorarioGrupalId,
   type HorarioIndividualId,
@@ -26,7 +27,7 @@ import {
 const GRUPAL_WEEKS = 26;
 const INDIVIDUAL_SEARCH_WEEKS = 52;
 
-/** Primer martes o jueves (ancla) desde `fromDateKey` donde la banda grupal es libre y no pisa la evaluación. */
+/** Primer día válido (ancla) desde `fromDateKey` donde la banda grupal es libre y no pisa la evaluación. */
 export function findFirstGrupalAnchorForEval(
   occupied: Set<string>,
   horG: HorarioGrupalId,
@@ -38,7 +39,7 @@ export function findFirstGrupalAnchorForEval(
   for (let i = 0; i <= 730; i++) {
     const dk = addDaysDateKey(fromDateKey, i);
     const wd = isoDateWeekday(dk);
-    if (wd !== 2 && wd !== 4) continue;
+    if (wd === null || !weekdayMatchesGrupalTemplate(horG, wd)) continue;
     if (!grupalBandFree(occupied, horG, dk, GRUPAL_WEEKS)) continue;
     const claseCitas = expandGrupalCitas({ horarioId: horG, anchorMarOrJueDateKey: dk, weeks: GRUPAL_WEEKS });
     if (claseCitas.some((c) => slotKey(c.dateKey, normalizeTimeLocal(c.timeLocal)) === evalKey)) continue;
@@ -47,7 +48,7 @@ export function findFirstGrupalAnchorForEval(
   return null;
 }
 
-/** Si ese turno puntual puede ser evaluación de un plan grupal `horG` (libre + existe ancla mar/jue). */
+/** Si ese turno puntual puede ser evaluación de un plan grupal `horG` (libre + existe ancla válida). */
 export function evalConcreteFeasibleForGrupal(
   occupied: Set<string>,
   horG: HorarioGrupalId,
@@ -177,8 +178,8 @@ export async function resolveCitasForReserva(
     edk = input.evalSlot!.dateKey;
     etl = normalizeTimeLocal(input.evalSlot!.timeLocal);
     const w = isoDateWeekday(ancla);
-    if (w !== 2 && w !== 4) {
-      return { ok: false, error: "La primera clase debe caer en martes o jueves.", code: "BAD_ANCLA" };
+    if (w === null || !weekdayMatchesGrupalTemplate(horG, w)) {
+      return { ok: false, error: "La primera clase no coincide con la franja elegida.", code: "BAD_ANCLA" };
     }
     if (!grupalBandFree(occupied, horG, ancla, GRUPAL_WEEKS)) {
       return {
@@ -202,8 +203,8 @@ export async function resolveCitasForReserva(
   } else if (!hasExplicitEval && hasExplicitAncla) {
     ancla = input.grupalClaseAnclaDateKey!.trim();
     const w = isoDateWeekday(ancla);
-    if (w !== 2 && w !== 4) {
-      return { ok: false, error: "La primera clase debe caer en martes o jueves.", code: "BAD_ANCLA" };
+    if (w === null || !weekdayMatchesGrupalTemplate(horG, w)) {
+      return { ok: false, error: "La primera clase no coincide con la franja elegida.", code: "BAD_ANCLA" };
     }
     if (!grupalBandFree(occupied, horG, ancla, GRUPAL_WEEKS)) {
       return {

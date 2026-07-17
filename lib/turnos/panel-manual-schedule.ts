@@ -18,6 +18,7 @@ import {
   type CitaDoc,
   type HorarioGrupalId,
   utcTodayDateKey,
+  weekdayMatchesGrupalTemplate,
 } from "./wanda-schedule";
 import {
   grupalBandFree,
@@ -58,7 +59,7 @@ export type PanelManualResolveResult =
       horario: string;
       horarioEvaluacion?: string;
       fechasOmitidas: string[];
-      /** Franja mar/jue asignada automáticamente (evaluación libre). */
+      /** Franja grupal asignada automáticamente (evaluación libre). */
       franjaGrupalAsignada?: HorarioGrupalId;
     }
   | { ok: false; error: string; code?: string };
@@ -92,7 +93,7 @@ async function resolveGrupalSoloClase(
   for (let i = 0; i <= 730; i++) {
     const dk = addDaysDateKey(from, i);
     const wd = isoDateWeekday(dk);
-    if (wd !== 2 && wd !== 4) continue;
+    if (wd === null || !weekdayMatchesGrupalTemplate(horarioId, wd)) continue;
     if (!grupalBandFree(occupied, horarioId, dk, GRUPAL_WEEKS)) continue;
     return {
       ok: true,
@@ -191,7 +192,7 @@ export async function resolvePanelManualCitas(
   const evalCitas: CitaDoc[] = [];
   const fechasOmitidas: string[] = [];
 
-  /** Panel + evaluación: solo las fechas elegidas/repetidas; el ciclo mar/jue va solo con "Solo ciclo de clases". */
+  /** Panel + evaluación: solo las fechas elegidas/repetidas; el ciclo grupal va solo con "Solo ciclo de clases". */
   for (const edk of evalDates) {
     if (!isSlotFreePublic(occupied, edk, etl)) {
       fechasOmitidas.push(edk);

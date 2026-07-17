@@ -18,18 +18,16 @@ import {
 } from "../../../components/panel/panel-ui";
 
 const HORARIOS_GRUPAL = [
-  { value: "grupal_930", label: "Martes y Jueves - 9:30H" },
-  { value: "grupal_1030", label: "Martes y Jueves - 10:30H" },
   { value: "grupal_15", label: "Martes y Jueves - 15:00H" },
-  { value: "grupal_16", label: "Martes y Jueves - 16:00H" },
-  { value: "grupal_17", label: "Martes y Jueves - 17:00H" },
+  { value: "grupal_1730", label: "Lunes y Miércoles - 17:30H" },
 ] as const;
 
 const HORARIOS_CONSULTA_INDIVIDUAL = [
-  { value: "09:30", label: "09:30" },
   { value: "14:00", label: "14:00" },
   { value: "15:00", label: "15:00" },
   { value: "16:00", label: "16:00" },
+  { value: "17:00", label: "17:00" },
+  { value: "17:30", label: "17:30" },
 ] as const;
 
 const iconChevronDown = (
@@ -87,17 +85,18 @@ function isConsultaIndividualWeekday(dateKey: string): boolean {
   if (!m) return false;
   const dt = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
   const wd = dt.getDay();
-  return wd === 1 || wd === 2 || wd === 3 || wd === 4; // lun, mar, mie, jue
+  return wd >= 1 && wd <= 5; // lun a vie
 }
 
 function consultaIndividualHoursForDate(dateKey: string): string[] {
   const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateKey.trim());
   if (!m) return [];
   const wd = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])).getDay();
-  if (wd === 1) return ["14:00", "15:00"]; // lunes
-  if (wd === 2) return ["09:30"]; // martes
+  if (wd === 1) return ["14:00", "16:00"]; // lunes
+  if (wd === 2) return ["14:00", "17:30"]; // martes
   if (wd === 3) return ["14:00", "15:00", "16:00"]; // miercoles
-  if (wd === 4) return ["09:30"]; // jueves
+  if (wd === 4) return ["14:00", "17:30"]; // jueves
+  if (wd === 5) return ["15:00", "16:00", "17:00"]; // viernes
   return [];
 }
 

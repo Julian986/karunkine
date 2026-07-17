@@ -6,6 +6,10 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { isLikelyWhatsappNumber } from "../../lib/customer/phone";
 import {
+  customerCapsulasEstadoLabel,
+  type CustomerCapsulaInscripcionPublic,
+} from "../../lib/capsulas/customer-inscripciones";
+import {
   customerTallerInscripcionEstadoLabel,
   type CustomerTallerInscripcionPublic,
 } from "../../lib/taller/customer-inscripciones";
@@ -70,6 +74,7 @@ export function MisTurnosClient() {
   const searchParams = useSearchParams();
   const [rows, setRows] = useState<CustomerTurnoPublic[] | null>(null);
   const [inscripciones, setInscripciones] = useState<CustomerTallerInscripcionPublic[]>([]);
+  const [capsulas, setCapsulas] = useState<CustomerCapsulaInscripcionPublic[]>([]);
   const [loading, setLoading] = useState(true);
   const [authed, setAuthed] = useState(false);
   const [phoneInput, setPhoneInput] = useState("");
@@ -90,25 +95,32 @@ export function MisTurnosClient() {
       if (res.status === 401) {
         setAuthed(false);
         setRows([]);
+        setInscripciones([]);
+        setCapsulas([]);
         return;
       }
       const data = (await res.json()) as {
         turnos?: CustomerTurnoPublic[];
         inscripciones?: CustomerTallerInscripcionPublic[];
+        capsulas?: CustomerCapsulaInscripcionPublic[];
         error?: string;
       };
       if (!res.ok) {
         setError(data.error ?? "No se pudieron cargar tus datos.");
         setRows([]);
         setInscripciones([]);
+        setCapsulas([]);
         return;
       }
       setAuthed(true);
       setRows(data.turnos ?? []);
       setInscripciones(Array.isArray(data.inscripciones) ? data.inscripciones : []);
+      setCapsulas(Array.isArray(data.capsulas) ? data.capsulas : []);
     } catch {
       setError("Sin conexión.");
       setRows([]);
+      setInscripciones([]);
+      setCapsulas([]);
     } finally {
       setLoading(false);
     }
@@ -178,6 +190,7 @@ export function MisTurnosClient() {
       setAuthed(false);
       setRows([]);
       setInscripciones([]);
+      setCapsulas([]);
     } finally {
       setBusy(false);
     }
@@ -226,7 +239,7 @@ export function MisTurnosClient() {
           {!authed ? (
             <p className="mt-2 text-base text-zinc-600">Entrá con tu WhatsApp para ver tus turnos e inscripciones.</p>
           ) : (
-            <p className="mt-2 text-sm text-zinc-500">Tus turnos e inscripciones al taller.</p>
+            <p className="mt-2 text-sm text-zinc-500">Tus turnos, inscripciones al taller y cápsulas.</p>
           )}
         </header>
 
@@ -445,6 +458,48 @@ export function MisTurnosClient() {
                       >
                         Ver detalles del taller
                       </Link>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+        ) : null}
+
+        {authed && !loading ? (
+          <section className="mb-8">
+            <h2 className="mb-4 text-lg font-bold text-zinc-900">Cápsulas de movimiento</h2>
+            {capsulas.length === 0 ? (
+              <div className="rounded-2xl border border-dashed border-zinc-300 bg-white/60 px-4 py-10 text-center">
+                <p className="text-base font-semibold text-zinc-800">No tenés cápsulas inscriptas</p>
+                <p className="mt-2 text-sm text-zinc-500">
+                  Cuando te inscribas a una cápsula, vas a ver acá su fecha, nombre y estado.
+                </p>
+              </div>
+            ) : (
+              <ul className="space-y-4">
+                {capsulas.map((capsula) => (
+                  <li
+                    key={capsula.id}
+                    className="overflow-hidden rounded-2xl border border-zinc-200/90 bg-white shadow-md shadow-zinc-900/5"
+                  >
+                    <div className="px-4 py-5 sm:px-5">
+                      <p className="text-[11px] font-bold uppercase tracking-wider text-zinc-400">
+                        {capsula.cicloTitulo}
+                      </p>
+                      <p className="mt-1 text-xl font-bold leading-snug text-zinc-900">{capsula.capsulaNombre}</p>
+                      <p className="mt-1 text-base text-zinc-600">{capsula.capsulaFecha}</p>
+                      <p className="mt-1 text-sm leading-relaxed text-zinc-500">{capsula.capsulaSubtitulo}</p>
+                      <div className="mt-3 flex flex-wrap items-center gap-2">
+                        <span
+                          className={`inline-flex items-center rounded-full px-3 py-1 text-sm font-semibold ${tallerEstadoBadgeStyles(capsula.estado)}`}
+                        >
+                          {customerCapsulasEstadoLabel(capsula.estado)}
+                        </span>
+                        <span className="rounded-full bg-zinc-100 px-3 py-1 text-sm font-medium text-zinc-800">
+                          {capsula.cicloMesLabel}
+                        </span>
+                      </div>
                     </div>
                   </li>
                 ))}

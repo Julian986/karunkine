@@ -7,6 +7,7 @@ import {
   WANDA_CUSTOMER_SESSION_COOKIE,
 } from "../../../../lib/customer/customer-session";
 import { getDb } from "../../../../lib/mongodb";
+import { listCustomerCapsulasInscripciones } from "../../../../lib/capsulas/customer-inscripciones";
 import {
   listCustomerTallerInscripciones,
 } from "../../../../lib/taller/customer-inscripciones";
@@ -29,13 +30,15 @@ export async function GET() {
 
   try {
     const db = await getDb();
-    const [rows, inscripciones] = await Promise.all([
+    const [rows, inscripciones, capsulas] = await Promise.all([
       listCustomerTurnos(db, digits),
       listCustomerTallerInscripciones(db, digits),
+      listCustomerCapsulasInscripciones(db, digits),
     ]);
     return NextResponse.json({
       turnos: rows.map(serializeTurnoForCustomer),
       inscripciones,
+      capsulas,
     });
   } catch (e) {
     console.error("[mis-turnos/turnos]", e);

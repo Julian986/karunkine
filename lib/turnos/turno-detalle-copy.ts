@@ -30,7 +30,7 @@ export function buildTurnoDetalleFromCitas(params: {
           ? "presencial"
           : "";
     const evPart = `${formatDisplayFechaHora(ev.dateKey, ev.timeLocal)}${fmtEv ? ` (${fmtEv})` : ""}`;
-    return `Clases grupales desde ${formatDisplayFechaHora(clase.dateKey, clase.timeLocal)} (ciclo mar/jue) · Evaluación: ${evPart}`;
+    return `Clases grupales desde ${formatDisplayFechaHora(clase.dateKey, clase.timeLocal)} · Evaluación: ${evPart}`;
   }
 
   return params.citas.map((c) => `${c.tipo} ${c.dateKey} ${c.timeLocal}`).join(" · ");

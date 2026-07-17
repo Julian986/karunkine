@@ -10,15 +10,24 @@ export const MOTIVOS_VALIDOS = new Set([
 ]);
 
 export const HORARIOS_GRUPAL = new Set([
+  "grupal_15",
+  "grupal_1730",
   "grupal_930",
   "grupal_1030",
-  "grupal_15",
   "grupal_16",
   "grupal_17",
 ]);
 
 export const HORARIOS_INDIVIDUAL = new Set([
   "lun_1400",
+  "lun_1600",
+  "mar_1400",
+  "mar_1730",
+  "jue_1400",
+  "jue_1730",
+  "vie_1500",
+  "vie_1600",
+  "vie_1700",
   "lun_1500",
   "mar_930",
   "mie_1400",
