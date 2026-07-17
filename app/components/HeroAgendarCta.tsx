@@ -14,7 +14,7 @@ export default function HeroAgendarCta() {
           location: "hero",
         });
       }}
-      className="hero-cta mt-8 inline-flex items-center gap-2 rounded-xl px-8 py-4 font-semibold shadow-lg transition hover:shadow-xl"
+      className="hero-cta mt-6 inline-flex items-center gap-2 rounded-xl px-8 py-4 font-semibold shadow-lg transition hover:shadow-xl sm:mt-8"
       style={
         isLogoV2
           ? { backgroundColor: accentColor, color: "#ffffff" }

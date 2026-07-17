@@ -15,13 +15,13 @@ export default function HomeHero() {
   return (
     <section
       id="inicio"
-      className="hero-home relative flex min-h-[88vh] flex-col items-center justify-start overflow-x-hidden px-6 pb-12 pt-1 text-center transition-colors duration-300 sm:min-h-[100svh] sm:justify-center sm:pb-14 sm:pt-0 md:pb-16 lg:pb-[4.5rem]"
+      className="hero-home relative flex flex-col items-center justify-start overflow-x-hidden px-6 pb-8 pt-1 text-center transition-colors duration-300 sm:min-h-[100svh] sm:justify-center sm:pb-14 sm:pt-0 md:pb-16 lg:pb-[4.5rem]"
       style={{ backgroundColor: heroBg }}
     >
-      <div className="hero-content relative z-10 flex max-w-2xl flex-col items-center pt-16 text-center sm:pt-0 md:-translate-y-3 lg:-translate-y-4">
+      <div className="hero-content relative z-10 flex max-w-2xl flex-col items-center pt-14 text-center sm:pt-0 md:-translate-y-3 lg:-translate-y-4">
         <HeroLogoToggle />
         <p
-          className="mt-4 text-sm font-medium tracking-wide sm:text-base"
+          className="mt-3 text-sm font-medium tracking-wide sm:mt-4 sm:text-base"
           style={{ color: secondaryTextColor }}
         >
           Conciencia Corporal y Movimiento
@@ -33,7 +33,7 @@ export default function HomeHero() {
           WANDA PERRIN | Lic. en Kinesiología y Fisiatría
         </p>
         <h1
-          className="mt-6 whitespace-nowrap text-base font-bold tracking-tight drop-shadow-sm sm:text-3xl md:text-4xl lg:text-5xl"
+          className="mt-4 whitespace-nowrap text-base font-bold tracking-tight drop-shadow-sm sm:mt-6 sm:text-3xl md:text-4xl lg:text-5xl"
           style={{ color: mainTextColor }}
         >
           SENTITE PLENO HABITANDO TU CUERPO

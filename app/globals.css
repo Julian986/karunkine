@@ -123,14 +123,14 @@ body {
 /* Evita superposición entre CTA del hero y formulario en celulares de poca altura */
 @media (max-width: 767px) and (max-height: 740px) {
   .hero-home {
-    min-height: 100svh;
+    min-height: 0;
     justify-content: flex-start;
-    padding-top: 4rem;
-    padding-bottom: 1.25rem;
+    padding-top: 3.5rem;
+    padding-bottom: 1rem;
   }
 
   .hero-content {
-    padding-top: 0.5rem;
+    padding-top: 0.25rem;
   }
 
   /* Logo hero: isotipo + wordmark (no forzar cuadrado en todas las img) */
@@ -147,7 +147,7 @@ body {
   }
 
   .hero-cta {
-    margin-top: 1rem;
+    margin-top: 0.85rem;
   }
 
   .hero-formulario-section {
